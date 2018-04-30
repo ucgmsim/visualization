@@ -59,7 +59,7 @@ if not os.path.exists(args.out_dir):
     except OSError:
         if not os.path.isdir(args.out_dir):
             raise
-rrup_mag_e_c = np.loadtxt(args.deagg_file, skiprows = 4, usecols = (2, 1, 5, 4))
+rrup_mag_e_c = np.loadtxt(args.deagg_file, skiprows = 5, usecols = (2, 1, 5, 4))
 
 
 ###
