@@ -5,6 +5,7 @@ import os
 from shutil import copyfile, rmtree
 from subprocess import call, Popen, PIPE
 import sys
+from tempfile import mkdtemp
 sys.path.insert(0, '.')
 
 import numpy as np
@@ -34,7 +35,8 @@ if srfplot.out_dir == 'srfdir':
     if srfplot.out_dir == '':
         srfplot.out_dir = '.'
 
-for folder in [srfplot.out_dir, srfplot.gmt_temp]:
+gmt_temp = os.path.abspath(mkdtemp(prefix = '_GMT_WD_SRF_', dir = '.'))
+for folder in [srfplot.out_dir, gmt_temp]:
     if not os.path.exists(folder):
         os.makedirs(folder)
 
@@ -154,10 +156,10 @@ while km_inch / major_tick > tick_factor:
         tick_helper = 0
 
 # start plot
-p = gmt.GMTPlot('%s/%s_square.ps' % (srfplot.gmt_temp, \
+p = gmt.GMTPlot('%s/%s_square.ps' % (gmt_temp, \
         os.path.splitext(os.path.basename(srf_file))[0]))
 # override GMT defaults
-gmt.gmt_defaults(wd = srfplot.gmt_temp, font_label = label_size, \
+gmt.gmt_defaults(wd = gmt_temp, font_label = label_size, \
         map_tick_length_primary = '0.03i', ps_media = 'A4', \
         font_annot_primary = base_size, ps_page_orientation = 'landscape', \
         map_frame_pen = '%sp,black' % (scale_factor * 1.5))
@@ -177,8 +179,8 @@ if tinit_max > 20:
     acontour = 2
 elif tinit_max > 10:
     acontour = 1
-cpt_out = ['%s/slip.cpt' % (srfplot.gmt_temp), \
-        '%s/trise.cpt' % (srfplot.gmt_temp)]
+cpt_out = ['%s/slip.cpt' % (gmt_temp), \
+        '%s/trise.cpt' % (gmt_temp)]
 cpt_max = []
 for i, values in enumerate([slip_values, trise_values]):
     cpt_max.append(np.percentile(values, 99))
@@ -188,7 +190,7 @@ for i, values in enumerate([slip_values, trise_values]):
             continuous = True)
 
 # overlays
-grd_file = '%s/tmp.grd' % (srfplot.gmt_temp)
+grd_file = '%s/tmp.grd' % (gmt_temp)
 for s, seg in enumerate(planes):
     for r, row_data in enumerate([slips[s], trises[s], rakes[s]]):
         # shift to plot origin (bottom left corner)
@@ -352,4 +354,4 @@ if srfplot.title != None:
 
 p.finalise()
 p.png(dpi = 600, portrait = True, out_dir = srfplot.out_dir)
-rmtree(srfplot.gmt_temp)
+rmtree(gmt_temp)

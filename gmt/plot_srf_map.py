@@ -77,7 +77,6 @@ if finite_fault:
 ### OUTPUT 1: binary file for GMT grid plotting
 ###
 if finite_fault:
-    print('Loading SRF file data from %s...' % (srf_file))
     # get all corners
     bounds = srf.get_bounds(srf_file)
     # get all tinit values, set a sane countour interval
@@ -131,7 +130,6 @@ if finite_fault:
     else:
         # 2 sf
         cpt_max = round(percentile, 1 - int(floor(log10(abs(percentile)))))
-    print('Loading complete.')
 else:
     bounds = []
 
@@ -140,7 +138,6 @@ else:
 ### OUTPUT 2: corners file for fault plane and hypocentre plot
 ###
 if finite_fault:
-    print('Creating corners file...')
     # find hypocentre, use bounds from previous step
     hypocentre = srf.get_hypo(srf_file)
     # standard corners file format
@@ -152,7 +149,6 @@ if finite_fault:
             cf.write('>segment %d\n' % (c))
             for i in xrange(5):
                 cf.write('%f %f\n' % tuple(corners[i % 4]))
-    print('Corners written to %s.' % ('%s/corners.txt' % (out_dir)))
 else:
     hypocentre = srf.get_hypo(srf_file, depth = True)
     plot_region = (hypocentre[0] - 0.2, hypocentre[0] + 0.2, \
@@ -173,7 +169,6 @@ plot_bounds = '%f %f\n%f %f\n%f %f\n%f %f\n' % \
 ###
 ### OUTPUT 3: GMT MAP
 ###
-print('Plotting SRF on map...')
 nz_region = gmt.nz_region
 if finite_fault:
     gmt.makecpt(cpt, '%s/slip.cpt' % (out_dir), 0, cpt_max, 1)
@@ -315,4 +310,3 @@ if finite_fault:
 p.finalise()
 p.png(dpi = dpi, out_dir = srf_dir)
 rmtree(out_dir)
-print('SRF plot at %s.' % ('%s/srf_map.png' % (srf_dir)))
