@@ -63,10 +63,10 @@ if not os.path.exists(args.out_dir):
     except OSError:
         if not os.path.isdir(args.out_dir):
             raise
-rrup_mag_z_c = np.loadtxt(args.deagg_file, skiprows = 4, usecols = (2, 1, 5, 4))
+rrup_mag_z_c = np.loadtxt(args.deagg_file, skiprows = 5, usecols = (2, 1, 5, 4))
 # modifications based on plot type selection
 if args.z == 'type':
-    t = np.loadtxt(args.deagg_file, skiprows = 4, usecols = (3), dtype = '|S2')
+    t = np.loadtxt(args.deagg_file, skiprows = 5, usecols = (3), dtype = '|S2')
     colours = TYPE_COLOURS
     labels = TYPE_LABELS
     legend_expand = TYPE_LEGEND_EXPAND

@@ -529,8 +529,7 @@ if len(sys.argv) > 1:
 
     # temporary working directories for gmt are within here
     # prevent multiprocessing issues by isolating processes
-    gmt_temp = mkdtemp(prefix = '_GMT_WD_STATIONS_', \
-            dir = os.path.dirname(os.path.abspath('.')))
+    gmt_temp = mkdtemp(prefix = '_GMT_WD_STATIONS_', dir = os.path.abspath('.'))
 
     # command line arguments take priority
     args = load_args()
