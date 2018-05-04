@@ -29,11 +29,14 @@ Z_LEN = 2.5
 ROT = 30
 TILT = 60
 LEGEND_SPACE = 0.7
-LEGEND_EXPAND = 1.25
+EPSILON_LEGEND_EXPAND = 1.25
 EPSILON_COLOURS = ['215/38/3', '252/94/62', '252/180/158', '254/220/210', \
                    '217/217/255', '151/151/255', '0/0/255', '0/0/170']
 EPSILON_LABELS = ['@~e@~<-2', '-2<@~e@~<-1', '-1<@~e@~<-0.5', '-0.5<@~e@~<0', \
                   '0<@~e@~<0.5', '0.5<@~e@~<1', '1<@~e@~<2', '2<@~e@~']
+TYPE_LEGEND_EXPAND = 0.35
+TYPE_COLOURS = ['blue', 'red', 'green']
+TYPE_LABELS = ['A', 'B', 'DS']
 
 ###
 ### LOAD DATA
@@ -50,6 +53,7 @@ parser.add_argument('--mag-min', help = 'minimum magnitude', \
                     type = float, default = 5.0)
 parser.add_argument('--mag-max', help = 'maximum magnitude', \
                     type = float, default = 9.0)
+parser.add_argument('-z', help = '"epsilon" or "type"', default = 'epsilon')
 args = parser.parse_args()
 assert(os.path.exists(args.deagg_file))
 assert(args.mag_min < args.mag_max)
@@ -59,14 +63,23 @@ if not os.path.exists(args.out_dir):
     except OSError:
         if not os.path.isdir(args.out_dir):
             raise
-rrup_mag_e_c = np.loadtxt(args.deagg_file, skiprows = 5, usecols = (2, 1, 5, 4))
-
+rrup_mag_z_c = np.loadtxt(args.deagg_file, skiprows = 4, usecols = (2, 1, 5, 4))
+# modifications based on plot type selection
+if args.z == 'type':
+    t = np.loadtxt(args.deagg_file, skiprows = 4, usecols = (3), dtype = '|S2')
+    colours = TYPE_COLOURS
+    labels = TYPE_LABELS
+    legend_expand = TYPE_LEGEND_EXPAND
+else:
+    colours = EPSILON_COLOURS
+    labels = EPSILON_LABELS
+    legend_expand = EPSILON_LEGEND_EXPAND
 
 ###
 ### PROCESS DATA
 ###
 # x axis
-x_max = max(rrup_mag_e_c[:, 0])
+x_max = max(rrup_mag_z_c[:, 0])
 if x_max < 115:
     x_inc = 10
 elif x_max < 225:
@@ -92,30 +105,33 @@ dy = y_inc / 2.0
 # bins to put data in
 bins_x = (np.arange(int(x_max / dx)) + 1) * dx
 bins_y = (np.arange(int((y_max - y_min) / dy)) + 1) * dy + y_min
-bins_z = np.array([-2, -1, -0.5, 0, 0.5, 1, 2, \
-                   max(3, np.max(rrup_mag_e_c[:, 2]) + 1)])
+bins_e = np.array([-2, -1, -0.5, 0, 0.5, 1, 2, \
+                   max(3, np.max(rrup_mag_z_c[:, 2]) + 1)])
 
 # convert data into bin indexes
-rrup_mag_e_c[:, 0] = np.digitize(rrup_mag_e_c[:, 0], bins_x)
-rrup_mag_e_c[:, 1] = np.digitize(rrup_mag_e_c[:, 1], bins_y)
-rrup_mag_e_c[:, 2] = np.digitize(rrup_mag_e_c[:, 2], bins_z)
+rrup_mag_z_c[:, 0] = np.digitize(rrup_mag_z_c[:, 0], bins_x)
+rrup_mag_z_c[:, 1] = np.digitize(rrup_mag_z_c[:, 1], bins_y)
+if args.z == 'type':
+    rrup_mag_z_c[:, 2] = np.float32(t == 'B') + np.float32(t == 'DS') * 2
+else:
+    rrup_mag_z_c[:, 2] = np.digitize(rrup_mag_z_c[:, 2], bins_e)
 
 # combine duplicate bins
 blocks = np.zeros(tuple(map(int, \
-                  np.append(np.max(rrup_mag_e_c[:, :3], axis = 0) + 1, 2))))
-unique = np.unique(rrup_mag_e_c[:, :3], axis = 0)
-for rrup, mag, e in unique[unique[:, 2].argsort()]:
+                  np.append(np.max(rrup_mag_z_c[:, :3], axis = 0) + 1, 2))))
+unique = np.unique(rrup_mag_z_c[:, :3], axis = 0)
+for rrup, mag, z in unique[unique[:, 2].argsort()]:
     # get base
-    blocks[int(rrup), int(mag), int(e), 1] = \
+    blocks[int(rrup), int(mag), int(z), 1] = \
             np.max(blocks[int(rrup), int(mag), :, 0])
     # current top = value + base
-    value = np.add.reduce(rrup_mag_e_c[ \
+    value = np.add.reduce(rrup_mag_z_c[ \
             np.ix_(np.minimum.reduce( \
-            rrup_mag_e_c[:, :3] == (rrup, mag, e), axis = 1), (3,))])
+            rrup_mag_z_c[:, :3] == (rrup, mag, z), axis = 1), (3,))])
     if value:
-        blocks[int(rrup), int(mag), int(e), 0] = \
-                value + blocks[int(rrup), int(mag), int(e), 1]
-del rrup_mag_e_c, unique
+        blocks[int(rrup), int(mag), int(z), 0] = \
+                value + blocks[int(rrup), int(mag), int(z), 1]
+del rrup_mag_z_c, unique
 
 # move indexes into array
 top, base = blocks.reshape((-1, 2)).T
@@ -161,9 +177,9 @@ p.path('\n>\n'.join(gridlines), is_file = False, width = '0.5p', z = True)
 ###
 ### PLOT CONTENTS
 ###
-cpt = os.path.join(wd, 'epsilon.cpt')
-gmt.makecpt(','.join(EPSILON_COLOURS), cpt, \
-            0, len(EPSILON_COLOURS), inc = 1, wd = wd)
+cpt = os.path.join(wd, 'z.cpt')
+gmt.makecpt(','.join(colours), cpt, \
+            0, len(colours), inc = 1, wd = wd)
 gmt_in = BytesIO()
 np.savetxt(gmt_in, gmt_rows, fmt = '%.6f')
 p.points(gmt_in.getvalue(), is_file = False, z = True, line = 'black', \
@@ -179,10 +195,10 @@ angle = math.radians(ROT)
 map_width = math.cos(angle) * X_LEN + math.sin(angle) * Y_LEN
 x_end = (X_LEN + math.cos(angle) * math.sin(angle) \
                  * (Y_LEN - math.tan(angle) * X_LEN)) / X_LEN \
-                 * x_max * LEGEND_EXPAND
+                 * x_max * legend_expand
 y_end = math.tan(angle) * x_end / x_max * X_LEN * (y_max - y_min) / Y_LEN
 # x y diffs at start, alternatively set -D(dz)
-x_shift = map_width * (LEGEND_EXPAND - 1) * -0.5
+x_shift = map_width * (legend_expand - 1) * -0.5
 y_shift = (LEGEND_SPACE) / math.cos(math.radians(TILT)) \
           + X_LEN * math.sin(angle)
 x0 = (y_shift * math.sin(angle) + x_shift * math.cos(angle)) * (x_max / X_LEN)
@@ -191,15 +207,15 @@ y0 = y_min + (-y_shift * math.cos(angle) + x_shift * math.sin(angle)) \
 # legend definitions
 legend_boxes = []
 legend_labels = []
-for i, x in enumerate(np.arange(0, 1.01, 1.0 / (len(EPSILON_COLOURS) - 1.0))):
+for i, x in enumerate(np.arange(0, 1.01, 1.0 / (len(colours) - 1.0))):
     legend_boxes.append('%s %s %s %s' % (x0 + x * x_end, y0 + x * y_end, \
                                          z_inc / 2.0, i))
-    legend_labels.append('%s 0 %s' % (x, EPSILON_LABELS[i]))
+    legend_labels.append('%s 0 %s' % (x, labels[i]))
 # cubes and labels of legend
 p.points('\n'.join(legend_boxes), is_file = False, z = True, line = 'black', \
         shape = 'o', size = '%si/%sib0' % (Z_LEN / 10.0, Z_LEN / 10.0), \
         line_thickness = '0.5p', cpt = cpt, clip = False)
-p.spacial('X', (0, 1, 0, 1), sizing = '%si/1i' % (map_width * LEGEND_EXPAND), \
+p.spacial('X', (0, 1, 0, 1), sizing = '%si/1i' % (map_width * legend_expand), \
           x_shift = '%si' % (x_shift), \
           y_shift = '-%si' % (LEGEND_SPACE + 0.2))
 p.text_multi('\n'.join(legend_labels), is_file = False, justify = 'CT')
