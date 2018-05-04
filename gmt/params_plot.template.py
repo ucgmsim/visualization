@@ -147,7 +147,6 @@ class SRF:
     title = None
     # PNG output, 'srfdir' for same location as SRF
     out_dir = 'srfdir'
-    gmt_temp = os.path.abspath('GMT_WD_SRF2D')
     # use average rake (True) or midpoint rake (False)
     rake_average = False
     # length of the longest rake arrow (based on slip)
