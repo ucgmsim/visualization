@@ -218,13 +218,13 @@ if borderless:
             window = (margin_left, margin_right, margin_top, margin_bottom))
 else:
     # background can be larger as whitespace is later cropped
-    b.background(page_width, page_height, colour = 'seashell')
+    b.background(page_width, page_height, colour = 'white')
 # leave space for left tickmarks and bottom colour scale
 b.spacial('M', ll_region, sizing = map_width, \
         x_shift = margin_left, y_shift = margin_bottom)
 if not borderless:
     # topo, water, overlay cpt scale
-    b.basemap()
+    b.basemap(topo_cpt = 'grey1')
 # title, fault model and velocity model subtitles
 b.text(ll_avg[0], y_max, plot.event_title, size = 20, dy = 0.6)
 b.text(x_min, y_max, plot.fault_model, size = 14, align = 'LB', dy = 0.3)
