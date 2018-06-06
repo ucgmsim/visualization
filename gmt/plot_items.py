@@ -57,7 +57,6 @@ if len(srf_files) == 0 and len(vm_corners) == 0:
     sys.exit('nothing found to plot')
 
 gmt_temp = mkdtemp()
-print gmt_temp
 
 # slip cpt
 slip_cpt = '%s/slip.cpt' % (gmt_temp)
@@ -96,9 +95,8 @@ def load_srf(i_srf):
     except ValueError:
         # vertical dip
         return
-if len(srf_files) > 0:
-    pool = Pool(args.nproc)
-    i_srf_data = pool.map(load_srf, zip(range(len(srf_files)), srf_files))
+pool = Pool(args.nproc)
+i_srf_data = pool.map(load_srf, zip(range(len(srf_files)), srf_files))
 
 # load vm corners
 vm_corners = '\n>\n'.join(['\n'.join([' '.join(map(str, v)) for v in \
