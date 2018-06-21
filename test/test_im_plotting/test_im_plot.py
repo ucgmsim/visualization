@@ -66,6 +66,7 @@ def test_im_plot_rrup(garbage_collector, input_file, output_file1, output_file2,
 
 
 def teardown_module(garbage_collector):
+    print "----------teardown_module----------"
     if not pytest.garbage:
         try:
             shutil.rmtree(OUTPUT_DIR)
