@@ -36,6 +36,7 @@ ISSUES:
 """
 
 from glob import glob
+from multiprocessing import Pool
 import os
 from shutil import copy, rmtree
 import sys
@@ -194,6 +195,12 @@ def load_file(station_file):
 ### boundaries
 ###
 def determine_sizing(args, meta):
+    # retrieve simulation domain if available
+    if args.model_params is not None:
+        corners, cnr_str = get_corners(args.model_params, gmt_format = True)
+        meta['corners'] = corners
+        meta['cnr_str'] = cnr_str
+
     if args.region is not None:
         x_min, x_max, y_min, y_max = args.region
     elif 'corners' in meta.keys():
@@ -250,8 +257,11 @@ def determine_sizing(args, meta):
 
 def template(args, meta):
     """
-    Creates template (baselayer) file.
+    Creates template (baselayer) file and prepares recources.
     """
+    # working directory for this input file
+    meta['gmt_temp'] = mkdtemp()
+
     # incomplete template for common working GMT conf/history files
     t = gmt.GMTPlot('%s/template.ps' % (meta['gmt_temp']))
     # background can be larger as whitespace is later cropped
@@ -275,11 +285,6 @@ def template(args, meta):
         pass
     t.leave()
 
-def fault_prep(args, meta):
-    """
-    Makes sure simple SRF bounds description is available.
-    Prevents re-loading the SRF file.
-    """
     # fault path - boundaries already available
     if args.srf_cnrs is not None:
         copy(args.srf_cnrs, '%s/srf_cnrs.txt' % (meta['gmt_temp']))
@@ -287,10 +292,11 @@ def fault_prep(args, meta):
     elif args.srf is not None:
         srf2corners(args.srf, cnrs = '%s/srf_cnrs.txt' % (meta['gmt_temp']))
 
-def column_overlay(args, meta, n):
+def column_overlay(args_meta_n):
     """
     Produces map for a column of data.
     """
+    args, meta, n = args_meta_n
 
     # prepare resources in separate folder
     # prevents GMT IO errors on its conf/history files
@@ -399,30 +405,27 @@ def column_overlay(args, meta, n):
                 meta['cpt_inc'][n], label = meta['legend'], \
                 arrow_f = meta['cpt_max'][n] > 0, arrow_b = meta['cpt_min'][n] < 0)
 
-def render(args, meta, n):
-    """
-    Rendering postscript can be slow (by amount of details)
-    """
-    # same working directory as top layer
-    rwd = '%s%sc%.3dwd' % (meta['gmt_temp'], os.sep, n)
-
-    # have to combine multiple postscript layers
-    bottom = '%s/template.ps' % (meta['gmt_temp'])
-    top = '%s%sc%.3d.ps' % (rwd, os.sep, n)
-    combined = '%s/final.ps' % (rwd)
-    copy(bottom, combined)
-    with open(combined, 'a') as cf:
-        with open(top, 'r') as tf:
-            cf.write(tf.read())
-
-    p = gmt.GMTPlot(combined, append = True)
-    # only add srf here to reduce dependencies on column_overlay function
+    # fault planes
     if os.path.exists('%s/srf_cnrs.txt' % (meta['gmt_temp'])):
         p.fault('%s/srf_cnrs.txt' % (meta['gmt_temp']), is_srf = False, \
                 plane_width = 0.5, top_width = 1, hyp_width = 0.5, \
                 top_colour = meta['overlays'], \
                 plane_colour = meta['overlays'], hyp_colour = meta['overlays'])
+    p.leave()
 
+    ###
+    ### save as png
+    ###
+
+    # have to combine multiple postscript layers
+    bottom = '%s/template.ps' % (meta['gmt_temp'])
+    top = '%s%sc%.3d.ps' % (swd, os.sep, n)
+    combined = '%s/final.ps' % (swd)
+    copy(bottom, combined)
+    with open(combined, 'a') as cf:
+        with open(top, 'r') as tf:
+            cf.write(tf.read())
+    p = gmt.GMTPlot(combined, append = True)
     # actual rendering (slow)
     p.finalise()
     p.png(dpi = args.dpi, clip = True, out_name = \
@@ -474,24 +477,20 @@ def load_args():
 if __name__ == '__main__':
     # command line arguments
     args = load_args()
+    pool = Pool(args.nproc)
+    msgs = []
 
     # station file metadata
     meta = load_file(args.station_file)
-    meta['gmt_temp'] = mkdtemp()
-    # retrieve simulation domain if available
-    if args.model_params is not None:
-        corners, cnr_str = get_corners(args.model_params, gmt_format = True)
-        meta['corners'] = corners
-        meta['cnr_str'] = cnr_str
     # calculate other parameters
     determine_sizing(args, meta)
-
-    # plot
+    # start plot
     template(args, meta)
-    fault_prep(args, meta)
-    for i in xrange(meta['ncol']):
-        column_overlay(args, meta, i)
-        render(args, meta, i)
+    # finish plot per column
+    msgs.extend([(args, meta, i) for i in xrange(meta['ncol'])])
+    pool.map(column_overlay, msgs)
+    # debug friendly version
+    #[column_overlay((args, meta, i)) for i in xrange(meta['ncol'])]
 
     # clear all working files
     rmtree(meta['gmt_temp'])
