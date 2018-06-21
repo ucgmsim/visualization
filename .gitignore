@@ -1,1 +1,6 @@
 *.pyc
+test/test_im_plotting/__*
+test/test_im_plotting/params*
+test/test_im_plotting/sample1/output/
+test/test_im_plotting/.cache/
+test/test_im_plotting/.coverage

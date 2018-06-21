@@ -6,6 +6,8 @@ Generate non_uniform.xyz and sim/obs.xyz file
 Command:
 To generate .xyz:
 python im_plot.py ~/kelly_sim_ims/kelly_sim_ims.info /home/nesi00213/dev/impp_datasets/Darfield/sample_nz_grid.ll -o ~/xyz_test
+python im_plot.py ~/kelly_sim_ims/kelly_sim_ims.info /home/nesi00213/dev/impp_datasets/darfield_benchmark/rrups.csv -o ~/xyz_test
+
 To plot:
 python plot_stations.py ~/xyz_test/nonuniform_im_plot_map_kelly_sim_ims.xyz --out_dir ~/xyz_test --model_params /home/nesi00213/VelocityModel/v1.64_FVM/model_params_nz01-h0.100
 """
@@ -64,7 +66,6 @@ def get_measures_header(data_header, is_non_uniform):
     :return: measures_header, mmi_index
     """
     measures = data_header.strip().split(',')[2:]
-    print(len(measures))
     i = 0
     mmi_index = None
     while i < len(measures):
@@ -77,7 +78,6 @@ def get_measures_header(data_header, is_non_uniform):
                 i -= 1
                 continue
         i += 1
-    print("now",len(measures))
     measures_header = ', '.join(measures)
     return measures_header, mmi_index
 
@@ -245,9 +245,14 @@ def validate_filepath(parser, file_path):
         with open(file_path, 'r') as f:
             return
     except IOError:
-        parser.error("check if you have permission to read {}".format(file_path))
+        parser.error("{} is a dir".format(file_path))
     except OSError:
         parser.error("{} does not exit".format(file_path))
+
+
+def validate_dir(parser, dir_path):
+    if not os.path.isdir(dir_path):
+        parser.error('{} is not a directory'.format(dir_path))
 
 
 def validate_compoent(parser, comp):
@@ -271,7 +276,7 @@ def main():
 
     validate_filepath(parser, args.meta_filepath)
     validate_filepath(parser, args.rrup_or_station_filepath)
-    validate_filepath(parser, args.output_path)
+    validate_dir(parser, args.output_path)
 
     run_name, run_type = get_runname(args. meta_filepath)
     data = get_data(args.meta_filepath)
