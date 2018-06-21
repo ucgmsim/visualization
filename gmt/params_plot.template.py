@@ -12,10 +12,6 @@ vel_model = 'NZVM v1.65 h=<HH>km'
 # 'CANTERBURY', 'WIDERCANT', 'MIDNZ', 'SOUTHISLAND'
 region = None
 
-# topography at different resolutions
-topo_file_low = '/nesi/projects/nesi00213/PlottingData/Topo/nztopo.grd'
-topo_file_high = '/nesi/projects/nesi00213/PlottingData/Topo/srtm_all_filt_nz.grd'
-
 # timeslice plotting
 class TS:
     # which component to plot
@@ -93,23 +89,6 @@ class MMI:
     convergence_limit = 0.1
     # crop MMI to land
     land_crop = False
-
-# station plotting
-class STATION:
-    dpi = 300
-    width = '6i'
-    topo_file = topo_file_high
-    out_dir = os.path.abspath('PNG_stations')
-    # override velocity model region default = None
-    # eg: region = (x_min, x_max, y_min, y_max)
-    region = None
-    # major, minor tick increment on map edges. None for automatic
-    tick_major = None
-    tick_minor = None
-    # 'major' only include major sites, 'all' include all sites,
-    # 'auto' to choose between major and all, None for [] (no sites listed)
-    # or specify list of sites manualy ['Kaikoura', 'Wellington']...
-    sites = 'auto'
 
 # observed / simulated seismogram plotting
 class SEISMO:
