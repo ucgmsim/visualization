@@ -1,7 +1,7 @@
 """
 Assumption: (1) im_values.csv and im_values.info are in the same location and
             (2) .csv and .info have the same prefix
-            
+
 Generate non_uniform.xyz and sim/obs.xyz file
 
 Command:
@@ -278,6 +278,7 @@ def main():
     validate_filepath(parser, args.meta_filepath)
     validate_filepath(parser, args.rrup_or_station_filepath)
     validate_dir(parser, args.output_path)
+    validate_compoent(parser, args.component)
 
     run_name, run_type = get_runname(args. meta_filepath)
     data = get_data(args.meta_filepath)
