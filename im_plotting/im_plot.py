@@ -18,6 +18,7 @@ import sys
 import argparse
 import getpass
 import common
+from qcore import utils
 
 SIM_HOT = "hot-karim:invert 0.2 80/0/0 0/0/80"
 NON_UNIFORM_HOT = "hot-karim:invert,t-30,overlays-blue 1k:g-surface,nns-12m,contours"
@@ -26,6 +27,7 @@ SIM_OBS_TEMPLATE = 'obs_im_plot_map_{}.xyz'
 NON_UNI_EMP_TEMPLATE = 'nonuniform_im_plot_map_{}_empirical.xyz'
 NON_UNI_TEMPLATE = 'nonuniform_im_plot_map_{}.xyz'
 COMPS = ['geom', '090', '000', 'ver']
+DEFAULT_OUTPUT_DIR = '/home/{}/im_plot_map_xyz'.format(getpass.getuser())
 
 
 def get_runname(meta_filepath):
@@ -118,26 +120,8 @@ def get_coords(station_name, coords_dict):
         lon, lat = coords_dict[station_name]
         return '{} {}'.format(lon, lat)
     except KeyError:
-        print("{} does not exits in the rrup or station file that you provided".format(station_name))
-
-
-def get_hot_header(is_non_uniform):
-    """
-    check if a non_uniform plot and return corresponding hot header
-    :param is_non_uniform: Boolean
-    :return: hot header
-    """
-    return NON_UNIFORM_HOT if is_non_uniform else SIM_HOT
-
-
-def check_virtual(station_name, is_non_uniform):
-    """
-    check if a virtual station
-    :param station_name:
-    :param is_non_uniform:
-    :return: Boolean
-    """
-    return common.is_virtual_station(station_name) if not is_non_uniform else False
+        print("{} does not exist in the rrup or station file that you provided".format(station_name))
+        return None
 
 
 def get_im_values(im_values_list, mmi_index):
@@ -166,12 +150,16 @@ def write_lines(output_dir, filename, data, coords_dict, component, is_non_unifo
     """
     output_path = os.path.join(output_dir, filename)
     print("output path {}".format(output_path))
-    third_line = get_hot_header(is_non_uniform)
+
+    if is_non_uniform:
+        fourth_line = NON_UNIFORM_HOT
+    else:
+        fourth_line = SIM_HOT
 
     with open(output_path, 'w') as fp:
         fp.write("IM Plot\n")
         fp.write("IM\n")
-        fp.write("{}\n".format(third_line))
+        fp.write("{}\n".format(fourth_line))
         fp.write("\n")
 
         measures, mmi_index = get_measures_header(data[0], is_non_uniform)
@@ -189,9 +177,11 @@ def write_lines(output_dir, filename, data, coords_dict, component, is_non_unifo
                 im_values = segs[2:]
                 values = get_im_values(im_values, mmi_index)
                 coords = get_coords(station_name, coords_dict)
-                if coords:
-                    is_virtual = check_virtual(station_name, is_non_uniform)
-                    if not is_virtual:
+                if coords is not None:
+                    if not is_non_uniform:  # uniform.xyz only writes non_virtual station
+                        if not common.is_virtual_station(station_name):
+                            fp.write('{} {}\n'.format(coords, values))
+                    else:  # non_uniform.xyz writes all stations regardless virtual or not
                         fp.write('{} {}\n'.format(coords, values))
 
 
@@ -239,46 +229,54 @@ def validate_filepath(parser, file_path):
     """
     validates input file path
     :param parser:
-    :param file_path:
+    :param file_path: user input
     :return: parser error if error
     """
-    try:
-        with open(file_path, 'r') as f:
-            return
-    except IOError:
-        parser.error("{} is a dir".format(file_path))
-    except OSError:
-        parser.error("{} does not exit".format(file_path))
+    if os.path.isfile(file_path):
+        try:
+            with open(file_path, 'r') as f:
+                return
+        except (IOError, OSError):
+            parser.error("Can't open {}".format(file_path))
+    else:
+        parser.error("No such file {}".format(file_path))  # might be a dir or not exist
 
 
 def validate_dir(parser, dir_path):
+    """
+    validates a dir
+    :param parser:
+    :param dir_path: user input
+    :return:
+    """
     if not os.path.isdir(dir_path):
-        parser.error('{} is not a directory'.format(dir_path))
+        parser.error('No such directory {}'.format(dir_path))
 
 
-def validate_compoent(parser, comp):
+def validate_component(parser, comp):
     """
     validates input component
     :param parser:
-    :param comp:
+    :param comp: user input single vel/acc component
     :return: parser error if error
     """
     if comp.lower() not in COMPS:
         parser.error("Please enter a valid component. Choose from {}".format(COMPS))
 
 
-def main():
+def generate_maps():
     parser = argparse.ArgumentParser()
     parser.add_argument('meta_filepath', help='path to input metadata file')
     parser.add_argument('rrup_or_station_filepath', help='path to inpurt rrup_csv/station_ll file path')
-    parser.add_argument('-o', '--output_path', default='/home/{}'.format(getpass.getuser()), help='path to store output xyz files')
-    parser.add_argument('-c', '--component', default='geom', help="single component of the vel/acc vector. Available compoents are {}. Default is 'geom'".format(COMPS))
+    parser.add_argument('-o', '--output_path', default=DEFAULT_OUTPUT_DIR, help='path to store output xyz files')
+    parser.add_argument('-c', '--component', default='geom', help="which component of the intensity measure. Available compoents are {}. Default is 'geom'".format(COMPS))
     args = parser.parse_args()
 
+    utils.setup_dir(DEFAULT_OUTPUT_DIR)
     validate_filepath(parser, args.meta_filepath)
     validate_filepath(parser, args.rrup_or_station_filepath)
     validate_dir(parser, args.output_path)
-    validate_compoent(parser, args.component)
+    validate_component(parser, args.component)
 
     run_name, run_type = get_runname(args. meta_filepath)
     data = get_data(args.meta_filepath)
@@ -287,8 +285,8 @@ def main():
     generate_im_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component)
     generate_non_uniform_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component)
 
-    print("xyz files generated to {}".format(args.output_path))
+    print("xyz files are output to {}".format(args.output_path))
 
 
 if __name__ == '__main__':
-    main()
+    generate_maps()

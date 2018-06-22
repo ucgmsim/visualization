@@ -30,7 +30,6 @@ BENCHMARK_NONUNI_EMP_XYZ = os.path.join(INPUT_DIR, 'nonuniform_im_plot_map_kelly
 
 def setup_module():
     """ create a tmp directory for storing output from test"""
-    print "----------setup_module----------"
     utils.setup_dir(OUTPUT_DIR)
 
 
@@ -66,8 +65,8 @@ def test_im_plot_rrup(garbage_collector, input_file, output_file1, output_file2,
 
 
 def teardown_module(garbage_collector):
-    print "----------teardown_module----------"
-    if not pytest.garbage:
+    """remove the output dir if the garbage_collector is an empty string(no error collected)"""
+    if pytest.garbage == '':
         try:
             shutil.rmtree(OUTPUT_DIR)
         except (IOError, OSError):
