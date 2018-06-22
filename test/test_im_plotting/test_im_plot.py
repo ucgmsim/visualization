@@ -35,6 +35,7 @@ def setup_module():
 
 @pytest.fixture()
 def garbage_collector():
+    """a global that collects errors along the tests"""
     pytest.garbage = ''
 
 
