@@ -75,7 +75,7 @@ def load_srf(i_srf):
         else:
             with h5open(info) as h:
                 mag = h.attrs['mag']
-                hypocentre = h.attrs['hlon'], h.attrs['hlat'], h.attrs['cd']
+                hypocentre = h.attrs['hlon'], h.attrs['hlat'], h.attrs['hdepth']
                 strike = h.attrs['strike'][0]
                 dip = h.attrs['dip'][0]
                 rake = h.attrs['rake']
