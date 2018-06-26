@@ -114,9 +114,11 @@ p.basemap(topo_cpt = 'grey1', land = 'lightgray', topo = None, road = None, high
 p.path(vm_corners, is_file = False, close = True, width = '0.5p', split = '-')
 
 # loop through srfs and planes
+finite_faults = False
 for i_s in i_srf_data:
     if i_s is None:
         continue
+    finite_faults = True
     for plane in xrange(len(i_s[1][1])):
         p.overlay('%s/srf%d_%d_slip.bin' % (gmt_temp, i_s[0], plane), slip_cpt, \
                 dx = i_s[1][0][0], dy = i_s[1][0][1], climit = 2, \
@@ -137,8 +139,9 @@ p.ticks(major = 2, minor = 0.2)
 p.image('L', 'T', '%s/quakecore-logo.png' % (script_dir), \
         width = '3i', pos = 'rel')
 # slip scale
-p.cpt_scale('C', 'B', slip_cpt, pos = 'rel_out', dy = '0.5i', \
-        label = 'Slip (cm)', length = map_width * 0.618)
+if finite_faults:
+    p.cpt_scale('C', 'B', slip_cpt, pos = 'rel_out', dy = '0.5i', \
+                label = 'Slip (cm)', length = map_width * 0.618)
 # output
 p.finalise()
 p.png(out_name = os.path.abspath(args.filename), dpi = args.dpi, \
