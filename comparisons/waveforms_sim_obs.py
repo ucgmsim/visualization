@@ -106,8 +106,12 @@ def plot_station(args, name, sim_bb = None):
 
     # get axis max, assume that within sim and obs, nt are equal
     y_min = min(np.min(sim_yx[0]), np.min(obs_yx[0]))
-    pgvs = np.maximum(np.max(sim_yx[0], axis = 1), np.max(obs_yx[0], axis = 1))
-    y_max = max(pgvs)
+    y_max = max(np.max(sim_yx[0]), np.max(obs_yx[0]))
+    all_y = np.concatenate((np.array(sim_yx[0], dtype = np.float32), \
+                            np.array(obs_yx[0], dtype = np.float32)), axis = 1)
+    pgvs = np.max(np.abs(all_y), axis = 1)
+    ppgvs = np.max(all_y, axis = 1)
+    npgvs = np.min(all_y, axis = 1)
     y_diff = y_max - y_min
     x_max = max(sim_yx[1][-1], obs_yx[1][-1])
     scale_length = max(int(round(x_max / 25.)) * 5, 5)
@@ -126,7 +130,8 @@ def plot_station(args, name, sim_bb = None):
         for j in xrange(3):
             ax = axis[i, j]
             ax.set_axis_off()
-            ax.plot(s[1], s[0][j], color = colours[i], linewidth = 1)
+            ax.plot(s[1], s[0][j] * min(y_max / ppgvs[j], y_min / npgvs[j]), \
+                    color = colours[i], linewidth = 1)
             ax.set_ylim([y_min, y_max])
             if i and not j:
                 ax.plot([0, scale_length], [y_min] * 2, color = 'black', \
@@ -143,7 +148,7 @@ def plot_station(args, name, sim_bb = None):
                         horizontalalignment = 'center')
             elif not i:
                 ax.set_title(extensions[j][1:], fontsize = 18)
-                ax.text(s[1][-1], pgvs[j], '%.1f' % (pgvs[j]), fontsize = 14)
+                ax.text(s[1][-1], y_max, '%.1f' % (pgvs[j]), fontsize = 14)
 
     plt.savefig(os.path.join(args.out, '%s.png' % (name)))
     plt.close()
