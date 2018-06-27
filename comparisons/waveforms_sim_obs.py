@@ -157,11 +157,12 @@ if __name__ == '__main__':
 
     stations = load_stations(args, sim_bb)
 
-    # multiprocessing
-    def plot_station_star(params):
-        return plot_station(*params)
-    p = Pool(args.nproc)
-    msgs = [(args, s, sim_bb) for s in stations]
-    p.map(plot_station_star, msgs)
-    # debug friendly single process alternative
-    #[plot_station(args, s, sim_bb) for s in stations]
+    # multiprocessing or serial (debug friendly)
+    if args.nproc > 1:
+        def plot_station_star(params):
+            return plot_station(*params)
+        p = Pool(args.nproc)
+        msgs = [(args, s, sim_bb) for s in stations]
+        p.map(plot_station_star, msgs)
+    else:
+        [plot_station(args, s, sim_bb) for s in stations]
