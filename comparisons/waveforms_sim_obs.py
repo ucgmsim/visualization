@@ -126,7 +126,7 @@ def plot_station(args, name, sim_bb = None):
                  horizontalalignment = 'left', verticalalignment = 'center')
 
     # subplots
-    for i, s in enumerate([sim_yx, obs_yx]):
+    for i, s in enumerate([obs_yx, sim_yx]):
         for j in xrange(3):
             ax = axis[i, j]
             ax.set_axis_off()
