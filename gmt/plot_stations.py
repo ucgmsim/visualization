@@ -259,8 +259,6 @@ def template(args, meta):
     """
     Creates template (baselayer) file and prepares recources.
     """
-    # working directory for this input file
-    meta['gmt_temp'] = mkdtemp()
 
     # incomplete template for common working GMT conf/history files
     t = gmt.GMTPlot('%s/template.ps' % (meta['gmt_temp']))
@@ -467,7 +465,7 @@ def load_args():
     assert(os.path.exists(args.station_file))
     args.out_dir = os.path.abspath(args.out_dir)
     if not os.path.isdir(args.out_dir):
-        os.path.makedirs(args.out_dir)
+        os.makedirs(args.out_dir)
 
     return args
 
@@ -482,15 +480,18 @@ if __name__ == '__main__':
 
     # station file metadata
     meta = load_file(args.station_file)
+    meta['gmt_temp'] = mkdtemp()
     # calculate other parameters
     determine_sizing(args, meta)
     # start plot
     template(args, meta)
     # finish plot per column
-    msgs.extend([(args, meta, i) for i in xrange(meta['ncol'])])
-    pool.map(column_overlay, msgs)
-    # debug friendly version
-    #[column_overlay((args, meta, i)) for i in xrange(meta['ncol'])]
+    if args.nproc > 1:
+        msgs.extend([(args, meta, i) for i in xrange(meta['ncol'])])
+        pool.map(column_overlay, msgs)
+    else:
+        # debug friendly version
+        [column_overlay((args, meta, i)) for i in xrange(meta['ncol'])]
 
     # clear all working files
     rmtree(meta['gmt_temp'])
