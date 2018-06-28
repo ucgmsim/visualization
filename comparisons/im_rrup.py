@@ -69,7 +69,8 @@ for im_col in im_data_list[0].dtype.names[2:]:
     print_name = get_print_name(im_col, args.comp)
 
     # plot data
-    fig = plt.figure()
+    fig = plt.figure(figsize = (14, 7.5), dpi = 100)
+    plt.rcParams.update({'font.size': 18})
     for i, im_data in enumerate(im_data_list):
         im_data = im_data[im_data.component == args.comp]
         r_rups = rrups['rrup'][argsearch(im_data.station, rrups['station'])]
