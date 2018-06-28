@@ -9,8 +9,6 @@ from argparse import ArgumentParser
 import os
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import matplotlib.lines as mlines
 import numpy as np
 
 from qcore.formats import load_im_file
