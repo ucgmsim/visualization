@@ -148,7 +148,8 @@ def plot_station(args, name, sim_bb = None):
                         horizontalalignment = 'center')
             elif not i:
                 ax.set_title(extensions[j][1:], fontsize = 18)
-                ax.text(s[1][-1], y_max, '%.1f' % (pgvs[j]), fontsize = 14)
+                ax.text(max(obs_yx[1][-1], sim_yx[1][-1]), y_max, \
+                        '%.1f' % (pgvs[j]), fontsize = 14)
 
     plt.savefig(os.path.join(args.out, '%s.png' % (name)))
     plt.close()
