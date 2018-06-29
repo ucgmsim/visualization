@@ -20,9 +20,9 @@ def load_args():
 
     # read
     parser = ArgumentParser()
-    parser.add_argument('sim', help = 'path to SIMULATED IM file')
-    parser.add_argument('obs', help = 'path to OBSERVED IM file')
-    parser.add_argument('-o', '--out-dir', default = '.', \
+    parser.add_argument('-s', '--sim', help = 'path to SIMULATED IM file')
+    parser.add_argument('-o', '--obs', help = 'path to OBSERVED IM file')
+    parser.add_argument('-d', '--out-dir', default = '.', \
                         help = 'output folder to place plots')
     # TODO: automatically retrieved default
     parser.add_argument('--run-name', help = 'run_name - should automate?', \
@@ -30,9 +30,16 @@ def load_args():
     parser.add_argument('--comp', help = 'component', default = 'geom')
     args = parser.parse_args()
 
+    args.have_sim = args.sim is not None
+    args.have_obs = args.obs is not None
+    args.have_both = args.sim is not None and args.obs is not None
+
     # validate
-    assert(os.path.isfile(args.sim))
-    assert(os.path.isfile(args.obs))
+    assert(args.have_sim or args.have_obs)
+    if args.have_sim:
+        assert(os.path.isfile(args.sim))
+    if args.have_obs:
+        assert(os.path.isfile(args.obs))
     if not os.path.isdir(args.out_dir):
         os.makedirs(args.out_dir)
 
@@ -43,15 +50,23 @@ def load_args():
 ###
 
 args = load_args()
-sim_ims = load_im_file(args.sim, all_psa = True)
-obs_ims = load_im_file(args.obs, all_psa = True)
-# keep only wanted component
-sim_ims = sim_ims[sim_ims.component == args.comp]
-obs_ims = obs_ims[obs_ims.component == args.comp]
+if args.have_sim:
+    sim_ims = load_im_file(args.sim, all_psa = True)
+    sim_ims = sim_ims[sim_ims.component == args.comp]
+    sim_psa = [sim_ims.dtype.names[col_i] for col_i in \
+               np.where(np_startswith(sim_ims.dtype.names, 'pSA_'))[0]]
+if args.have_obs:
+    obs_ims = load_im_file(args.obs, all_psa = True)
+    obs_ims = obs_ims[obs_ims.component == args.comp]
+    obs_psa = [obs_ims.dtype.names[col_i] for col_i in \
+               np.where(np_startswith(obs_ims.dtype.names, 'pSA_'))[0]]
 # only common pSA
-psa_names = np.intersect1d([obs_ims.dtype.names[col_i] for col_i in \
-                            np.where(np_startswith(obs_ims.dtype.names, 'pSA_'))[0]], \
-                           sim_ims.dtype.names)
+if args.have_both:
+    psa_names = np.intersect1d(obs_psa, sim_psa)
+elif args.have_obs:
+    psa_names = np.array(obs_psa)
+else:
+    psa_names = np.array(sim_psa)
 psa_vals = np_lstrip(psa_names, chars='pSA_').astype(np.float32)
 x_min = min(psa_vals)
 # sorted
@@ -59,30 +74,44 @@ sort_idx = np.argsort(psa_vals)
 psa_names = psa_names[sort_idx]
 psa_vals = psa_vals[sort_idx]
 # pSA arrays
-sim_psa = np.array(sim_ims.getfield(np.dtype({name: sim_ims.dtype.fields[name] \
-                                              for name in psa_names})).tolist())
-obs_psa = np.array(obs_ims.getfield(np.dtype({name: obs_ims.dtype.fields[name] \
-                                              for name in psa_names})).tolist())
-y_max = max(np.max(sim_psa), np.max(obs_psa))
-# duplicated data
-sim_stations = sim_ims.station
-obs_stations = obs_ims.station
-del sim_ims
-del obs_ims
+if args.have_sim:
+    sim_psa = np.array(sim_ims.getfield( \
+                np.dtype({name: sim_ims.dtype.fields[name] \
+                        for name in psa_names})).tolist())
+    sim_stations = sim_ims.station
+    del sim_ims
+if args.have_obs:
+    obs_psa = np.array(obs_ims.getfield( \
+                np.dtype({name: obs_ims.dtype.fields[name] \
+                        for name in psa_names})).tolist())
+    obs_stations = obs_ims.station
+    del obs_ims
 
-for obs_idx, sim_idx in enumerate(argsearch(obs_stations, sim_stations)):
+if args.have_both:
+    stat_idx = enumerate(argsearch(obs_stations, sim_stations))
+    stations = sim_stations
+elif args.have_obs:
+    stat_idx = enumerate(xrange(len(obs_stations)))
+    stations = obs_stations
+else:
+    stat_idx = enumerate(xrange(len(sim_stations)))
+    stations = sim_stations
+
+for obs_idx, sim_idx in stat_idx:
     if sim_idx is NOT_FOUND:
         # obs station not found in sim
         continue
-    station = sim_stations[sim_idx]
+    station = stations[sim_idx]
 
     # plot data
     fig = plt.figure(figsize = (14, 7.5), dpi = 100)
     plt.rcParams.update({'font.size': 18})
-    plt.loglog(psa_vals, sim_psa[sim_idx], color='red', \
-               label='%s Sim' % (station))
-    plt.loglog(psa_vals, obs_psa[obs_idx], color='black', \
-               label='%s Obs' % (station))
+    if args.have_sim:
+        plt.loglog(psa_vals, sim_psa[sim_idx], color='red', \
+                label='%s Sim' % (station))
+    if args.have_obs:
+        plt.loglog(psa_vals, obs_psa[obs_idx], color='black', \
+                label='%s Obs' % (station))
 
     # plot formatting
     plt.legend(loc='best')
