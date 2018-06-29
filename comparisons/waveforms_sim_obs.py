@@ -133,23 +133,21 @@ def plot_station(args, name, sim_bb = None):
             ax.set_axis_off()
             ax.plot(s[1], s[0][j] * min(y_max / ppgvs[j], y_min / npgvs[j]), \
                     color = colours[i], linewidth = 1)
-            if i:
-                ax.set_ylim([y_min - y_diff * 0.15, y_max])
-                if not j:
-                    ax.plot([0, scale_length], [y_min - y_diff * 0.1] * 2, \
-                            color = 'black', linewidth = 1)
-                    ax.text(0, y_min - y_diff * 0.15, '0', size = 12, \
-                            verticalalignment = 'top', \
-                            horizontalalignment = 'center')
-                    ax.text(scale_length, y_min - y_diff * 0.15, \
-                            str(scale_length), size = 12, \
-                            verticalalignment = 'top', \
-                            horizontalalignment = 'center')
-                    ax.text(scale_length / 2.0, y_min - y_diff * 0.225, \
-                            'sec', size = 12, verticalalignment = 'top', \
-                            horizontalalignment = 'center')
-            else:
-                ax.set_ylim([y_min, y_max])
+            ax.set_ylim([y_min - y_diff * 0.15, y_max])
+            if i and not j:
+                ax.plot([0, scale_length], [y_min - y_diff * 0.1] * 2, \
+                        color = 'black', linewidth = 1)
+                ax.text(0, y_min - y_diff * 0.15, '0', size = 12, \
+                        verticalalignment = 'top', \
+                        horizontalalignment = 'center')
+                ax.text(scale_length, y_min - y_diff * 0.15, \
+                        str(scale_length), size = 12, \
+                        verticalalignment = 'top', \
+                        horizontalalignment = 'center')
+                ax.text(scale_length / 2.0, y_min - y_diff * 0.225, \
+                        'sec', size = 12, verticalalignment = 'top', \
+                        horizontalalignment = 'center')
+            elif not i:
                 ax.set_title(extensions[j][1:], fontsize = 18)
                 ax.text(sim_yx[1][-1], y_max, '%.1f' % (pgvs[j]), fontsize = 14)
 
