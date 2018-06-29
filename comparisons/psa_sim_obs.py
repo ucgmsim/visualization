@@ -97,6 +97,7 @@ else:
     stat_idx = enumerate(xrange(len(sim_stations)))
     stations = sim_stations
 
+# in the case of only sim or obs: both indexes are the same
 for obs_idx, sim_idx in stat_idx:
     if sim_idx is NOT_FOUND:
         # obs station not found in sim
