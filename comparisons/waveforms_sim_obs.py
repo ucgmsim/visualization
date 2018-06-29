@@ -124,6 +124,7 @@ def plot_station(args, name, sim_bb = None):
                       wspace = 0.08, hspace = 0)
     plt.suptitle(name, fontsize = 20, x = 0.02, y = 0.5, \
                  horizontalalignment = 'left', verticalalignment = 'center')
+    plt.xlim([0, sim_yx[1][-1]])
 
     # subplots
     for i, s in enumerate([obs_yx, sim_yx]):
@@ -148,8 +149,7 @@ def plot_station(args, name, sim_bb = None):
                         horizontalalignment = 'center')
             elif not i:
                 ax.set_title(extensions[j][1:], fontsize = 18)
-                ax.text(max(obs_yx[1][-1], sim_yx[1][-1]), y_max, \
-                        '%.1f' % (pgvs[j]), fontsize = 14)
+                ax.text(sim_yx[1][-1], y_max, '%.1f' % (pgvs[j]), fontsize = 14)
 
     plt.savefig(os.path.join(args.out, '%s.png' % (name)))
     plt.close()
