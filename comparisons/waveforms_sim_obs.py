@@ -120,7 +120,7 @@ def plot_station(args, name, sim_bb = None):
     colours = ['black', 'red']
     f, axis = plt.subplots(2, 3, sharex = True, sharey = True, \
                            figsize = (20, 4), dpi = 96)
-    f.subplots_adjust(left = 0.08, bottom = 0.12, right = 0.98, top = None, \
+    f.subplots_adjust(left = 0.08, bottom = 0.12, right = 0.96, top = None, \
                       wspace = 0.08, hspace = 0)
     plt.suptitle(name, fontsize = 20, x = 0.02, y = 0.5, \
                  horizontalalignment = 'left', verticalalignment = 'center')
@@ -133,21 +133,23 @@ def plot_station(args, name, sim_bb = None):
             ax.set_axis_off()
             ax.plot(s[1], s[0][j] * min(y_max / ppgvs[j], y_min / npgvs[j]), \
                     color = colours[i], linewidth = 1)
-            ax.set_ylim([y_min, y_max])
-            if i and not j:
-                ax.plot([0, scale_length], [y_min] * 2, color = 'black', \
-                        linewidth = 2)
-                ax.text(0, y_min - y_diff * 0.05, '0', size = 12, \
-                        verticalalignment = 'top', \
-                        horizontalalignment = 'center')
-                ax.text(scale_length, y_min - y_diff * 0.05, \
-                        str(scale_length), size = 12, \
-                        verticalalignment = 'top', \
-                        horizontalalignment = 'center')
-                ax.text(scale_length / 2.0, y_min - y_diff * 0.125, \
-                        'sec', size = 12, verticalalignment = 'top', \
-                        horizontalalignment = 'center')
-            elif not i:
+            if i:
+                ax.set_ylim([y_min - y_diff * 0.15, y_max])
+                if not j:
+                    ax.plot([0, scale_length], [y_min - y_diff * 0.1] * 2, \
+                            color = 'black', linewidth = 1)
+                    ax.text(0, y_min - y_diff * 0.15, '0', size = 12, \
+                            verticalalignment = 'top', \
+                            horizontalalignment = 'center')
+                    ax.text(scale_length, y_min - y_diff * 0.15, \
+                            str(scale_length), size = 12, \
+                            verticalalignment = 'top', \
+                            horizontalalignment = 'center')
+                    ax.text(scale_length / 2.0, y_min - y_diff * 0.225, \
+                            'sec', size = 12, verticalalignment = 'top', \
+                            horizontalalignment = 'center')
+            else:
+                ax.set_ylim([y_min, y_max])
                 ax.set_title(extensions[j][1:], fontsize = 18)
                 ax.text(sim_yx[1][-1], y_max, '%.1f' % (pgvs[j]), fontsize = 14)
 
