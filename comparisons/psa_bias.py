@@ -69,10 +69,36 @@ sim_idx = obs_in_sim.compressed()
 del obs_in_sim
 
 # plotting data
-psa_ratios = np.log(obs_ims[psa_names][obs_idx].tolist()) / \
+psa_ratios = np.log(obs_ims[psa_names][obs_idx].tolist()) - \
              np.log(sim_ims[psa_names][sim_idx].tolist())
 psa_means = np.mean(psa_ratios, axis = 0)
 psa_std = np.std(psa_ratios, axis = 0)
 del obs_ims, sim_ims, obs_idx, sim_idx, psa_names, psa_ratios
 
 # plot
+fig = plt.figure(figsize = (14, 7.5), dpi = 100)
+plt.rcParams.update({'font.size': 18})
+plt.fill_between(psa_vals, psa_means - psa_std, psa_means + psa_std,
+                 facecolor=[1, 0.8, 0.8], edgecolor=[1, 0.2, 0.2], \
+                 linestyle='dashed', linewidth=.5, alpha=0.5)
+plt.plot(psa_vals, psa_means, color='red', linestyle='solid', linewidth=5,
+            label='Physics-based')
+plt.plot(psa_vals, np.zeros_like(psa_vals), color='black', \
+         linestyle='dashed', linewidth=3)
+
+# plot formatting
+plt.gca().set_xscale('log')
+plt.minorticks_on()
+plt.grid(b=True, axis='y', which='major')
+plt.grid(b=True, axis='x', which='minor')
+fig.set_tight_layout(True)
+plt.legend(loc='best')
+plt.ylabel('pSA residual, ln(obs)-ln(GMM)', fontsize=14)
+plt.xlabel('Vibration period, T (s)', fontsize=14)
+plt.title(args.run_name, fontsize=16)
+plt.xlim([0.01, 10])
+if not (np.max(psa_means) < -2.5 or np.min(psa_means) > 2.5):
+    plt.ylim([-2.5, 2.5])
+plt.savefig(os.path.join(args.out_dir, 'pSAWithPeriod_comp_%s_%s.png' \
+                                        % (args.comp, args.run_name)))
+plt.close()
