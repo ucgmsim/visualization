@@ -8,7 +8,6 @@ import numpy as np
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
 
-NOT_FOUND = np.ma.masked
 np_startswith = np.core.defchararray.startswith
 #np_lstrip = np.core.defchararray.lstrip
 
