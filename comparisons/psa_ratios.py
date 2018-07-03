@@ -87,6 +87,7 @@ xyz[:, 2:] = np.log(obs_ims[psa_names][obs_idx].tolist()) / \
 filename = os.path.join(args.out_dir, 'stat_ratios_pSA_%s.xyz' % (args.run_name))
 np.savetxt(filename, xyz, fmt = '%.5e', comments = '', header = '''Residual Plot
 pSA residual
-polar:fg-80/0/0,bg-0/0/80 0.2\n-1.5 1.5 0.25 0.5
+polar:fg-80/0/0,bg-0/0/80 0.2
+-1.5 1.5 0.25 0.5
 %d white
 %s''' % (psa_names.size, ', '.join(psa_names)))
