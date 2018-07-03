@@ -71,7 +71,7 @@ psa_names = np.intersect1d(obs_psa, sim_psa)
 # common stations
 os_idx = argsearch(obs_ims.station, sim_ims.station)
 ls_idx = argsearch(lon_lat_name['f2'], sim_ims.station)
-os_idx.mask += np.isin(os_idx.compressed(), ls_idx.compressed(), invert=True)
+os_idx.mask += np.isin(os_idx, ls_idx.compressed(), invert=True)
 obs_idx = np.where(os_idx.mask == False)[0]
 sim_idx = os_idx.compressed()
 stations = obs_ims.station[obs_idx]
