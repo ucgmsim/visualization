@@ -80,7 +80,7 @@ lon_lat_name = lon_lat_name[argsearch(stations, lon_lat_name['f2']).compressed()
 xyz = np.zeros((stations.size, 2 + psa_names.size))
 xyz[:, 0] = lon_lat_name['f0']
 xyz[:, 1] = lon_lat_name['f1']
-xyz[:, 2:] = np.log(obs_ims[psa_names][obs_idx].tolist()) / \
+xyz[:, 2:] = np.log(obs_ims[psa_names][obs_idx].tolist()) - \
              np.log(sim_ims[psa_names][sim_idx].tolist())
 
 filename = os.path.join(args.out_dir, 'stat_ratios_pSA_%s.xyz' % (args.run_name))
