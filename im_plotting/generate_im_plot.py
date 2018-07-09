@@ -3,7 +3,6 @@ import glob
 import subprocess
 from qcore import utils
 
-SLURM = 'im_plot.sl'
 SIM_REPO = '/home/yzh231/kelly_srf'
 LL_PATH = '/home/yzh231/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll'
 PLOT_REPO = '/home/yzh231/IM_plot_kelly_srf'
