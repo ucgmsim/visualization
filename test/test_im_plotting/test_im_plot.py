@@ -1,7 +1,4 @@
 import os
-import errno
-import shutil
-import getpass
 import pytest
 import shutil
 from qcore import shared, utils
@@ -10,9 +7,9 @@ TEST_FOLDER = os.path.abspath(os.path.dirname(__file__))
 SCRIPT = os.path.abspath(os.path.join(TEST_FOLDER, '..', '..', 'im_plotting', 'im_plot.py'))
 
 INPUT_DIR = os.path.join(TEST_FOLDER,'sample1','input')
-INPUT_OBS = os.path.join(INPUT_DIR, 'input_obs.meta_info')
-INPUT_SIM = os.path.join(INPUT_DIR, 'input_sim.meta_info')
-INPUT_EMP = os.path.join(INPUT_DIR, 'input_emp.meta_info')
+INPUT_OBS = os.path.join(INPUT_DIR, 'input_obs_imcalc.info')
+INPUT_SIM = os.path.join(INPUT_DIR, 'input_sim_imcalc.info')
+INPUT_EMP = os.path.join(INPUT_DIR, 'input_emp_imcalc.info')
 INPUT_LL = os.path.join(INPUT_DIR, 'station.ll')
 INPUT_RRUP = os.path.join(INPUT_DIR, 'rrup.csv')
 

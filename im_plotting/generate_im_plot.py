@@ -14,7 +14,7 @@ def plot_im(sim_repo=SIM_REPO, plot_repo=PLOT_REPO, model_params=MODEL_PARAMS):
     for dire in os.listdir(sim_repo):
         dire_path = os.path.join(sim_repo, dire)
         print(sim_repo, dire_path)
-        info = glob.glob1(dire_path, '*.meta_info')[0]
+        info = glob.glob1(dire_path, '*_imcalc.info')[0]
         print("info", info)
         info_path = os.path.join(dire_path, info)
         print("info path", info_path)
