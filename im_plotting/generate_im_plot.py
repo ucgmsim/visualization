@@ -12,8 +12,6 @@ SRF_1264 = '/home/nesi00213/RunFolder/Cybershake/v18p6/verification/Kelly/Kelly_
 
 
 def plot_im(sim_repo=SIM_REPO, plot_repo=PLOT_REPO, model_params=MODEL_PARAMS):
-    #with open(SLURM, 'w') as s:
-        #s.write("#!/bin/bash\n#script version: slurm\n# Please modify this file as needed, this is just a sample\n#SBATCH --job-name=im_calc\n#SBATCH --account=nesi00213\n#SBATCH --partition=NeSI\n#SBATCH --ntasks=1\n#SBATCH --time={{time}}\n#SBATCH --output im_calc-%j.out\n#SBATCH --error im_calc-%j.err\n###SBATCH --mail-type=all\n###SBATCH --mail-user=test@test.com\n###SBATCH --mem-per-cpu=16G\n###SBATCH -C avx\n#SBATCH --hint=nomultithread\n## END HEADER\ndate")
     for dire in os.listdir(sim_repo):
         dire_path = os.path.join(sim_repo, dire)
         print(sim_repo, dire_path)
