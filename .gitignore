@@ -5,3 +5,4 @@ test/test_im_plotting/__pycache__
 test/test_im_plotting/sample1/output/
 test/test_im_plotting/.cache/
 test/test_im_plotting/.coverage
+*.idea

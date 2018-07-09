@@ -1,13 +1,13 @@
 """
-Assumption: (1) im_values.csv and im_values.info are in the same location and
-            (2) .csv and .info have the same prefix
+Assumption: (1) im_values.csv and im_values.meta_info are in the same location and
+            (2) .csv and .meta_info have the same prefix
 
 Generate non_uniform.xyz and sim/obs.xyz file
 
 Command:
 To generate .xyz:
-python im_plot.py ~/kelly_sim_ims/kelly_sim_ims.info /home/nesi00213/dev/impp_datasets/Darfield/sample_nz_grid.ll -o ~/xyz_test
-python im_plot.py ~/kelly_sim_ims/kelly_sim_ims.info /home/nesi00213/dev/impp_datasets/darfield_benchmark/rrups.csv -o ~/xyz_test
+python im_plot.py ~/kelly_sim_ims/kelly_sim_ims.meta_info /home/nesi00213/dev/impp_datasets/Darfield/sample_nz_grid.ll -o ~/xyz_test
+python im_plot.py ~/kelly_sim_ims/kelly_sim_ims.meta_info /home/nesi00213/dev/impp_datasets/darfield_benchmark/rrups.csv -o ~/xyz_test
 
 To plot:
 python plot_stations.py ~/xyz_test/nonuniform_im_plot_map_kelly_sim_ims.xyz --out_dir ~/xyz_test --model_params /home/nesi00213/VelocityModel/v1.64_FVM/model_params_nz01-h0.100
@@ -32,7 +32,7 @@ DEFAULT_OUTPUT_DIR = '/home/{}/im_plot_map_xyz'.format(getpass.getuser())
 
 def get_runname(meta_filepath):
     """
-    get the run name for output xyz filename from the .info metadata file
+    get the run name for output xyz filename from the .meta_info metadata file
     :param meta_filepath: user input
     :return: run_name, run_type
     """
@@ -46,11 +46,11 @@ def get_runname(meta_filepath):
 
 def get_data(meta_filepath):
     """
-    Assumes that .info and .csv are in the same location
+    Assumes that .meta_info and .csv are in the same location
     :param meta_filepath:
     :return: lines from summary data csv file
     """
-    csv_path = meta_filepath.replace('.info', '.csv')
+    csv_path = meta_filepath.replace('.meta_info', '.csv')
     try:
         with open(csv_path, 'r') as csv_file:
             buf = csv_file.readlines()
@@ -188,8 +188,8 @@ def write_lines(output_dir, filename, data, coords_dict, component, is_non_unifo
 def generate_im_plot_map(run_name, run_type, data, coords_dict, output_dir, comp, is_non_uniform=False):
     """
     writes im_plot .xyz file
-    :param run_name: row2_colum1 string from .info metadata file
-    :param run_type: row2_colum3 stirng from .info metadata file
+    :param run_name: row2_colum1 string from .meta_info metadata file
+    :param run_type: row2_colum3 stirng from .meta_info metadata file
     :param data: summary csv buffer
     :param coords_dict: summary csv data buffer
     :param output_dir: user input
