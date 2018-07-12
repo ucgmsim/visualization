@@ -3,14 +3,11 @@
 """
 
 from argparse import ArgumentParser
-import multiprocessing as mp
+from multiprocessing import Pool
 import os
-from shutil import copy, rmtree
-import sys
+from shutil import rmtree
 from tempfile import mkdtemp
 from time import time
-
-import numpy as np
 
 import qcore.geo as geo
 import qcore.gmt as gmt
@@ -230,7 +227,7 @@ def combine_slice(n):
 ### start rendering
 ###
 ts0 = time()
-pool = mp.Pool(args.nproc)
+pool = Pool(args.nproc)
 # shared bottom and top layers
 templates = pool.apply_async(create_shared_pngs, ())
 # middle layers
