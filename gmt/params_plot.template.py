@@ -1,75 +1,14 @@
 """
-Parameters to alter plotting.
-Template should be copied to sim_dir as params_plot.py
+this file should not be added to, parameters should be handled with argparse instead.
 """
 import os
 
-event_title = 'Automatically Generated Event'
 fault_model = 'Automatically generated source model'
 # <HH> is converted automatically
 vel_model = 'NZVM v1.65 h=<HH>km'
 # pick a predefined region or model_params sim domain used ('')
 # 'CANTERBURY', 'WIDERCANT', 'MIDNZ', 'SOUTHISLAND'
 region = None
-
-# topography at different resolutions
-topo_file_low = '/nesi/projects/nesi00213/PlottingData/Topo/nztopo.grd'
-topo_file_high = '/nesi/projects/nesi00213/PlottingData/Topo/srtm_all_filt_nz.grd'
-
-# timeslice plotting
-class TS:
-    # which component to plot
-    # -1 : geometric mean, 0 : X, 1 : Y, 2 : Z
-    component = -1
-    # width of map area
-    width = '6i'
-    # borderless maps have the map continuing under semi-transparent borders
-    # set border to None to disable borderless, borderless eg: 'white@25'
-    border = 'white@25'
-    # map tick labels. examples include '1d', '0.5d', '30m'
-    major_tick = None
-    minor_tick = None
-    # larger overlay grd limit improves speed, too large = bad results
-    # default is about 0.2 * cpt increment
-    convergence_limit = None
-    # colour scale for overlay
-    cpt = 'hot'
-    # override the background and foreground colours
-    cpt_bg = None
-    cpt_fg = None
-    # invert colour range
-    cpt_inv = True
-    cpt_min = 0
-    # max and increment override
-    cpt_max = None
-    cpt_inc = None
-    # values below lowcut or above highcut removed
-    # if lowcut > highcut then the range inbetween is removed
-    # None - disable, 'auto' - automatic (about 2% of cpt max)
-    # TODO: 'auto' only implemented for lowcut
-    lowcut = 'auto'
-    highcut = None
-    cpt_legend = 'ground motion (cm/s)'
-    # crop overlay to land
-    land_crop = False
-    # overlay grid resolution in longitude, latitude units
-    # append 'k' for killometres, 'e' for metres
-    # accurate at middle of grid, equal-longitude/latitude spacing
-    # None is ideal smooth resolution for data (may be slower than wanted)
-    # examples: '1k' 1 kilometre, '400e' 400 metres, '0.002' 0.002 lat or lon
-    grd_dx = None
-    grd_dy = None
-    # seismogram overlay data, thickness, colour and format
-    # only plotted if the file exists
-    seis_data = 'gmt-seismo.xy'
-    seis_line = '0.8p'
-    seis_colour = 'red'
-    # 'time' if data move, 'inc' if data extends
-    seis_fmt = 'time'
-    # 'major' only include major sites, 'all' include all sites,
-    # 'auto' to choose between major and all, None for [] (no sites listed)
-    # or specify list of sites manualy ['Kaikoura', 'Wellington']...
-    sites = 'auto'
 
 # PGV plotting
 class PGV(TS):
@@ -93,23 +32,6 @@ class MMI:
     convergence_limit = 0.1
     # crop MMI to land
     land_crop = False
-
-# station plotting
-class STATION:
-    dpi = 300
-    width = '6i'
-    topo_file = topo_file_high
-    out_dir = os.path.abspath('PNG_stations')
-    # override velocity model region default = None
-    # eg: region = (x_min, x_max, y_min, y_max)
-    region = None
-    # major, minor tick increment on map edges. None for automatic
-    tick_major = None
-    tick_minor = None
-    # 'major' only include major sites, 'all' include all sites,
-    # 'auto' to choose between major and all, None for [] (no sites listed)
-    # or specify list of sites manualy ['Kaikoura', 'Wellington']...
-    sites = 'auto'
 
 # observed / simulated seismogram plotting
 class SEISMO:
