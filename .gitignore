@@ -1,1 +1,10 @@
 *.pyc
+*.idea
+/comparisons/im_rrup/
+/comparisons/psa_bias/
+/comparisons/psa_ratios_rrups/
+/comparisons/psa_sim_obs/
+/comparisons/waveforms_sim_obs/
+/comparisons/waveforms_sim_obs_bb/
+/comparisons/waveforms_sim_obs_comp/
+/comparisons/waveforms_sim_vel_obs_vel

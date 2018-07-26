@@ -6,6 +6,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+import sys
+sys.path.insert(0, '../../qcore/')
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
 
@@ -69,6 +71,7 @@ else:
     psa_names = np.array(sim_psa)
 psa_vals = np_lstrip(psa_names, chars='pSA_').astype(np.float32)
 x_min = min(psa_vals)
+x_max = max(psa_vals)
 # sorted
 sort_idx = np.argsort(psa_vals)
 psa_names = psa_names[sort_idx]
@@ -119,7 +122,8 @@ for obs_idx, sim_idx in stat_idx:
     plt.ylabel('Spectral acceleration (g)', fontsize=14)
     plt.xlabel('Vibration period, T (s)', fontsize=14)
     plt.title(args.run_name)
-    plt.xlim([x_min, x_min * 10e4])
+    #plt.xlim([x_min, x_min * 10e4])
+    plt.xlim([x_min, x_max])
     plt.ylim([0.001, 5])
     plt.savefig(os.path.join(args.out_dir, 'pSA_comp_%s_vs_Period_%s_%s.png' \
                                            % (args.comp, args.run_name, station)))

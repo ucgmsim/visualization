@@ -11,13 +11,20 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+
+import sys
+sys.path.insert(0, '../../qcore/')
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
+
+#from qcore.formats import load_im_file
+#from qcore.nputil import argsearch
 
 colours = ['red', [0, 0.5, 0]]
 labels = ['Physics-based', 'Observed']
 markers = ['o', '+']
 edges = [None, 5]
+
 
 def load_args():
     """
@@ -48,6 +55,7 @@ def load_args():
 
     return args
 
+
 def get_print_name(im, comp):
     if im.startswith('pSA_'):
         im = 'pSA(%dp%s' % (float(im.split('_')[-1]), im.split('.')[-1])
@@ -65,6 +73,7 @@ im_data_list = [load_im_file(im_csv) for im_csv in args.im]
 
 for im_col in im_data_list[0].dtype.names[2:]:
     print_name = get_print_name(im_col, args.comp)
+    print(print_name)
 
     # plot data
     fig = plt.figure(figsize = (14, 7.5), dpi = 100)
@@ -72,12 +81,15 @@ for im_col in im_data_list[0].dtype.names[2:]:
     for i, im_data in enumerate(im_data_list):
         im_data = im_data[im_data.component == args.comp]
         r_rups = rrups['rrup'][argsearch(im_data.station, rrups['station'])]
+        # print("argssearch", argsearch(im_data_list[1].station, rrups['station']))
+        # print("rrups[staiton]",rrups['station'])
+        print("imdata",len(im_data),"r_rrups",r_rups.size)
         plt.loglog(r_rups, im_data[im_col], linestyle='None', color=colours[i],
                     marker=markers[i], markeredgewidth=edges[i], markersize=10, \
                     markeredgecolor=colours[i], label=labels[i])
 
     # plot formatting
-    plt.legend(loc='best', fontsize=9)
+    plt.legend(loc='best', fontsize=9, numpoints=1)
     plt.ylabel(print_name)
     plt.xlabel('Source-to-site distance, $R_{rup}$ (km)')
     plt.minorticks_on()

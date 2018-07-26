@@ -12,12 +12,15 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+sys.path.insert(0, '../../qcore/')
 
 from qcore.timeseries import BBSeis, read_ascii
 
 # files that contain the 3 components (text based)
 # must be in same order as binary results (x, y, z)
-extensions = ['.090', '.000', '.ver']
+extensions = ['.000', '.090', '.ver']
+
 
 def load_args():
     """
@@ -36,6 +39,7 @@ def load_args():
     parser.add_argument('-v', help = 'verbose messages', action = 'store_true')
     parser.add_argument('-n', '--nproc', help = 'number of processes to use', \
                         type = int, default = 1)
+    parser.add_argument('-t', '--tmax', type=float, help='maximun duration of waveform simulation')
     args = parser.parse_args()
 
     # validate
@@ -50,8 +54,10 @@ def load_args():
     assert(os.path.isdir(args.obs))
     if not os.path.isdir(args.out):
         os.makedirs(args.out)
-
+    if args.tmax <= 0:
+        parser.error('Duration -t/--tmax must be greater than 0')
     return args
+
 
 def load_stations(args, sim_bb = None):
     """
@@ -85,6 +91,7 @@ def load_stations(args, sim_bb = None):
                 % (sim_stations.size, len(obs_stations), np.sum(both)))
     return sim_stations[both]
 
+
 def plot_station(args, name, sim_bb = None):
     if args.v:
         print('Plotting station: %s...' % (name))
@@ -113,8 +120,12 @@ def plot_station(args, name, sim_bb = None):
     ppgvs = np.max(all_y, axis = 1)
     npgvs = np.min(all_y, axis = 1)
     y_diff = y_max - y_min
-    x_max = max(sim_yx[1][-1], obs_yx[1][-1])
+    #x_max = max(sim_yx[1][-1], obs_yx[1][-1])
+    if args.tmax is not None:
+        sim_yx[1][-1] = args.tmax
+    x_max = sim_yx[1][-1]
     scale_length = max(int(round(x_max / 25.)) * 5, 5)
+    print(name, sim_yx[1][-1], obs_yx[1][-1], scale_length)
 
     # start plot
     colours = ['black', 'red']
@@ -128,6 +139,7 @@ def plot_station(args, name, sim_bb = None):
 
     # subplots
     for i, s in enumerate([obs_yx, sim_yx]):
+        print(i)
         for j in xrange(3):
             ax = axis[i, j]
             ax.set_axis_off()
@@ -153,6 +165,7 @@ def plot_station(args, name, sim_bb = None):
 
     plt.savefig(os.path.join(args.out, '%s.png' % (name)))
     plt.close()
+
 
 if __name__ == '__main__':
     args = load_args()

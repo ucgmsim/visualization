@@ -6,6 +6,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+import sys
+sys.path.insert(0, '../../qcore/')
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
 
@@ -87,7 +89,7 @@ for im in im_names:
     plt.grid(b=True, axis='y', which='major')
     plt.grid(b=True, axis='x', which='minor')
     fig.set_tight_layout(True)
-    plt.legend(loc='best')
+    plt.legend(loc='best', numpoints=1)
     plt.ylabel('ln(obs/sim)-%s' % (print_name), fontsize=14)
     plt.xlabel('Source-to-site distance, $R_{rup}$ (km)', fontsize=14)
     plt.title(args.run_name, fontsize=16)
