@@ -70,8 +70,11 @@ elif args.have_obs:
 else:
     psa_names = np.array(sim_psa)
 psa_vals = np_lstrip(psa_names, chars='pSA_').astype(np.float32)
+
+# get xlim
 x_min = min(psa_vals)
 x_max = max(psa_vals)
+
 # sorted
 sort_idx = np.argsort(psa_vals)
 psa_names = psa_names[sort_idx]
@@ -100,6 +103,11 @@ else:
     stat_idx = enumerate(xrange(len(sim_stations)))
     stations = sim_stations
 
+# get ylim
+y_max = max(np.max(obs_psa), np.max(sim_psa))
+y_min = min(np.min(obs_psa), np.min(sim_psa))
+
+
 # in the case of only sim or obs: both indexes are the same
 for obs_idx, sim_idx in stat_idx:
     if sim_idx is NOT_FOUND:
@@ -108,14 +116,15 @@ for obs_idx, sim_idx in stat_idx:
     station = stations[sim_idx]
 
     # plot data
-    fig = plt.figure(figsize = (14, 7.5), dpi = 100)
-    plt.rcParams.update({'font.size': 18})
+    #fig = plt.figure(figsize = (14, 7.5), dpi = 100)
+    fig = plt.figure(figsize=(7.6, 7.5), dpi=100)  # fig square
+    plt.rcParams.update({'font.size': 14})
     if args.have_sim:
         plt.loglog(psa_vals, sim_psa[sim_idx], color='red', \
-                label='%s Sim' % (station))
+                label='%s Sim' % (station), linewidth=3)
     if args.have_obs:
         plt.loglog(psa_vals, obs_psa[obs_idx], color='black', \
-                label='%s Obs' % (station))
+                label='%s Obs' % (station), linewidth=3)
 
     # plot formatting
     plt.legend(loc='best')
@@ -124,7 +133,8 @@ for obs_idx, sim_idx in stat_idx:
     plt.title(args.run_name)
     #plt.xlim([x_min, x_min * 10e4])
     plt.xlim([x_min, x_max])
-    plt.ylim([0.001, 5])
+    plt.ylim([max(0.001, y_min), min(5, y_max)])
+    #plt.ylim([0.001, 5])
     plt.savefig(os.path.join(args.out_dir, 'pSA_comp_%s_vs_Period_%s_%s.png' \
                                            % (args.comp, args.run_name, station)))
     plt.close()

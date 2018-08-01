@@ -13,6 +13,7 @@ from qcore.nputil import argsearch
 
 np_startswith = np.core.defchararray.startswith
 
+
 def load_args():
     """
     Process command line arguments.
@@ -39,6 +40,7 @@ def load_args():
         os.makedirs(args.out_dir)
 
     return args
+
 
 def get_print_name(im, comp):
     if im.startswith('pSA_'):
@@ -95,6 +97,8 @@ for im in im_names:
     plt.title(args.run_name, fontsize=16)
     if not (np.max(im_ratios) < -2.5 or np.min(im_ratios) > 2.5):
         plt.ylim([-2.5, 2.5])
+    plt.xlim([0.7, 45])   # manually adjusted x-axis to strip blank space on plot, TODO Should be autoed
+
     plt.savefig(os.path.join(args.out_dir, '%s_ObsSimRatio_withRrup_%s.png' \
                                             % (print_name, args.run_name)))
     plt.close()

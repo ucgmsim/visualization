@@ -45,6 +45,9 @@ from time import time, sleep
 
 import numpy as np
 
+
+import sys
+sys.path.insert(0, '../../qcore/')
 import qcore.gmt as gmt
 import qcore.geo as geo
 from qcore.shared import get_corners
