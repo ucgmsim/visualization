@@ -63,26 +63,32 @@ def get_data(meta_filepath):
 
 def get_measures_header(data_header, is_non_uniform):
     """
-    get measures for xyz file and mmi index
-    :param data_header: row1 of summary csv
+    :param data_header:
     :param is_non_uniform:
-    :return: measures_header, mmi_index
+    :return:
     """
     measures = data_header.strip().split(',')[2:]
     i = 0
-    mmi_index = None
+    keep_indexes = []
+    new_measures = []
     while i < len(measures):
-        if 'pSA' in measures[i]:
-            measures[i] = measures[i].replace('_', ' (') + 's)'
-        if is_non_uniform:
-            if measures[i] == 'MMI':
-                measures.pop(i)
-                mmi_index = i
-                i -= 1
+        new_measure = measures[i]
+        if 'pSA' in new_measure:
+            if 'sigma' in new_measure:
+                i += 1
                 continue
+            else:
+                new_measure = new_measure.replace('_', ' (') + 's)'
+
+        if is_non_uniform:
+            if new_measure == 'MMI':
+                i += 1
+                continue
+        new_measures.append(new_measure)
+        keep_indexes.append(i)
         i += 1
-    measures_header = ', '.join(measures)
-    return measures_header, mmi_index
+    new_measures_header = ', '.join(new_measures)
+    return new_measures_header, keep_indexes
 
 
 def get_coords_dict(file_path):
@@ -124,17 +130,18 @@ def get_coords(station_name, coords_dict):
         return None
 
 
-def get_im_values(im_values_list, mmi_index):
+def get_im_values(im_values_list, keep_indexes):
     """
     get mmi excluded or included im values
     :param im_values_list:
     :param mmi_index:
     :return: im values
     """
-    if mmi_index:  # if we removed mmi from the original measures as generating non_uniform plot, we need to exclude the corresponding value in csv
-        im_values_list.pop(mmi_index)
-    values = ' '.join(im_values_list)
-    return values
+    new_values = []
+    for index in keep_indexes:
+        new_values.append(im_values_list[index])
+    new_values = ' '.join(new_values)
+    return new_values
 
 
 def write_lines(output_dir, filename, data, coords_dict, component, is_non_uniform):

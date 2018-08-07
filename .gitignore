@@ -6,3 +6,6 @@ test/test_im_plotting/sample1/output/
 test/test_im_plotting/.cache/
 test/test_im_plotting/.coverage
 *.idea
+gmt/bench*
+gmt/non_uni*
+gmt/sim*
