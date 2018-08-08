@@ -23,7 +23,8 @@ from qcore import utils
 SIM_HOT = "hot-karim:invert 0.2 80/0/0 0/0/80"
 NON_UNIFORM_HOT = "hot-karim:invert,t-30,overlays-blue 1k:g-surface,nns-12m,contours"
 SIM_TEMPLATE = 'sim_im_plot_map_{}.xyz'
-SIM_OBS_TEMPLATE = 'obs_im_plot_map_{}.xyz'
+OBS_TEMPLATE = 'obs_im_plot_map_{}.xyz'
+EMP_TEMPLATE = 'emp_im_plot_map_{}.xyz'
 NON_UNI_EMP_TEMPLATE = 'nonuniform_im_plot_map_{}_empirical.xyz'
 NON_UNI_TEMPLATE = 'nonuniform_im_plot_map_{}.xyz'
 COMPS = ['geom', '090', '000', 'ver']
@@ -207,8 +208,10 @@ def generate_im_plot_map(run_name, run_type, data, coords_dict, output_dir, comp
     """
     if run_type == 'simulated':
         filename = SIM_TEMPLATE.format(run_name)
-    else:
-        filename = SIM_OBS_TEMPLATE.format(run_name)
+    elif run_type == 'observed':
+        filename = OBS_TEMPLATE.format(run_name)
+    elif run_type == 'empirical':
+        filename = EMP_TEMPLATE.format(run_name)
 
     write_lines(output_dir, filename, data, coords_dict, comp, is_non_uniform=is_non_uniform)
 
