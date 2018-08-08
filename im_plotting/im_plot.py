@@ -29,7 +29,8 @@ NON_UNI_TEMPLATE = 'nonuniform_im_plot_map_{}.xyz'
 COMPS = ['geom', '090', '000', 'ver']
 DEFAULT_OUTPUT_DIR = '/home/{}/im_plot_map_xyz'.format(getpass.getuser())
 
-# albry_imcalc.info
+
+# albury_imcalc.info
 def get_runname(meta_filepath):
     """
     get the run name for output xyz filename from the _imcalc.info metadata file
@@ -134,7 +135,7 @@ def get_im_values(im_values_list, keep_indexes):
     """
     get mmi excluded or included im values
     :param im_values_list:
-    :param mmi_index:
+    :param keep_indexes: indexes of im_values to keep
     :return: im values
     """
     new_values = []
