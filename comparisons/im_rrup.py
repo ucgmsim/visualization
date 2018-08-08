@@ -5,27 +5,23 @@ IM vs RRUP plot - basic edition
 Must have only exactly 2 IM inputs: sim, obs (in that order)
 """
 
+import matplotlib as mpl
+mpl.use('Agg')
+
 from argparse import ArgumentParser
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-
-import sys
-sys.path.insert(0, '../../qcore/')
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
-
-#from qcore.formats import load_im_file
-#from qcore.nputil import argsearch
-
-from collections import Counter
 
 colours = ['red', [0, 0.5, 0]]
 labels = ['Physics-based', 'Observed']
 markers = ['o', '+']
 edges = [None, 5]
+
 
 def load_args():
     """

@@ -1,13 +1,14 @@
 #TODO write a wrapp fuction to merge with the obs-sim
 #!/usr/bin/env python2
 
+import matplotlib as mpl
+mpl.use('Agg')
+
 from argparse import ArgumentParser
 import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-import sys
-sys.path.insert(0, '../../qcore/')
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
 

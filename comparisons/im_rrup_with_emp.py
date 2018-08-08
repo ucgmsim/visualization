@@ -1,9 +1,13 @@
 #!/usr/bin/env python2
+# TODO: use common stations between emp, obs and sim, not 'emp and obs' or 'sim and obs'
 """
 IM vs RRUP plot - basic edition
 
 Must have only exactly 2 IM inputs: sim, obs (in that order)
 """
+
+import matplotlib as mpl
+mpl.use('Agg')
 
 from argparse import ArgumentParser
 import os
@@ -11,16 +15,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-
-import sys
-sys.path.insert(0, '../../qcore/')
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
-
-#from qcore.formats import load_im_file
-#from qcore.nputil import argsearch
-
-from collections import Counter
 
 colours = ['red', [0, 0.5, 0]]
 labels = ['Physics-based', 'Observed']
@@ -110,11 +106,10 @@ for im in im_names:
     plt.title(args.run_name, fontsize=12)
     ymax = max(np.max(sim_ys), np.max(obs_ys))
     ymin = min(np.min(sim_ys), np.min(obs_ys))
-    xmax = np.max(rrups)
-    xmin = np.min(rrups)
-    print(ymax)
+   # xmax = np.max(rrups)
+  #  xmin = np.min(rrups)
     plt.ylim(ymax=ymax * 1.27)
-    # plt.xlim(1e-1, 1e2)
+    plt.xlim(1e-1, 1e2)
     fig.set_tight_layout(True)
     plt.savefig(os.path.join(args.out_dir, '%s_with_Rrup_%s.png' \
                                            % (print_name, args.run_name)))

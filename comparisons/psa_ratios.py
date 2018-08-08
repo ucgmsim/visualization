@@ -5,8 +5,6 @@ import os
 
 import numpy as np
 
-import sys
-sys.path.insert(0, '../../qcore/')
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
 

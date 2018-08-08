@@ -5,6 +5,9 @@ Plots 3 components for simulated and observed seismograms.
 USAGE: run with -h parameter
 """
 
+import matplotlib as mpl
+mpl.use('Agg')
+
 from argparse import ArgumentParser
 from glob import glob
 from multiprocessing import Pool
@@ -12,8 +15,6 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
-sys.path.insert(0, '../../qcore/')
 
 from qcore.timeseries import BBSeis, read_ascii
 
@@ -54,7 +55,8 @@ def load_args():
     assert(os.path.isdir(args.obs))
     if not os.path.isdir(args.out):
         os.makedirs(args.out)
-    if args.tmax <= 0:
+
+    if args.tmax != None and args.tmax <= 0:
         parser.error('Duration -t/--tmax must be greater than 0')
     return args
 
@@ -125,7 +127,7 @@ def plot_station(args, name, sim_bb = None):
         sim_yx[1][-1] = args.tmax
     x_max = sim_yx[1][-1]
     scale_length = max(int(round(x_max / 25.)) * 5, 5)
-    print(name, sim_yx[1][-1], obs_yx[1][-1], scale_length)
+    #print(name, sim_yx[1][-1], obs_yx[1][-1], scale_length)
 
     # start plot
     colours = ['black', 'red']
