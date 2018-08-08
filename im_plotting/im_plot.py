@@ -159,14 +159,14 @@ def write_lines(output_dir, filename, data, coords_dict, component, is_non_unifo
     print("output path {}".format(output_path))
 
     if is_non_uniform:
-        fourth_line = NON_UNIFORM_HOT
+        hot_type = NON_UNIFORM_HOT
     else:
-        fourth_line = SIM_HOT
+        hot_type = SIM_HOT
 
     with open(output_path, 'w') as fp:
         fp.write("IM Plot\n")
         fp.write("IM\n")
-        fp.write("{}\n".format(fourth_line))
+        fp.write("{}\n".format(hot_type))
         fp.write("\n")
 
         measures, mmi_index = get_measures_header(data[0], is_non_uniform)
@@ -279,7 +279,7 @@ def generate_maps():
     parser.add_argument('-c', '--component', default='geom', help="which component of the intensity measure. Available compoents are {}. Default is 'geom'".format(COMPS))
     args = parser.parse_args()
 
-    utils.setup_dir(DEFAULT_OUTPUT_DIR)
+    utils.setup_dir(args.output_path)
     validate_filepath(parser, args.meta_filepath)
     validate_filepath(parser, args.rrup_or_station_filepath)
     validate_dir(parser, args.output_path)
@@ -297,3 +297,4 @@ def generate_maps():
 
 if __name__ == '__main__':
     generate_maps()
+
