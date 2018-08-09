@@ -61,6 +61,7 @@ def calc_ratio(arg_obs, arg_sim):
     # sorted
     sort_idx = np.argsort(psa_vals)
     psa_names = psa_names[sort_idx]
+    print(psa_names)
     psa_vals = psa_vals[sort_idx]
     del sim_psa, sort_idx
 
