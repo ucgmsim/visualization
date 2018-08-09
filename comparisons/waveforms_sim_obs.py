@@ -58,7 +58,7 @@ def load_args():
     if not os.path.isdir(args.out):
         os.makedirs(args.out)
 
-    if args.tmax != None and args.tmax <= 0:
+    if args.tmax is not None and args.tmax <= 0:
         parser.error('Duration -t/--tmax must be greater than 0')
     return args
 
