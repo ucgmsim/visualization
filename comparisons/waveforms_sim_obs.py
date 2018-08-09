@@ -1,8 +1,10 @@
 #!/usr/bin/env python2
 """
 Plots 3 components for simulated and observed seismograms.
-
 USAGE: run with -h parameter
+
+sample command:
+python waveforms_sim_obs.py /nesi/projects/nesi00213/dev/impp_datasets/Darfield/sim/Vel /nesi/projects/nesi00213/dev/impp_datasets/Darfield/obs/velBB/ ~/test_mpl/waveforms
 """
 
 import matplotlib as mpl
@@ -127,7 +129,6 @@ def plot_station(args, name, sim_bb = None):
         sim_yx[1][-1] = args.tmax
     x_max = sim_yx[1][-1]
     scale_length = max(int(round(x_max / 25.)) * 5, 5)
-    #print(name, sim_yx[1][-1], obs_yx[1][-1], scale_length)
 
     # start plot
     colours = ['black', 'red']
@@ -141,7 +142,6 @@ def plot_station(args, name, sim_bb = None):
 
     # subplots
     for i, s in enumerate([obs_yx, sim_yx]):
-        print(i)
         for j in xrange(3):
             ax = axis[i, j]
             ax.set_axis_off()
