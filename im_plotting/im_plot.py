@@ -17,7 +17,8 @@ import os
 import sys
 import argparse
 import getpass
-import common
+
+from qcore import shared
 from qcore import utils
 
 SIM_HOT = "hot-karim:invert 0.2 80/0/0 0/0/80"
@@ -188,7 +189,7 @@ def write_lines(output_dir, filename, data, coords_dict, component, is_non_unifo
                 coords = get_coords(station_name, coords_dict)
                 if coords is not None:
                     if not is_non_uniform:  # uniform.xyz only writes non_virtual station
-                        if not common.is_virtual_station(station_name):
+                        if not shared.is_virtual_station(station_name):
                             fp.write('{} {}\n'.format(coords, values))
                     else:  # non_uniform.xyz writes all stations regardless virtual or not
                         fp.write('{} {}\n'.format(coords, values))
