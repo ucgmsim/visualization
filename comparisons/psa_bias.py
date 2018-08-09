@@ -79,12 +79,9 @@ del obs_ims, sim_ims, obs_idx, sim_idx, psa_names, psa_ratios
 fig = plt.figure(figsize = (14, 7.5), dpi = 100)
 plt.rcParams.update({'font.size': 18})
 plt.fill_between(psa_vals, psa_means - psa_std, psa_means + psa_std,
-                 facecolor=[1, 0.8, 0.8], edgecolor=[1, 0.2, 0.2], \
-                 linestyle='dashed', linewidth=.5, alpha=0.5)
-plt.plot(psa_vals, psa_means, color='red', linestyle='solid', linewidth=5,
-            label='Physics-based')
-plt.plot(psa_vals, np.zeros_like(psa_vals), color='black', \
-         linestyle='dashed', linewidth=3)
+                 facecolor=[1, 0.8, 0.8], edgecolor=[1, 0.2, 0.2], linestyle='dashed', linewidth=.5, alpha=0.5)
+plt.plot(psa_vals, psa_means, color='red', linestyle='solid', linewidth=5, label='Physics-based')
+plt.plot(psa_vals, np.zeros_like(psa_vals), color='black', linestyle='dashed', linewidth=3)
 
 # plot formatting
 plt.gca().set_xscale('log')

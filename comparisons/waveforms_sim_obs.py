@@ -29,13 +29,10 @@ def load_args():
     parser.add_argument('sim', help = 'path to binary file or text dir for simulated seismograms')
     parser.add_argument('obs', help = 'path to text dir for observed seismograms')
     parser.add_argument('out', help = 'output folder to place plots')
-    parser.add_argument('--sim-prefix', default = '', \
-                        help = 'sim text files are named <prefix>station.comp')
-    parser.add_argument('--obs-prefix', default = '', \
-                        help = 'obs text files are named <prefix>station.comp')
+    parser.add_argument('--sim-prefix', default = '', help = 'sim text files are named <prefix>station.comp')
+    parser.add_argument('--obs-prefix', default = '', help = 'obs text files are named <prefix>station.comp')
     parser.add_argument('-v', help = 'verbose messages', action = 'store_true')
-    parser.add_argument('-n', '--nproc', help = 'number of processes to use', \
-                        type = int, default = 1)
+    parser.add_argument('-n', '--nproc', help = 'number of processes to use', type = int, default = 1)
     args = parser.parse_args()
 
     # validate
@@ -52,6 +49,7 @@ def load_args():
         os.makedirs(args.out)
 
     return args
+
 
 def load_stations(args, sim_bb = None):
     """
@@ -84,6 +82,7 @@ def load_stations(args, sim_bb = None):
         print('n_stations: %d sim, %d obs, intersection: %d' \
                 % (sim_stations.size, len(obs_stations), np.sum(both)))
     return sim_stations[both]
+
 
 def plot_station(args, name, sim_bb = None):
     if args.v:
@@ -153,6 +152,7 @@ def plot_station(args, name, sim_bb = None):
 
     plt.savefig(os.path.join(args.out, '%s.png' % (name)))
     plt.close()
+
 
 if __name__ == '__main__':
     args = load_args()
