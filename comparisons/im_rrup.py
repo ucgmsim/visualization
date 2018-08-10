@@ -5,6 +5,9 @@ IM vs RRUP plot - basic edition
 Must have only exactly 2 IM inputs: sim, obs (in that order)
 """
 
+import matplotlib as mpl
+mpl.use('Agg')
+
 from argparse import ArgumentParser
 import os
 
@@ -18,6 +21,7 @@ colours = ['red', [0, 0.5, 0]]
 labels = ['Physics-based', 'Observed']
 markers = ['o', '+']
 edges = [None, 5]
+
 
 def load_args():
     """
@@ -48,6 +52,7 @@ def load_args():
 
     return args
 
+
 def get_print_name(im, comp):
     if im.startswith('pSA_'):
         im = 'pSA(%dp%s' % (float(im.split('_')[-1]), im.split('.')[-1])
@@ -72,6 +77,10 @@ for im_col in im_data_list[0].dtype.names[2:]:
     for i, im_data in enumerate(im_data_list):
         im_data = im_data[im_data.component == args.comp]
         r_rups = rrups['rrup'][argsearch(im_data.station, rrups['station'])]
+        maximum = np.max(rrups['rrup'])
+        for r in rrups:
+            if r['rrup'] == maximum:
+                print(r['station'])
         plt.loglog(r_rups, im_data[im_col], linestyle='None', color=colours[i],
                     marker=markers[i], markeredgewidth=edges[i], markersize=10, \
                     markeredgecolor=colours[i], label=labels[i])

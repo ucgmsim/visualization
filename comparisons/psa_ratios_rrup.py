@@ -1,5 +1,8 @@
 #!/usr/bin/env python2
 
+import matplotlib as mpl
+mpl.use('Agg')
+
 from argparse import ArgumentParser
 import os
 
@@ -10,6 +13,7 @@ from qcore.formats import load_im_file
 from qcore.nputil import argsearch
 
 np_startswith = np.core.defchararray.startswith
+
 
 def load_args():
     """
@@ -37,6 +41,7 @@ def load_args():
         os.makedirs(args.out_dir)
 
     return args
+
 
 def get_print_name(im, comp):
     if im.startswith('pSA_'):
@@ -87,12 +92,14 @@ for im in im_names:
     plt.grid(b=True, axis='y', which='major')
     plt.grid(b=True, axis='x', which='minor')
     fig.set_tight_layout(True)
-    plt.legend(loc='best')
+    plt.legend(loc='best', numpoints=1)
     plt.ylabel('ln(obs/sim)-%s' % (print_name), fontsize=14)
     plt.xlabel('Source-to-site distance, $R_{rup}$ (km)', fontsize=14)
     plt.title(args.run_name, fontsize=16)
     if not (np.max(im_ratios) < -2.5 or np.min(im_ratios) > 2.5):
         plt.ylim([-2.5, 2.5])
+    plt.xlim([0.7, 45])   # manually adjusted x-axis to strip blank space on plot, TODO Should be autoed
+
     plt.savefig(os.path.join(args.out_dir, '%s_ObsSimRatio_withRrup_%s.png' \
                                             % (print_name, args.run_name)))
     plt.close()

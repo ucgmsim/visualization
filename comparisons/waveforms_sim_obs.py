@@ -1,9 +1,14 @@
 #!/usr/bin/env python2
 """
 Plots 3 components for simulated and observed seismograms.
-
 USAGE: run with -h parameter
+
+sample command:
+python waveforms_sim_obs.py /nesi/projects/nesi00213/dev/impp_datasets/Darfield/sim/Vel /nesi/projects/nesi00213/dev/impp_datasets/Darfield/obs/velBB/ ~/test_mpl/waveforms
 """
+
+import matplotlib as mpl
+mpl.use('Agg')
 
 from argparse import ArgumentParser
 from glob import glob
@@ -17,7 +22,8 @@ from qcore.timeseries import BBSeis, read_ascii
 
 # files that contain the 3 components (text based)
 # must be in same order as binary results (x, y, z)
-extensions = ['.090', '.000', '.ver']
+extensions = ['.000', '.090', '.ver']
+
 
 def load_args():
     """
@@ -29,10 +35,14 @@ def load_args():
     parser.add_argument('sim', help = 'path to binary file or text dir for simulated seismograms')
     parser.add_argument('obs', help = 'path to text dir for observed seismograms')
     parser.add_argument('out', help = 'output folder to place plots')
-    parser.add_argument('--sim-prefix', default = '', help = 'sim text files are named <prefix>station.comp')
-    parser.add_argument('--obs-prefix', default = '', help = 'obs text files are named <prefix>station.comp')
+    parser.add_argument('--sim-prefix', default = '', \
+                        help = 'sim text files are named <prefix>station.comp')
+    parser.add_argument('--obs-prefix', default = '', \
+                        help = 'obs text files are named <prefix>station.comp')
     parser.add_argument('-v', help = 'verbose messages', action = 'store_true')
-    parser.add_argument('-n', '--nproc', help = 'number of processes to use', type = int, default = 1)
+    parser.add_argument('-n', '--nproc', help = 'number of processes to use', \
+                        type = int, default = 1)
+    parser.add_argument('-t', '--tmax', type=float, help='maximun duration of waveform simulation')
     args = parser.parse_args()
 
     # validate
@@ -48,6 +58,8 @@ def load_args():
     if not os.path.isdir(args.out):
         os.makedirs(args.out)
 
+    if args.tmax is not None and args.tmax <= 0:
+        parser.error('Duration -t/--tmax must be greater than 0')
     return args
 
 
@@ -112,7 +124,10 @@ def plot_station(args, name, sim_bb = None):
     ppgvs = np.max(all_y, axis = 1)
     npgvs = np.min(all_y, axis = 1)
     y_diff = y_max - y_min
-    x_max = max(sim_yx[1][-1], obs_yx[1][-1])
+    #x_max = max(sim_yx[1][-1], obs_yx[1][-1])
+    if args.tmax is not None:
+        sim_yx[1][-1] = args.tmax
+    x_max = sim_yx[1][-1]
     scale_length = max(int(round(x_max / 25.)) * 5, 5)
 
     # start plot
