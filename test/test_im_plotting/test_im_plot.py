@@ -68,9 +68,8 @@ def test_im_plot_rrup(garbage_collector, input_file, output_file1, output_file2,
 
 def teardown_module(garbage_collector):
     """remove the output dir if the garbage_collector is an empty string(no error collected)"""
-    pass
-    # if pytest.garbage == '':
-    #    try:
-    #        shutil.rmtree(OUTPUT_DIR)
-    #    except (IOError, OSError):
-    #        raise
+    if pytest.garbage == '':
+       try:
+           shutil.rmtree(OUTPUT_DIR)
+       except (IOError, OSError):
+           raise

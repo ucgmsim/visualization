@@ -1,17 +1,16 @@
 """
-Assumption: (1) im_values.csv and im_values_imcalc.info are in the same location and
-            (2) .csv and _imcalc.info have the same prefix or
-            (3) .csv and _empirical.info have the same prefix
+Assumption: (1) im_values.csv and im_values_[imcalc|empirical].info are in the same location and
+            (2) .csv and _[imcalc|empirical].info have the same prefix
 
 Generate non_uniform.xyz and sim/obs.xyz file
 
 Command:
 To generate .xyz:
-python im_plot.py ~/kelly_sim_ims/kelly_sim_ims.csv /home/nesi00213/dev/impp_datasets/Darfield/sample_nz_grid.ll -o ~/xyz_test
-python im_plot.py ~/kelly_sim_ims/kelly_sim_ims_imcalc.info /home/nesi00213/dev/impp_datasets/darfield_benchmark/rrups.csv -o ~/xyz_test
+python im_plot.py ~/darfield_sim/darfield_sim.csv /nesi/projects/nesi00213/dev/impp_datasets/Darfield/non_uniform_whole_nz_with_real_stations-hh100_17062017.ll -o ~/test_emp_plot
+python im_plot.py ~/darfield_sim/darfield_sim.csv ~/rrup.csv -o ~/test_emp_plot
 
 To plot:
-python plot_stations.py ~/xyz_test/nonuniform_im_plot_map_kelly_sim_ims.xyz --out_dir ~/xyz_test --model_params /home/nesi00213/VelocityModel/v1.64_FVM/model_params_nz01-h0.100
+python plot_stations.py ~/test_emp_plot/sim_im_plot_map_darfield_sim.xyz --srf_cnrs /nesi/projects/nesi00213/dev/impp_datasets/Darfield/bev01_s103246Allsegm_v8_23.srf --model_params /nesi/projects/nesi00213/dev/impp_datasets/Darfield/model_params_nz01-h0.100 --out_dir ~/test_emp_plot/sim_im_plot_map
 """
 
 import os
