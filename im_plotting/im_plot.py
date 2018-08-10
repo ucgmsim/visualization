@@ -31,34 +31,33 @@ EMP_TEMPLATE = 'emp_im_plot_map_{}.xyz'
 NON_UNI_EMP_TEMPLATE = 'nonuniform_im_plot_map_{}_empirical.xyz'
 NON_UNI_SIM_TEMPLATE = 'nonuniform_im_plot_map_{}_sim.xyz'
 NON_UNI_OBS_TEMPLATE = 'nonuniform_im_plot_map_{}_obs.xyz'
-TEMPLATE_DICT = {'simulated':(SIM_TEMPLATE, NON_UNI_SIM_TEMPLATE),
-                 'observed':(OBS_TEMPLATE, NON_UNI_OBS_TEMPLATE),
-                 'empirical':(EMP_TEMPLATE, NON_UNI_EMP_TEMPLATE)}
+TEMPLATE_DICT = {'simulated': (SIM_TEMPLATE, NON_UNI_SIM_TEMPLATE),
+                 'observed': (OBS_TEMPLATE, NON_UNI_OBS_TEMPLATE),
+                 'empirical': (EMP_TEMPLATE, NON_UNI_EMP_TEMPLATE)}
 COMPS = ['geom', '090', '000', 'ver']
 DEFAULT_OUTPUT_DIR = '/home/{}/im_plot_map_xyz'.format(getpass.getuser())
 
 
 def check_get_meta(csv_filepath):
+    """
+    :param csv_filepath: user input path to summary im/emp .csv file
+    :return: runname, meta_info_file path
+    """
     csv_filename = csv_filepath.split('/')[-1]
-    print("csv_filename", csv_filename)
     csv_dir = os.path.abspath(os.path.dirname(csv_filepath))
-    print("csv_dir", csv_filename)
     runname = csv_filename.split('.')[0]
-    print('runname',runname)
     meta_filename = glob.glob1(csv_dir, '{}_*'.format(runname))
-    print('metafilename',meta_filename)
     if len(meta_filename) == 1:
         return runname, os.path.join(csv_dir, meta_filename[0])
     else:
         sys.exit("Please provide a meta info file for the csv you have provided")
 
 
-# kelly_sim_ims.csv
 def get_runtype(meta_filepath):
     """
     get the run type for output xyz filename from the '_[imcalc|empirical].info' metadata file
     :param meta_filepath: user input
-    :return: run_name, run_type
+    :return: run_type
     """
     with open(meta_filepath, 'r') as meta_file:
         meta_file.readline()  # skip header
@@ -68,7 +67,7 @@ def get_runtype(meta_filepath):
 
 def get_data(csv_path):
     """
-    Assumes that _imcalc.info and .csv are in the same location
+    Assumes that .info and .csv are in the same location
     :param csv_path:
     :return: lines from summary data csv file
     """
@@ -213,27 +212,21 @@ def write_lines(output_dir, filename, data, coords_dict, component, is_non_unifo
                         fp.write('{} {}\n'.format(coords, values))
 
 
-def generate_im_plot_map(run_name, run_type, data, coords_dict, output_dir, comp, is_non_uniform=0):
+def generate_im_plot_map(run_name, run_type, data, coords_dict, output_dir, comp, is_non_uniform):
     """
     writes im_plot .xyz file
-    :param run_name: row2_colum1 string from imcalc.info metadata file
-    :param run_type: row2_colum3 stirng from imcalc.info metadata file
+    :param run_name: row2_colum1 string from .info metadata file
+    :param run_type: row2_colum3 stirng from .info metadata file
     :param data: summary csv buffer
     :param coords_dict: summary csv data buffer
     :param output_dir: user input
     :param comp: user input
-    :param is_non_uniform: Bool
+    :param is_non_uniform: int repr of Bool: 0(F)/1(T)
     :return:
     """
     filename = TEMPLATE_DICT[run_type][is_non_uniform].format(run_name)
-    # if run_type == 'simulated':
-    #     filename = SIM_TEMPLATE.format(run_name)
-    # elif run_type == 'observed':
-    #     filename = OBS_TEMPLATE.format(run_name)
-    # elif run_type == 'empirical':
-    #     filename = EMP_TEMPLATE.format(run_name)
 
-    write_lines(output_dir, filename, data, coords_dict, comp, is_non_uniform=is_non_uniform)
+    write_lines(output_dir, filename, data, coords_dict, comp, is_non_uniform)
 
 
 def validate_filepath(parser, file_path):
@@ -295,8 +288,8 @@ def generate_maps():
     data = get_data(args.csv_filepath)
     coords_dict = get_coords_dict(args.rrup_or_station_filepath)
 
-    generate_im_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component, is_non_uniform=0)
-    generate_im_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component, is_non_uniform=1)
+    generate_im_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component, 0)
+    generate_im_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component, 1)
 
     print("xyz files are output to {}".format(args.output_path))
 
