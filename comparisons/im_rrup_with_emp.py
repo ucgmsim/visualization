@@ -1,9 +1,8 @@
 #!/usr/bin/env python2
-# Note: Empirical Engine must exits so that it can be imported
+#TODO: Elegant solution of Empirical Engine path
 """
-IM vs RRUP plot - basic edition
-
-Must have only exactly 2 IM inputs: sim, obs (in that order)
+IM vs RRUP plot
+python im_rrup_with_emp.py ~/darfield_obs/rrups.csv  ~/darfield_sim_e/darfield_sim_e.csv ~/darfield_obs_e/darfield_obs_e.csv --config ~/Empirical_Engine/model_config.yaml --srf /nesi/projects/nesi00213/dev/impp_datasets/Darfield/source.info --out_dir darfield_emp_new_rrup4 --run_name 20100904_Darfield_m7p1_201705011613
 """
 
 import matplotlib as mpl
@@ -20,15 +19,10 @@ from qcore.nputil import argsearch
 from qcore.utils import setup_dir
 
 import sys
-sys.path.insert(0, '../../Empirical_Engine')
+sys.path.append('/nesi/projects/nesi00213/Empirical_Engine')
 import calculate_empirical
 import empirical_factory
 from GMM_models import classdef
-
-colours = ['red', [0, 0.5, 0]]
-labels = ['Physics-based', 'Observed']
-markers = ['o', '+']
-edges = [None, 5]
 
 
 def load_args():
@@ -43,12 +37,12 @@ def load_args():
     parser.add_argument('obs', help='path to OBSERVED IM file')
     parser.add_argument('--config', help='path to .yaml empirical config file')
     parser.add_argument('--srf', help='path to srf info file')
-    parser.add_argument('--dist_min', default=0.2, type=float, help='GMPE param DistMin, default 1.0 km')
+    parser.add_argument('--dist_min', default=0.1, type=float, help='GMPE param DistMin, default 1.0 km')
     parser.add_argument('--dist_max', default=100.0, type=float, help='GMPE param DistMax, default 100.0 km')
     parser.add_argument('--n_val', default=51, type=float, help='GMPE param n_val, default 51.0')
-    parser.add_argument('--out_dir', help = 'output folder to place plot', default = '.')
-    parser.add_argument('--run_name', help = 'run_name - should automate?', default = 'event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm')
-    parser.add_argument('--comp', help = 'component', default = 'geom')
+    parser.add_argument('--out_dir', help='output folder to place plot', default = '.')
+    parser.add_argument('--run_name', help='run_name - should automate?', default = 'event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm')
+    parser.add_argument('--comp', help='component', default = 'geom')
     args = parser.parse_args()
 
     # validate
@@ -71,19 +65,18 @@ def get_print_name(im, comp):
 
 def validate_file(file_path):
     if not os.path.isfile(file_path):
-        sys.exit("{} File does not exit")
+        sys.exit("{} File does not exist".format(file_path))
 
 
 def validate_emp_args(arg_config, arg_srf):
-    if arg_config is not None:
-        validate_file(arg_config)
-        if not arg_srf:
-            sys.exit("Please provide srf info file for empirical calculation")
-        else:
-            validate_file(arg_srf)
+    """config file is optional with empirical calculation"""
+    if arg_srf is not None:
+        validate_file(arg_srf)
+        if arg_config:
+            validate_file(arg_config)
     else:
-        if arg_srf:
-            sys.exit("Plase provide a .yaml config file for empirical calculation")
+        if arg_config is not None:
+            sys.exit("Please provide srf info file for empirical calculation")
 
 
 def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
@@ -97,7 +90,6 @@ def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
         site = classdef.Site()
         site.Rrup = r_rup_vals[i]
         site.Rjb = r_jbs_vals[i]
-        print("im",im)
         value = empirical_factory.compute_gmm(fault, site, gmm, im, period)
         if isinstance(value, tuple):
             e_means.append(value[0])
@@ -121,7 +113,6 @@ sim_ims = load_im_file(args.sim, comp=args.comp)
 obs_ims = load_im_file(args.obs, comp=args.comp)
 
 im_names = np.intersect1d(obs_ims.dtype.names[2:], sim_ims.dtype.names[2:])
-print(im_names)
 
 os_idx = argsearch(obs_ims.station, sim_ims.station)
 ls_idx = argsearch(name_rrup['f0'], sim_ims.station)
@@ -132,10 +123,13 @@ stations = obs_ims.station[obs_idx]
 name_rrup = name_rrup[argsearch(stations, name_rrup['f0']).compressed()]
 rrups = name_rrup['f1']
 
-model_dict = empirical_factory.read_model_dict(args.config)
-fault = calculate_empirical.create_fault_parameters(args.srf)
-r_rup_vals = np.exp(np.linspace(np.log(args.dist_min), np.log(args.dist_max), args.n_val))
+# empirical calc
+if args.srf is not None:
+    model_dict = empirical_factory.read_model_dict(args.config)
+    fault = calculate_empirical.create_fault_parameters(args.srf)
+    r_rup_vals = np.exp(np.linspace(np.log(args.dist_min), np.log(args.dist_max), args.n_val))
 
+# plot
 for im in im_names:
     print_name = get_print_name(im, args.comp)
     fig = plt.figure(figsize=(14, 7.5), dpi=100)
@@ -143,24 +137,29 @@ for im in im_names:
     sim_ys = sim_ims[im][sim_idx]
     obs_ys = obs_ims[im][obs_idx]
 
-    if 'pSA' in im:
-        im, p = im.split('_')
-        period = [float(p)]
-    else:
-        period = None
-
-    e_means, e_sigmas = get_empirical_values(fault, im, model_dict, r_rup_vals, period)
-
-   # print(im, e_means, e_sigmas)
-
-    plt.loglog(rrups, sim_ys, linestyle='None', color=colours[0],
+    # sim obs plots
+    plt.loglog(rrups, sim_ys, linestyle='None', color='red',
                marker='o', markeredgewidth=None, markersize=10, markeredgecolor='red', label='Physics-based')
-    plt.loglog(rrups, obs_ys, linestyle='None', color=colours[1],
-               marker='+', markeredgewidth=5, markersize=10, markeredgecolor='green', label='observed')
-    if np.size(e_means) != 0:  # MMI does not have emp
-        plt.loglog(r_rup_vals, e_means, color='black', marker=None, linewidth=3, label='empirical')
-        plt.loglog(r_rup_vals, e_means * np.exp(-e_sigmas), color='black', marker=None, linestyle='dashed', linewidth=3)
-        plt.loglog(r_rup_vals, e_means * np.exp(e_sigmas[:]), color='black', marker=None, linestyle='dashed', linewidth=3)
+    plt.loglog(rrups, obs_ys, linestyle='None', color='green',
+               marker='+', markeredgewidth=5, markersize=10, markeredgecolor='green', label='Observed')
+
+    # emp plot
+    if args.srf is not None:
+        if 'pSA' in im:
+            im, p = im.split('_')
+            period = [float(p)]
+        else:
+            period = None
+
+        e_means, e_sigmas = get_empirical_values(fault, im, model_dict, r_rup_vals, period)
+
+        if np.size(e_means) != 0:  # MMI does not have emp
+            plt.loglog(r_rup_vals, e_means, color='black', marker=None, linewidth=3, label='Empirical')
+            plt.loglog(r_rup_vals, e_means * np.exp(-e_sigmas), color='black', marker=None, linestyle='dashed',
+                       linewidth=3)
+            plt.loglog(r_rup_vals, e_means * np.exp(e_sigmas[:]), color='black', marker=None, linestyle='dashed',
+                       linewidth=3)
+
     # plot formatting
     plt.legend(loc='best', fontsize=9, numpoints=1)
     plt.ylabel(print_name)
@@ -169,11 +168,8 @@ for im in im_names:
     plt.title(args.run_name, fontsize=12)
     ymax = max(np.max(sim_ys), np.max(obs_ys))
     ymin = min(np.min(sim_ys), np.min(obs_ys))
-   # xmax = np.max(rrups)
-  #  xmin = np.min(rrups)
     plt.ylim(ymax=ymax * 1.27)
     plt.xlim(1e-1, 1e2)
     fig.set_tight_layout(True)
-    plt.savefig(os.path.join(args.out_dir, '%s_with_Rrup_%s.png' \
-                                           % (print_name, args.run_name)))
+    plt.savefig(os.path.join(args.out_dir, '%s_with_Rrup_%s.png'% (print_name, args.run_name)))
     plt.close()
