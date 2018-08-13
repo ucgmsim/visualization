@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# TODO: use common stations between emp, obs and sim, not 'emp and obs' or 'sim and obs'
+# Note: Empirical Engine must exits so that it can be imported
 """
 IM vs RRUP plot - basic edition
 
@@ -17,6 +17,7 @@ import numpy as np
 
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
+from qcore.utils import setup_dir
 
 import sys
 sys.path.insert(0, '../../Empirical_Engine')
@@ -42,24 +43,21 @@ def load_args():
     parser.add_argument('obs', help='path to OBSERVED IM file')
     parser.add_argument('--config', help='path to .yaml empirical config file')
     parser.add_argument('--srf', help='path to srf info file')
-    parser.add_argument('--dist_min', default=0.2, help='GMPE param DistMin, default 1.0 km')
-    parser.add_argument('--dist_max', default=100.0, help='GMPE param DistMax, default 100.0 km')
-    parser.add_argument('--n_val', default=51, help='GMPE param n_val, default 51.0')
-    parser.add_argument('--vs30', help='path to .vs30 file')
-    parser.add_argument('--out-dir', help = 'output folder to place plot', \
-                        default = '.')
-    parser.add_argument('--run-name', help = 'run_name - should automate?', \
-                        default = 'event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm')
+    parser.add_argument('--dist_min', default=0.2, type=float, help='GMPE param DistMin, default 1.0 km')
+    parser.add_argument('--dist_max', default=100.0, type=float, help='GMPE param DistMax, default 100.0 km')
+    parser.add_argument('--n_val', default=51, type=float, help='GMPE param n_val, default 51.0')
+    parser.add_argument('--out_dir', help = 'output folder to place plot', default = '.')
+    parser.add_argument('--run_name', help = 'run_name - should automate?', default = 'event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm')
     parser.add_argument('--comp', help = 'component', default = 'geom')
     args = parser.parse_args()
 
     # validate
-    assert (os.path.isfile(args.obs))
-    assert (os.path.isfile(args.sim))
-    # TODO: currently fixed as 'sim', 'obs'
-    assert(os.path.isfile(args.rrup))
-    if not os.path.isdir(args.out_dir):
-        os.makedirs(args.out_dir)
+    validate_file(args.obs)
+    validate_file(args.sim)
+    validate_file(args.rrup)
+    validate_emp_args(args.config, args.srf)
+
+    setup_dir(args.out_dir)
 
     return args
 
@@ -71,11 +69,27 @@ def get_print_name(im, comp):
     return '%s_comp_%s' % (im, comp)
 
 
-def get_empirical_values(fault, im, model_dict, dist_min, dist_max, n_val, period):
+def validate_file(file_path):
+    if not os.path.isfile(file_path):
+        sys.exit("{} File does not exit")
+
+
+def validate_emp_args(arg_config, arg_srf):
+    if arg_config is not None:
+        validate_file(arg_config)
+        if not arg_srf:
+            sys.exit("Please provide srf info file for empirical calculation")
+        else:
+            validate_file(arg_srf)
+    else:
+        if arg_srf:
+            sys.exit("Plase provide a .yaml config file for empirical calculation")
+
+
+def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
     gmm = empirical_factory.determine_gmm(fault, im, model_dict)
     # https://github.com/ucgmsim/post-processing/blob/master/im_processing/computations/GMPE.py
-    # line 144-145
-    r_rup_vals = np.exp(np.linspace(np.log(dist_min), np.log(dist_max), n_val))
+    # line 145
     r_jbs_vals = np.sqrt(np.maximum(0, r_rup_vals ** 2 - fault.ztor ** 2))
     e_means = []
     e_sigmas = []
@@ -92,17 +106,15 @@ def get_empirical_values(fault, im, model_dict, dist_min, dist_max, n_val, perio
             for v in value:
                 e_means.append(v[0])
                 e_sigmas.append(v[1][0])
-    # if im == 'PGV':
-    #     print(e_means, e_sigmas)
-    return np.array(r_rup_vals), np.array(e_means), np.array(e_sigmas)
+
+    return np.array(e_means), np.array(e_sigmas)
 
 ###
 ### MAIN
 ###
 
 args = load_args()
-name_rrup = np.loadtxt(args.rrup, dtype='|S7,f', \
-                       usecols=(0,3), skiprows=1, delimiter=',')
+name_rrup = np.loadtxt(args.rrup, dtype='|S7,f', usecols=(0, 3), skiprows=1, delimiter=',')
 
 # load im files (slow) for component, available pSA columns
 sim_ims = load_im_file(args.sim, comp=args.comp)
@@ -122,8 +134,9 @@ rrups = name_rrup['f1']
 
 model_dict = empirical_factory.read_model_dict(args.config)
 fault = calculate_empirical.create_fault_parameters(args.srf)
-for im in im_names:
+r_rup_vals = np.exp(np.linspace(np.log(args.dist_min), np.log(args.dist_max), args.n_val))
 
+for im in im_names:
     print_name = get_print_name(im, args.comp)
     fig = plt.figure(figsize=(14, 7.5), dpi=100)
     plt.rcParams.update({'font.size': 18})
@@ -136,7 +149,7 @@ for im in im_names:
     else:
         period = None
 
-    r_rup_vals, e_means, e_sigmas = get_empirical_values(fault, im, model_dict, args.dist_min, args.dist_max, args.n_val, period)
+    e_means, e_sigmas = get_empirical_values(fault, im, model_dict, r_rup_vals, period)
 
    # print(im, e_means, e_sigmas)
 
