@@ -23,7 +23,7 @@ from qcore.nputil import argsearch
 from qcore.utils import setup_dir
 
 import sys
-sys.path.append('/nesi/projects/nesi00213/Empirical_Engine')
+sys.path.append('/nesi/transit/nesi00213/Empirical_Engine')
 import calculate_empirical
 import empirical_factory
 from GMM_models import classdef
@@ -33,10 +33,9 @@ def load_args():
     """
     Process command line arguments.
     """
-
     # read
     parser = ArgumentParser()
-    parser.add_argument('rrup', help = 'path to RRUP file')
+    parser.add_argument('rrup', help='path to RRUP file')
     parser.add_argument('sim', help='path to SIMULATED IM file')
     parser.add_argument('obs', help='path to OBSERVED IM file')
     parser.add_argument('--config', help='path to .yaml empirical config file')
@@ -49,11 +48,7 @@ def load_args():
     parser.add_argument('--comp', help='component', default='geom')
     args = parser.parse_args()
 
-    # validate
-    validate_file(args.obs)
-    validate_file(args.sim)
-    validate_file(args.rrup)
-    validate_emp_args(args.config, args.srf)
+    validate_args(args)
 
     setup_dir(args.out_dir)
 
@@ -67,20 +62,21 @@ def get_print_name(im, comp):
     return '%s_comp_%s' % (im, comp)
 
 
-def validate_file(file_path):
-    if not os.path.isfile(file_path):
-        sys.exit("File not found: {}".format(file_path))
+def validate_args(args):
+    """
+       validates all input args;
+       config arg exists if and only if srf arg exists
+    """
+    for f in [args.obs, args.sim, args.sim]:
+        assert os.path.isfile(f)
 
-
-def validate_emp_args(arg_config, arg_srf):
-    """config file is optional with empirical calculation"""
-    if arg_srf is not None:
-        validate_file(arg_srf)
-        if arg_config:
-            validate_file(arg_config)
+    if args.srf is not None:
+        assert os.path.isfile(args.srf)
+        if args.config is not None:
+            assert os.path.isfile(args.config)
     else:
-        if arg_config is not None:
-            sys.exit("Please provide srf info file for empirical calculation")
+        if args.config is not None:
+            sys.exit("Please also provide the path to an srf info file for empirical calculation.")
 
 
 def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
