@@ -1,6 +1,11 @@
 #!/usr/bin/env python2
 """
 IM vs RRUP plot
+
+To see help message:
+python im_rrup.py -h
+
+Sample command:
 python im_rrup.py ~/darfield_obs/rrups.csv  ~/darfield_sim/darfield_sim.csv ~/darfield_obs/darfield_obs.csv --config ~/Empirical_Engine/model_config.yaml --srf /nesi/projects/nesi00213/dev/impp_datasets/Darfield/source.info --out_dir darfield_emp_new_rrup4 --run_name 20100904_Darfield_m7p1_201705011613
 """
 
@@ -36,12 +41,12 @@ def load_args():
     parser.add_argument('obs', help='path to OBSERVED IM file')
     parser.add_argument('--config', help='path to .yaml empirical config file')
     parser.add_argument('--srf', help='path to srf info file')
-    parser.add_argument('--dist_min', default=0.1, type=float, help='GMPE param DistMin, default 1.0 km')
+    parser.add_argument('--dist_min', default=0.1, type=float, help='GMPE param DistMin, default 0.1 km')
     parser.add_argument('--dist_max', default=100.0, type=float, help='GMPE param DistMax, default 100.0 km')
-    parser.add_argument('--n_val', default=51, type=float, help='GMPE param n_val, default 51.0')
-    parser.add_argument('--out_dir', help='output folder to place plot', default = '.')
-    parser.add_argument('--run_name', help='run_name - should automate?', default = 'event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm')
-    parser.add_argument('--comp', help='component', default = 'geom')
+    parser.add_argument('--n_val', default=51.0, type=float, help='GMPE param n_val, default 51.0')
+    parser.add_argument('--out_dir', help='output folder to place plot', default='.')
+    parser.add_argument('--run_name', help='run_name - should automate?', default='event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm')
+    parser.add_argument('--comp', help='component', default='geom')
     args = parser.parse_args()
 
     # validate
@@ -64,7 +69,7 @@ def get_print_name(im, comp):
 
 def validate_file(file_path):
     if not os.path.isfile(file_path):
-        sys.exit("{} File does not exist".format(file_path))
+        sys.exit("File not found: {}".format(file_path))
 
 
 def validate_emp_args(arg_config, arg_srf):
