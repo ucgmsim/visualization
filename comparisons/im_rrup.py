@@ -1,8 +1,7 @@
 #!/usr/bin/env python2
-#TODO: Elegant solution of Empirical Engine path
 """
 IM vs RRUP plot
-python im_rrup_with_emp.py ~/darfield_obs/rrups.csv  ~/darfield_sim_e/darfield_sim_e.csv ~/darfield_obs_e/darfield_obs_e.csv --config ~/Empirical_Engine/model_config.yaml --srf /nesi/projects/nesi00213/dev/impp_datasets/Darfield/source.info --out_dir darfield_emp_new_rrup4 --run_name 20100904_Darfield_m7p1_201705011613
+python im_rrup.py ~/darfield_obs/rrups.csv  ~/darfield_sim/darfield_sim.csv ~/darfield_obs/darfield_obs.csv --config ~/Empirical_Engine/model_config.yaml --srf /nesi/projects/nesi00213/dev/impp_datasets/Darfield/source.info --out_dir darfield_emp_new_rrup4 --run_name 20100904_Darfield_m7p1_201705011613
 """
 
 import matplotlib as mpl
@@ -84,7 +83,7 @@ def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
     # https://github.com/ucgmsim/post-processing/blob/master/im_processing/computations/GMPE.py
     # line 145
     r_jbs_vals = np.sqrt(np.maximum(0, r_rup_vals ** 2 - fault.ztor ** 2))
-    e_means = []
+    e_medians = []
     e_sigmas = []
     for i in range(len(r_rup_vals)):
         site = classdef.Site()
@@ -92,14 +91,14 @@ def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
         site.Rjb = r_jbs_vals[i]
         value = empirical_factory.compute_gmm(fault, site, gmm, im, period)
         if isinstance(value, tuple):
-            e_means.append(value[0])
+            e_medians.append(value[0])
             e_sigmas.append(value[1][0])
         elif isinstance(value, list):
             for v in value:
-                e_means.append(v[0])
+                e_medians.append(v[0])
                 e_sigmas.append(v[1][0])
 
-    return np.array(e_means), np.array(e_sigmas)
+    return np.array(e_medians), np.array(e_sigmas)
 
 ###
 ### MAIN
@@ -151,13 +150,13 @@ for im in im_names:
         else:
             period = None
 
-        e_means, e_sigmas = get_empirical_values(fault, im, model_dict, r_rup_vals, period)
+        e_medians, e_sigmas = get_empirical_values(fault, im, model_dict, r_rup_vals, period)
 
-        if np.size(e_means) != 0:  # MMI does not have emp
-            plt.loglog(r_rup_vals, e_means, color='black', marker=None, linewidth=3, label='Empirical')
-            plt.loglog(r_rup_vals, e_means * np.exp(-e_sigmas), color='black', marker=None, linestyle='dashed',
+        if np.size(e_medians) != 0:  # MMI does not have emp
+            plt.loglog(r_rup_vals, e_medians, color='black', marker=None, linewidth=3, label='Empirical')
+            plt.loglog(r_rup_vals, e_medians * np.exp(-e_sigmas), color='black', marker=None, linestyle='dashed',
                        linewidth=3)
-            plt.loglog(r_rup_vals, e_means * np.exp(e_sigmas[:]), color='black', marker=None, linestyle='dashed',
+            plt.loglog(r_rup_vals, e_medians * np.exp(e_sigmas[:]), color='black', marker=None, linestyle='dashed',
                        linewidth=3)
 
     # plot formatting
