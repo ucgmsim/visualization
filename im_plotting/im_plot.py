@@ -1,22 +1,23 @@
 """
-Assumption: (1) im_values.csv and im_values_imcalc.info are in the same location and
-            (2) .csv and _imcalc.info have the same prefix
+Assumption: (1) im_values.csv and im_values_[imcalc|empirical].info are in the same location and
+            (2) .csv and _[imcalc|empirical].info have the same prefix
 
 Generate non_uniform.xyz and sim/obs.xyz file
 
 Command:
 To generate .xyz:
-python im_plot.py ~/kelly_sim_ims/kelly_sim_ims_imcalc.info /home/nesi00213/dev/impp_datasets/Darfield/sample_nz_grid.ll -o ~/xyz_test
-python im_plot.py ~/kelly_sim_ims/kelly_sim_ims_imcalc.info /home/nesi00213/dev/impp_datasets/darfield_benchmark/rrups.csv -o ~/xyz_test
+python im_plot.py ~/darfield_sim/darfield_sim.csv /nesi/projects/nesi00213/dev/impp_datasets/Darfield/non_uniform_whole_nz_with_real_stations-hh100_17062017.ll -o ~/test_emp_plot
+python im_plot.py ~/darfield_sim/darfield_sim.csv ~/rrup.csv -o ~/test_emp_plot
 
 To plot:
-python plot_stations.py ~/xyz_test/nonuniform_im_plot_map_kelly_sim_ims.xyz --out_dir ~/xyz_test --model_params /home/nesi00213/VelocityModel/v1.64_FVM/model_params_nz01-h0.100
+python plot_stations.py ~/test_emp_plot/sim_im_plot_map_darfield_sim.xyz --srf_cnrs /nesi/projects/nesi00213/dev/impp_datasets/Darfield/bev01_s103246Allsegm_v8_23.srf --model_params /nesi/projects/nesi00213/dev/impp_datasets/Darfield/model_params_nz01-h0.100 --out_dir ~/test_emp_plot/sim_im_plot_map
 """
 
 import os
 import sys
 import argparse
 import getpass
+import glob
 
 from qcore import shared
 from qcore import utils
@@ -27,33 +28,48 @@ SIM_TEMPLATE = 'sim_im_plot_map_{}.xyz'
 OBS_TEMPLATE = 'obs_im_plot_map_{}.xyz'
 EMP_TEMPLATE = 'emp_im_plot_map_{}.xyz'
 NON_UNI_EMP_TEMPLATE = 'nonuniform_im_plot_map_{}_empirical.xyz'
-NON_UNI_TEMPLATE = 'nonuniform_im_plot_map_{}.xyz'
+NON_UNI_SIM_TEMPLATE = 'nonuniform_im_plot_map_{}_sim.xyz'
+NON_UNI_OBS_TEMPLATE = 'nonuniform_im_plot_map_{}_obs.xyz'
+TEMPLATE_DICT = {'simulated': (SIM_TEMPLATE, NON_UNI_SIM_TEMPLATE),
+                 'observed': (OBS_TEMPLATE, NON_UNI_OBS_TEMPLATE),
+                 'empirical': (EMP_TEMPLATE, NON_UNI_EMP_TEMPLATE)}
 COMPS = ['geom', '090', '000', 'ver']
 DEFAULT_OUTPUT_DIR = '/home/{}/im_plot_map_xyz'.format(getpass.getuser())
 
 
-# albury_imcalc.info
-def get_runname(meta_filepath):
+def check_get_meta(csv_filepath):
     """
-    get the run name for output xyz filename from the _imcalc.info metadata file
+    :param csv_filepath: user input path to summary im/emp .csv file
+    :return: runname, meta_info_file path
+    """
+    csv_filename = csv_filepath.split('/')[-1]
+    csv_dir = os.path.abspath(os.path.dirname(csv_filepath))
+    runname = csv_filename.split('.')[0]
+    meta_filename = glob.glob1(csv_dir, '{}_*'.format(runname))
+    if len(meta_filename) == 1:
+        return runname, os.path.join(csv_dir, meta_filename[0])
+    else:
+        sys.exit("Please provide a meta info file for the csv you have provided")
+
+
+def get_runtype(meta_filepath):
+    """
+    get the run type for output xyz filename from the '_[imcalc|empirical].info' metadata file
     :param meta_filepath: user input
-    :return: run_name, run_type
+    :return: run_type
     """
     with open(meta_filepath, 'r') as meta_file:
         meta_file.readline()  # skip header
-        info = meta_file.readline().strip().split(',')
-        run_name = info[0]
-        run_type = info[2]
-    return run_name, run_type
+        run_type = meta_file.readline().strip().split(',')[2]
+    return run_type
 
 
-def get_data(meta_filepath):
+def get_data(csv_path):
     """
-    Assumes that _imcalc.info and .csv are in the same location
-    :param meta_filepath:
+    Assumes that .info and .csv are in the same location
+    :param csv_path:
     :return: lines from summary data csv file
     """
-    csv_path = meta_filepath.replace('_imcalc.info', '.csv')
     try:
         with open(csv_path, 'r') as csv_file:
             buf = csv_file.readlines()
@@ -195,46 +211,21 @@ def write_lines(output_dir, filename, data, coords_dict, component, is_non_unifo
                         fp.write('{} {}\n'.format(coords, values))
 
 
-def generate_im_plot_map(run_name, run_type, data, coords_dict, output_dir, comp, is_non_uniform=False):
+def generate_im_plot_map(run_name, run_type, data, coords_dict, output_dir, comp, is_non_uniform):
     """
     writes im_plot .xyz file
-    :param run_name: row2_colum1 string from imcalc.info metadata file
-    :param run_type: row2_colum3 stirng from imcalc.info metadata file
+    :param run_name: row2_colum1 string from .info metadata file
+    :param run_type: row2_colum3 stirng from .info metadata file
     :param data: summary csv buffer
     :param coords_dict: summary csv data buffer
     :param output_dir: user input
     :param comp: user input
-    :param is_non_uniform: Bool
+    :param is_non_uniform: int repr of Bool: 0(F)/1(T)
     :return:
     """
-    if run_type == 'simulated':
-        filename = SIM_TEMPLATE.format(run_name)
-    elif run_type == 'observed':
-        filename = OBS_TEMPLATE.format(run_name)
-    elif run_type == 'empirical':
-        filename = EMP_TEMPLATE.format(run_name)
+    filename = TEMPLATE_DICT[run_type][is_non_uniform].format(run_name)
 
-    write_lines(output_dir, filename, data, coords_dict, comp, is_non_uniform=is_non_uniform)
-
-
-def generate_non_uniform_plot_map(run_name, run_type, data, coords_dict, output_dir, comp, is_non_uniform=True):
-    """
-    writes non_uniform .xyz file
-    :param run_name:
-    :param run_type:
-    :param data:
-    :param coords_dict:
-    :param output_dir:
-    :param comp:
-    :param is_non_uniform:
-    :return:
-    """
-    if run_type == 'empirical':
-        filename = NON_UNI_EMP_TEMPLATE.format(run_name)
-    else:
-        filename = NON_UNI_TEMPLATE.format(run_name)
-
-    write_lines(output_dir, filename, data, coords_dict, comp, is_non_uniform=is_non_uniform)
+    write_lines(output_dir, filename, data, coords_dict, comp, is_non_uniform)
 
 
 def validate_filepath(parser, file_path):
@@ -278,24 +269,26 @@ def validate_component(parser, comp):
 
 def generate_maps():
     parser = argparse.ArgumentParser()
-    parser.add_argument('meta_filepath', help='path to input metadata file')
+    parser.add_argument('csv_filepath', help='path to input metadata file')
     parser.add_argument('rrup_or_station_filepath', help='path to inpurt rrup_csv/station_ll file path')
     parser.add_argument('-o', '--output_path', default=DEFAULT_OUTPUT_DIR, help='path to store output xyz files')
     parser.add_argument('-c', '--component', default='geom', help="which component of the intensity measure. Available compoents are {}. Default is 'geom'".format(COMPS))
     args = parser.parse_args()
 
     utils.setup_dir(args.output_path)
-    validate_filepath(parser, args.meta_filepath)
+
+    validate_filepath(parser, args.csv_filepath)
     validate_filepath(parser, args.rrup_or_station_filepath)
     validate_dir(parser, args.output_path)
     validate_component(parser, args.component)
 
-    run_name, run_type = get_runname(args. meta_filepath)
-    data = get_data(args.meta_filepath)
+    run_name, meta_filepath = check_get_meta(args.csv_filepath)
+    run_type = get_runtype(meta_filepath)
+    data = get_data(args.csv_filepath)
     coords_dict = get_coords_dict(args.rrup_or_station_filepath)
 
-    generate_im_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component)
-    generate_non_uniform_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component)
+    generate_im_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component, 0)
+    generate_im_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component, 1)
 
     print("xyz files are output to {}".format(args.output_path))
 
