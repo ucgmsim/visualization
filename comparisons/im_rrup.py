@@ -67,8 +67,9 @@ def validate_args(args):
        validates all input args;
        config arg exists if and only if srf arg exists
     """
-    for f in [args.obs, args.sim, args.sim]:
-        assert os.path.isfile(f)
+    assert os.path.isfile(args.rrup)
+    assert os.path.isfile(args.obs)
+    assert os.path.isfile(args.sim)
 
     if args.srf is not None:
         assert os.path.isfile(args.srf)
