@@ -269,7 +269,7 @@ def validate_component(parser, comp):
 
 def generate_maps():
     parser = argparse.ArgumentParser()
-    parser.add_argument('csv_filepath', help='path to input metadata file')
+    parser.add_argument('csv_filepath', help='path to input csv file')
     parser.add_argument('rrup_or_station_filepath', help='path to inpurt rrup_csv/station_ll file path')
     parser.add_argument('-o', '--output_path', default=DEFAULT_OUTPUT_DIR, help='path to store output xyz files')
     parser.add_argument('-c', '--component', default='geom', help="which component of the intensity measure. Available compoents are {}. Default is 'geom'".format(COMPS))
