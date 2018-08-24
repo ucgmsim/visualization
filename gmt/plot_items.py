@@ -35,6 +35,11 @@ arg('-f', '--filename', default = 'plot_items', \
     help = 'output filename excluding extention')
 arg('-s', '--srf-files', action = 'append', \
     help = 'SRF files to plot, use wildcards, repeat as needed')
+arg('-c', '--srf-only-outline', action = 'append', \
+    help = 'SRF files to plot only outline, use wildcards, repeat as needed')
+arg('--fault-colour', help='outline colour of faults', default='black')
+arg('--outline-fault-colour', help='outline colour of only-outline faults', \
+    default='blue')
 arg('--slip-max', help = 'maximum slip (cm/s) on colour scale', \
     type = float, default = 1000.0)
 arg('-v', '--vm-corners', action = 'append', \
@@ -47,6 +52,10 @@ args = parser.parse_args()
 # gather resources
 srf_files = []
 vm_corners = []
+if args.srf_only_outline is not None:
+    for ex in args.srf_only_outline:
+        srf_files.extend(glob(ex))
+srf_0 = - len(srf_files)
 if args.srf_files is not None:
     for ex in args.srf_files:
         srf_files.extend(glob(ex))
@@ -84,6 +93,10 @@ def load_srf(i_srf):
                      (hypocentre[0], hypocentre[1], hypocentre[2], \
                       strike, dip, rake, mag, hypocentre[0], hypocentre[1]))
         return
+    # finite fault - only save outline
+    if i_srf[0] < 0:
+        srf.srf2corners(i_srf[1], cnrs='%s/srf%d.cnrs-X' % (gmt_temp, i_srf[0]))
+        return
     # finite fault - save outline and slip distributions
     srf.srf2corners(i_srf[1], cnrs = '%s/srf%d.cnrs' % (gmt_temp, i_srf[0]))
     proc_tmp = '%s/srf2map_%d' % (gmt_temp, i_srf[0])
@@ -96,7 +109,8 @@ def load_srf(i_srf):
         # vertical dip
         return
 pool = Pool(args.nproc)
-i_srf_data = pool.map(load_srf, zip(range(len(srf_files)), srf_files))
+i_srf_data = pool.map(load_srf, \
+                      zip(range(srf_0, srf_0 + len(srf_files)), srf_files))
 
 # load vm corners
 vm_corners = '\n>\n'.join(['\n'.join([' '.join(map(str, v)) for v in \
@@ -126,10 +140,16 @@ for i_s in i_srf_data:
                 land_crop = False, transparency = 35, \
                 custom_region = i_s[1][1][plane])
 for c in glob('%s/srf*.cnrs' % (gmt_temp)):
-    p.fault(c, is_srf = False, \
-            hyp_size = 0, plane_width = 0.2, top_width = 0.4, \
-            hyp_width = 0.2, plane_colour = 'blue', \
-            top_colour = 'blue', hyp_colour = 'blue')
+    p.fault(c, is_srf=False, \
+            hyp_size=0, plane_width=0.2, top_width=0.4, \
+            hyp_width=0.2, plane_colour=args.fault_colour, \
+            top_colour=args.fault_colour, hyp_colour=args.fault_colour)
+for c in glob('%s/srf*.cnrs-X' % (gmt_temp)):
+    p.fault(c, is_srf=False, \
+            hyp_size=0, plane_width=0.2, top_width=0.4, \
+            hyp_width=0.2, plane_colour=args.outline_fault_colour, \
+            top_colour=args.outline_fault_colour, \
+            hyp_colour=args.outline_fault_colour)
 for bb in glob('%s/beachball*.bb' % (gmt_temp)):
     p.beachballs(bb, is_file = True, fmt = 'a', scale = args.bb_scale)
 
