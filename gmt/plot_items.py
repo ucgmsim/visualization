@@ -42,6 +42,7 @@ arg('--outline-fault-colour', help='outline colour of only-outline faults', \
     default='blue')
 arg('--slip-max', help = 'maximum slip (cm/s) on colour scale', \
     type = float, default = 1000.0)
+arg('-r', '--region', help='Region to plot in the form xmin/xmax/ymin/ymax.')
 arg('-v', '--vm-corners', action = 'append', \
     help = 'VeloModCorners.txt to plot, use wildcards, repeat as needed')
 arg('-b', '--bb-scale', help = 'beachball scale', type = float, default = 0.05)
@@ -121,6 +122,10 @@ vm_corners = '\n>\n'.join(['\n'.join([' '.join(map(str, v)) for v in \
 ps_file = '%s/plot_items.ps' % (gmt_temp)
 map_width = 9
 p = gmt.GMTPlot(ps_file)
+if args.region is None:
+    region = gmt.nz_region
+else:
+    region = map(float, args.region.split('/'))
 p.spacial('M', gmt.nz_region, sizing = '%si' % (map_width), x_shift = 2, y_shift = 2)
 p.basemap(topo_cpt = 'grey1', land = 'lightgray', topo = None, road = None, highway = None)
 
