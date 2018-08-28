@@ -126,7 +126,7 @@ if args.region is None:
     region = gmt.nz_region
 else:
     region = map(float, args.region.split('/'))
-p.spacial('M', gmt.nz_region, sizing = '%si' % (map_width), x_shift = 2, y_shift = 2)
+p.spacial('M', region, sizing = '%si' % (map_width), x_shift = 2, y_shift = 2)
 p.basemap(topo_cpt = 'grey1', land = 'lightgray', topo = None, road = None, highway = None)
 
 # plot velocity model corners
