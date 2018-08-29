@@ -92,12 +92,17 @@ def get_measures_header(data_header, is_non_uniform):
     new_measures = []
     while i < len(measures):
         new_measure = measures[i]
+
         if 'sigma' in new_measure:
             i += 1
             continue
         
         if 'pSA' in new_measure:
-            new_measure = new_measure.replace('_', ' (') + 's)'
+            if len(new_measure) > 9:
+                i += 1
+                continue
+            else:
+                new_measure = new_measure.replace('_', ' (') + 's)'
 
         if is_non_uniform:
             if new_measure == 'MMI':
