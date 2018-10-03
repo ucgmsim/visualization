@@ -35,6 +35,7 @@ TEMPLATE_DICT = {'simulated': (SIM_TEMPLATE, NON_UNI_SIM_TEMPLATE),
                  'empirical': (EMP_TEMPLATE, NON_UNI_EMP_TEMPLATE)}
 COMPS = ['geom', '090', '000', 'ver']
 DEFAULT_OUTPUT_DIR = '/home/{}/im_plot_map_xyz'.format(getpass.getuser())
+META_PATTERN = ['_imcalc.info', '_empirical.info']
 
 
 def check_get_meta(csv_filepath):
@@ -45,7 +46,9 @@ def check_get_meta(csv_filepath):
     csv_filename = csv_filepath.split('/')[-1]
     csv_dir = os.path.abspath(os.path.dirname(csv_filepath))
     runname = csv_filename.split('.')[0]
-    meta_filename = glob.glob1(csv_dir, '{}_*'.format(runname))
+    meta_filename = []
+    for p in META_PATTERN:
+        meta_filename.extend(glob.glob1(csv_dir, '{}{}'.format(runname, p)))
     if len(meta_filename) == 1:
         return runname, os.path.join(csv_dir, meta_filename[0])
     else:
