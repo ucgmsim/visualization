@@ -45,7 +45,7 @@ def check_get_meta(csv_filepath):
     csv_filename = csv_filepath.split('/')[-1]
     csv_dir = os.path.abspath(os.path.dirname(csv_filepath))
     runname = csv_filename.split('.')[0]
-    meta_filename = glob.glob1(csv_dir, '{}_*'.format(runname))
+    meta_filename = glob.glob1(csv_dir, '{}_*.info'.format(runname))
     if len(meta_filename) == 1:
         return runname, os.path.join(csv_dir, meta_filename[0])
     else:
