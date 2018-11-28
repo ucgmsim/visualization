@@ -1,44 +1,37 @@
 #!/usr/bin/env python2
+"""
+TODO: allow srf.py to retrieve multiple properties at once for major speedup
+"""
 
+from argparse import ArgumentParser
 from math import ceil, floor, log10, log
 import os
-from shutil import copyfile, rmtree
-from subprocess import call, Popen, PIPE
-import sys
+from shutil import rmtree
 from tempfile import mkdtemp
-sys.path.insert(0, '.')
 
 import numpy as np
 
-import qcore.gmt as gmt
-import qcore.srf as srf
+from qcore import gmt
+from qcore import srf
 
-script_dir = os.path.abspath(os.path.dirname(__file__))
-if not os.path.exists('params_plot.py'):
-    copyfile('%s/params_plot.template.py' % (script_dir), 'params_plot.py')
-import params_plot as plot
-srfplot = plot.SRF
+parser = ArgumentParser()
+arg = parser.add_argument
+arg('srf_file', help='path to srf file')
+arg('--out-dir', help='save in a different dir')
+arg('--title', help='give a plot title')
+arg('--rake-spacing', help='set rake arrow spacing (subfaults)', type=float)
+arg('--rake-scale', help='maximum length of rake arrows', type=float, default=0.4)
+arg('--rake-average', help='use averaging in rake arrow area', action='store_true')
+args = parser.parse_args()
 
-try:
-    srf_file = os.path.abspath(sys.argv[1])
-    assert(os.path.exists(srf_file))
-except IndexError:
-    print('First parameter has to be the SRF file to plot.')
-    exit(1)
-except AssertionError:
-    print('Could not find SRF file: %s' % (srf_file))
-    exit(1)
+if args.out_dir is None:
+    args.out_dir = os.path.dirname(args.srf_file)
+if args.out_dir == '':
+    args.out_dir = '.'
+if not os.path.isdir(args.out_dir):
+    os.makedirs(args.out_dir)
 
-# place output along with input
-if srfplot.out_dir == 'srfdir':
-    srfplot.out_dir = os.path.dirname(srf_file)
-    if srfplot.out_dir == '':
-        srfplot.out_dir = '.'
-
-gmt_temp = os.path.abspath(mkdtemp(prefix = '_GMT_WD_SRF_', dir = '.'))
-for folder in [srfplot.out_dir, gmt_temp]:
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+gmt_temp = mkdtemp(prefix='_GMT_WD_SRF_')
 
 # modified base colour palettes
 plot_cpt = [gmt.CPTS['slip'], gmt.CPTS['trise']]
@@ -46,19 +39,16 @@ plot_cpt = [gmt.CPTS['slip'], gmt.CPTS['trise']]
 labels = ['Slip (cm)', 'Rise Time (s)', 'Rake (deg)']
 
 # retrieve hypocentre information
-hyp_seg, hyp_s, hyp_d = srf.get_hypo(srf_file, lonlat = False)
-with open(srf_file, 'r') as s:
-    # named indexes for plane header data
-    elon, elat, nstrike, ndip, length, width, \
-            strike, dip, dtop, shyp, dhyp = range(11)
-    planes = srf.read_header(s)
-seg_len = [plane[length] for plane in planes]
-seg_wid = [plane[width] for plane in planes]
+hyp_s, hyp_d = srf.get_hypo(args.srf_file, lonlat=False, join_minor=True)
+with open(args.srf_file, 'r') as s:
+    planes = srf.read_header(s, idx=True, join_minor=True)
+seg_len = [plane['length'] for plane in planes]
+seg_wid = [plane['width'] for plane in planes]
 # planes are plotted on a row, slip tinit and rake on 3 rows
 ncol = len(planes)
 nrow = 3
 # use optimal grid resolution to prevent interpolation or grid artifacts
-srf_dx, srf_dy = srf.srf_dxy(srf_file)
+srf_dx, srf_dy = srf.srf_dxy(args.srf_file)
 
 ###
 ### NOMINAL KM / INCH PAPER
@@ -69,7 +59,7 @@ PTPI = 72.
 media = [11.7, 8.3]
 # top space for title
 top_margin = 0.65
-if srfplot.title == None:
+if args.title is None:
     top_margin = 0.4
 # bottom space for tick labels
 bottom_margin = 0.55
@@ -118,7 +108,7 @@ row_spacing = annot_size / PTPI * 2 + 0.04 * 2
 col_spacing = annot_size / PTPI * 2 + 0.04 * 2
 base_gap = base_size / PTPI * 1.2
 annot_gap = annot_size / PTPI * 1.2
-if srfplot.title == None:
+if args.title is None:
     top_margin = 0.04 + annot_gap
 # between lines, below x tick labels, bottom margin update
 base_gap = base_size / PTPI * 1.2
@@ -131,11 +121,11 @@ left_margin = y_text_gap + base_gap
 km_inch, x_space = kminch_scale()
 
 # automatic rake arrow decimation
-if srfplot.rake_decimation < 1:
-    subfault_size = planes[0][length] / planes[0][nstrike] / km_inch
-    srfplot.rake_decimation = int(round(0.5 / subfault_size * scale_factor ** 2))
-    if srfplot.rake_decimation < 1:
-        srfplot.rake_decimation = 1
+if args.rake_spacing is None:
+    subfault_size = planes[0]['length'] / planes[0]['nstrike'] / km_inch
+    args.rake_spacing = int(round(0.5 / subfault_size * scale_factor ** 2))
+    if args.rake_spacing < 1:
+        args.rake_spacing = 1
 
 # pre-calculate distances using result km_inch
 seg_wid_d = [seg / km_inch for seg in seg_wid]
@@ -157,7 +147,7 @@ while km_inch / major_tick > tick_factor:
 
 # start plot
 p = gmt.GMTPlot('%s/%s_square.ps' % (gmt_temp, \
-        os.path.splitext(os.path.basename(srf_file))[0]))
+        os.path.splitext(os.path.basename(args.srf_file))[0]))
 # override GMT defaults
 gmt.gmt_defaults(wd = gmt_temp, font_label = label_size, \
         map_tick_length_primary = '0.03i', ps_media = 'A4', \
@@ -166,11 +156,11 @@ gmt.gmt_defaults(wd = gmt_temp, font_label = label_size, \
 p.background(media[0], media[1])
 
 # prepare data and CPTs
-slips = srf.srf2llv_py(srf_file, seg = -1, value = 'slip', lonlat = False)
-tinits = srf.srf2llv_py(srf_file, seg = -1, value = 'tinit', lonlat = False)
-trises = srf.srf2llv_py(srf_file, seg = -1, value = 'trise', lonlat = False)
-rakes = srf.srf2llv_py(srf_file, seg = -1, value = 'rake', \
-        flip_rake = True, lonlat = False)
+slips = srf.srf2llv_py(args.srf_file, join_minor=True, value='slip', lonlat=False)
+tinits = srf.srf2llv_py(args.srf_file, join_minor=True, value='tinit', lonlat=False)
+trises = srf.srf2llv_py(args.srf_file, join_minor=True, value='trise', lonlat=False)
+rakes = srf.srf2llv_py(args.srf_file, join_minor=True, value = 'rake', \
+        flip_rake=True, lonlat=False)
 slip_values = np.concatenate((slips))[:, 2]
 trise_values = np.concatenate((trises))[:, 2]
 tinit_max = max(np.concatenate((tinits))[:, 2])
@@ -217,7 +207,7 @@ for s, seg in enumerate(planes):
         else:
             fill = None
         # setup mapping region, - in sizing inverts axis
-        p.spacial('X', (0, seg[length], 0, seg[width]), \
+        p.spacial('X', (0, seg['length'], 0, seg['width']), \
                 sizing = '%s/-%s' % (seg_len_d[s], seg_wid_d[s]), \
                 x_shift = x_shift, y_shift = y_shift, fill = fill)
         # for labels to be less likely to overlap
@@ -226,14 +216,14 @@ for s, seg in enumerate(planes):
             align = 'R'
         # strike (x) label
         if r == 2:
-            p.text(seg[length] * (s % 2), seg[width], 'L (km)', \
+            p.text(seg['length'] * (s % 2), seg['width'], 'L (km)', \
                     dy = - x_text_gap, align = '%sT' % align, size = base_size)
-            p.text(seg[length] * (s % 2), seg[width], \
-                    'strike %s\260' % (seg[strike]), \
+            p.text(seg['length'] * (s % 2), seg['width'], \
+                    'strike %s\260' % (', '.join(map(str, seg['strike']))), \
                     dy = - x_text_gap - base_gap, \
                     align = '%sT' % align, size = base_size)
-            p.text(seg[length] * (s % 2), seg[width], \
-                    'dip %s\260' % (seg[dip]), \
+            p.text(seg['length'] * (s % 2), seg['width'], \
+                    'dip %s\260' % (seg['dip']), \
                     dy = - x_text_gap - base_gap * 2, \
                     align = '%sT' % align, size = base_size)
         # dip (y) label
@@ -247,7 +237,7 @@ for s, seg in enumerate(planes):
         mx = round(max(row_data[:, 2]), 1)
         if r == 2:
             mn, avg, mx = map(int, [mn, avg, mx])
-        p.text(seg[length] * (s % 2), 0, '%s / %s / %s' % (mn, avg, mx), \
+        p.text(seg['length'] * (s % 2), 0, '%s / %s / %s' % (mn, avg, mx), \
                 dy = 0.04, align = '%sB' % align, size = annot_size)
 
         # overlay data
@@ -261,8 +251,8 @@ for s, seg in enumerate(planes):
         else:
             # rake angles
             # only show arrows at dx, dy resolution
-            dx_rake = srfplot.rake_decimation * srf_dx
-            dy_rake = srfplot.rake_decimation * srf_dy
+            dx_rake = args.rake_spacing * srf_dx
+            dy_rake = args.rake_spacing * srf_dy
             # first arrow is at midpoint (0.5 dx and dy rake)
             nx = int((seg_len[s] + 0.5 * dx_rake) / dx_rake)
             ny = int((seg_wid[s] + 0.5 * dy_rake) / dy_rake)
@@ -280,7 +270,7 @@ for s, seg in enumerate(planes):
             ip = ix + iy * nx
 
             # use average value of all positions in grid square
-            if srfplot.rake_average:
+            if args.rake_average:
                 for x in np.nditer(np.arange(gridpoints)):
                     rk[x] = np.average(rakes[s][ip == x, 2])
                     sp[x] = np.average(slips[s][ip == x, 2])
@@ -304,12 +294,17 @@ for s, seg in enumerate(planes):
                 if not np.isnan(rk[x]):
                     output.append('%f %f %f %f\n' % (grid[x][0], grid[x][1], \
                             -rk[x], \
-                            srfplot.rake_length * sp[x] / max(slip_values)))
+                            args.rake_scale * sp[x] / max(slip_values)))
             # RWG default is +a45+ea
             p.points(''.join(output), is_file = False, shape = 'v', \
                     size = '%sp+a45+eA+g-' % (scale_factor * 6.), \
                     line = 'black', \
                     line_thickness = '%sp' % (scale_factor / 2.))
+
+        # show where sub planes are split
+        for split_km in np.cumsum(seg['length0'][:-1]):
+            p.path('%s 0\n%s %s' % (split_km, split_km, seg['width']), \
+                is_file=False, width='%sp' % (scale_factor / 2.))
 
         # also show tinit on top of slip
         if r == 0:
@@ -321,7 +316,7 @@ for s, seg in enumerate(planes):
                     acontours = acontour, font_size = annot_size, \
                     contour_thickness = scale_factor, contour_colour = 'black')
             # and hypocentre if first segment
-            if s == hyp_seg:
+            if s == 0:
                 p.points('%s %s' % (hyp_s, hyp_d), is_file = False, \
                         shape = 'a', size = (scale_factor * 0.6), \
                         line = 'red', line_thickness = '%sp' % (scale_factor))
@@ -345,13 +340,13 @@ for s, seg in enumerate(planes):
                 align = 'LT', label = labels[r])
 
 # main title
-if srfplot.title != None:
+if args.title is not None:
     p.text((sum(seg_len) + col_spacing * (ncol - 1) * km_inch) / -2 \
             + seg_len[-1], \
             -(max(seg_wid) * 2 + row_spacing * 2 * km_inch), \
-            srfplot.title, font = 'Helvetica-Bold', size = 20, \
+            args.title, font = 'Helvetica-Bold', size = 20, \
             dy = 0.4, align = 'CB')
 
 p.finalise()
-p.png(dpi = 600, portrait = True, out_dir = srfplot.out_dir)
+p.png(dpi=600, portrait=True, out_dir=args.out_dir)
 rmtree(gmt_temp)

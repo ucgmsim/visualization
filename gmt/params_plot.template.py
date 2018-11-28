@@ -11,7 +11,7 @@ vel_model = 'NZVM v1.65 h=<HH>km'
 region = None
 
 # PGV plotting
-class PGV(TS):
+class PGV:
     dpi = 300
     title = event_title + ' PGV'
     # cpt for PGV should be kept static for the most part
