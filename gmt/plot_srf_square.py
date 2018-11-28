@@ -1,4 +1,7 @@
 #!/usr/bin/env python2
+"""
+TODO: allow srf.py to retrieve multiple properties at once for major speedup
+"""
 
 from argparse import ArgumentParser
 from math import ceil, floor, log10, log
@@ -36,14 +39,13 @@ plot_cpt = [gmt.CPTS['slip'], gmt.CPTS['trise']]
 labels = ['Slip (cm)', 'Rise Time (s)', 'Rake (deg)']
 
 # retrieve hypocentre information
-hyp_seg, hyp_s, hyp_d = srf.get_hypo(args.srf_file, lonlat=False)
+hyp_s, hyp_d = srf.get_hypo(args.srf_file, lonlat=False, join_minor=True)
 with open(args.srf_file, 'r') as s:
-    planes = srf.read_header(s, idx=True)
+    planes = srf.read_header(s, idx=True, join_minor=True)
 seg_len = [plane['length'] for plane in planes]
 seg_wid = [plane['width'] for plane in planes]
-seg_sub = [plane['dhyp'] < 0 for plane in planes]
 # planes are plotted on a row, slip tinit and rake on 3 rows
-ncol = len(planes) - sum(seg_sub)
+ncol = len(planes)
 nrow = 3
 # use optimal grid resolution to prevent interpolation or grid artifacts
 srf_dx, srf_dy = srf.srf_dxy(args.srf_file)
@@ -154,11 +156,11 @@ gmt.gmt_defaults(wd = gmt_temp, font_label = label_size, \
 p.background(media[0], media[1])
 
 # prepare data and CPTs
-slips = srf.srf2llv_py(args.srf_file, seg = -1, value = 'slip', lonlat = False)
-tinits = srf.srf2llv_py(args.srf_file, seg = -1, value = 'tinit', lonlat = False)
-trises = srf.srf2llv_py(args.srf_file, seg = -1, value = 'trise', lonlat = False)
-rakes = srf.srf2llv_py(args.srf_file, seg = -1, value = 'rake', \
-        flip_rake = True, lonlat = False)
+slips = srf.srf2llv_py(args.srf_file, join_minor=True, value='slip', lonlat=False)
+tinits = srf.srf2llv_py(args.srf_file, join_minor=True, value='tinit', lonlat=False)
+trises = srf.srf2llv_py(args.srf_file, join_minor=True, value='trise', lonlat=False)
+rakes = srf.srf2llv_py(args.srf_file, join_minor=True, value = 'rake', \
+        flip_rake=True, lonlat=False)
 slip_values = np.concatenate((slips))[:, 2]
 trise_values = np.concatenate((trises))[:, 2]
 tinit_max = max(np.concatenate((tinits))[:, 2])
@@ -191,9 +193,7 @@ for s, seg in enumerate(planes):
             x_shift = 0
             y_shift = - row_spacing - max(seg_wid_d)
         else:
-            x_shift = seg_len_d[s - 1]
-            if not seg_sub[s]:
-                x_shift += col_spacing
+            x_shift = col_spacing + seg_len_d[s - 1]
             y_shift = (nrow - 1) * (row_spacing + max(seg_wid_d)) \
                     - (max(seg_wid_d) - seg_wid_d[s - 1]) \
                     + (max(seg_wid_d) - seg_wid_d[s])
@@ -219,7 +219,7 @@ for s, seg in enumerate(planes):
             p.text(seg['length'] * (s % 2), seg['width'], 'L (km)', \
                     dy = - x_text_gap, align = '%sT' % align, size = base_size)
             p.text(seg['length'] * (s % 2), seg['width'], \
-                    'strike %s\260' % (seg['strike']), \
+                    'strike %s\260' % (', '.join(map(str, seg['strike']))), \
                     dy = - x_text_gap - base_gap, \
                     align = '%sT' % align, size = base_size)
             p.text(seg['length'] * (s % 2), seg['width'], \
@@ -301,6 +301,11 @@ for s, seg in enumerate(planes):
                     line = 'black', \
                     line_thickness = '%sp' % (scale_factor / 2.))
 
+        # show where sub planes are split
+        for split_km in np.cumsum(seg['length0'][:-1]):
+            p.path('%s 0\n%s %s' % (split_km, split_km, seg['width']), \
+                is_file=False, width='%sp' % (scale_factor / 2.))
+
         # also show tinit on top of slip
         if r == 0:
             grd_table = '\n'.join(['%f %f %f' % tuple(row) \
@@ -311,7 +316,7 @@ for s, seg in enumerate(planes):
                     acontours = acontour, font_size = annot_size, \
                     contour_thickness = scale_factor, contour_colour = 'black')
             # and hypocentre if first segment
-            if s == hyp_seg:
+            if s == 0:
                 p.points('%s %s' % (hyp_s, hyp_d), is_file = False, \
                         shape = 'a', size = (scale_factor * 0.6), \
                         line = 'red', line_thickness = '%sp' % (scale_factor))
