@@ -38,14 +38,12 @@ labels = ['Slip (cm)', 'Rise Time (s)', 'Rake (deg)']
 # retrieve hypocentre information
 hyp_seg, hyp_s, hyp_d = srf.get_hypo(args.srf_file, lonlat=False)
 with open(args.srf_file, 'r') as s:
-    # named indexes for plane header data
-    elon, elat, nstrike, ndip, length, width, \
-            strike, dip, dtop, shyp, dhyp = range(11)
-    planes = srf.read_header(s)
-seg_len = [plane[length] for plane in planes]
-seg_wid = [plane[width] for plane in planes]
+    planes = srf.read_header(s, idx=True)
+seg_len = [plane['length'] for plane in planes]
+seg_wid = [plane['width'] for plane in planes]
+seg_sub = [plane['dhyp'] < 0 for plane in planes]
 # planes are plotted on a row, slip tinit and rake on 3 rows
-ncol = len(planes)
+ncol = len(planes) - sum(seg_sub)
 nrow = 3
 # use optimal grid resolution to prevent interpolation or grid artifacts
 srf_dx, srf_dy = srf.srf_dxy(args.srf_file)
@@ -122,7 +120,7 @@ km_inch, x_space = kminch_scale()
 
 # automatic rake arrow decimation
 if args.rake_spacing is None:
-    subfault_size = planes[0][length] / planes[0][nstrike] / km_inch
+    subfault_size = planes[0]['length'] / planes[0]['nstrike'] / km_inch
     args.rake_spacing = int(round(0.5 / subfault_size * scale_factor ** 2))
     if args.rake_spacing < 1:
         args.rake_spacing = 1
@@ -193,7 +191,9 @@ for s, seg in enumerate(planes):
             x_shift = 0
             y_shift = - row_spacing - max(seg_wid_d)
         else:
-            x_shift = col_spacing + seg_len_d[s - 1]
+            x_shift = seg_len_d[s - 1]
+            if not seg_sub[s]:
+                x_shift += col_spacing
             y_shift = (nrow - 1) * (row_spacing + max(seg_wid_d)) \
                     - (max(seg_wid_d) - seg_wid_d[s - 1]) \
                     + (max(seg_wid_d) - seg_wid_d[s])
@@ -207,7 +207,7 @@ for s, seg in enumerate(planes):
         else:
             fill = None
         # setup mapping region, - in sizing inverts axis
-        p.spacial('X', (0, seg[length], 0, seg[width]), \
+        p.spacial('X', (0, seg['length'], 0, seg['width']), \
                 sizing = '%s/-%s' % (seg_len_d[s], seg_wid_d[s]), \
                 x_shift = x_shift, y_shift = y_shift, fill = fill)
         # for labels to be less likely to overlap
@@ -216,14 +216,14 @@ for s, seg in enumerate(planes):
             align = 'R'
         # strike (x) label
         if r == 2:
-            p.text(seg[length] * (s % 2), seg[width], 'L (km)', \
+            p.text(seg['length'] * (s % 2), seg['width'], 'L (km)', \
                     dy = - x_text_gap, align = '%sT' % align, size = base_size)
-            p.text(seg[length] * (s % 2), seg[width], \
-                    'strike %s\260' % (seg[strike]), \
+            p.text(seg['length'] * (s % 2), seg['width'], \
+                    'strike %s\260' % (seg['strike']), \
                     dy = - x_text_gap - base_gap, \
                     align = '%sT' % align, size = base_size)
-            p.text(seg[length] * (s % 2), seg[width], \
-                    'dip %s\260' % (seg[dip]), \
+            p.text(seg['length'] * (s % 2), seg['width'], \
+                    'dip %s\260' % (seg['dip']), \
                     dy = - x_text_gap - base_gap * 2, \
                     align = '%sT' % align, size = base_size)
         # dip (y) label
@@ -237,7 +237,7 @@ for s, seg in enumerate(planes):
         mx = round(max(row_data[:, 2]), 1)
         if r == 2:
             mn, avg, mx = map(int, [mn, avg, mx])
-        p.text(seg[length] * (s % 2), 0, '%s / %s / %s' % (mn, avg, mx), \
+        p.text(seg['length'] * (s % 2), 0, '%s / %s / %s' % (mn, avg, mx), \
                 dy = 0.04, align = '%sB' % align, size = annot_size)
 
         # overlay data
