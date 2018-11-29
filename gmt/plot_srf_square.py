@@ -19,11 +19,14 @@ arg = parser.add_argument
 arg('srf_file', help='path to srf file')
 arg('--out-dir', help='save in a different dir')
 arg('--title', help='give a plot title')
+arg('--plane-order', help='\'-\'separated plane order, 3 plane default is 0-1-2')
 arg('--rake-spacing', help='set rake arrow spacing (subfaults)', type=float)
 arg('--rake-scale', help='maximum length of rake arrows', type=float, default=0.4)
 arg('--rake-average', help='use averaging in rake arrow area', action='store_true')
 args = parser.parse_args()
 
+if args.plane_order is not None:
+    args.plane_order = map(int, args.plane_order.split('-'))
 if args.out_dir is None:
     args.out_dir = os.path.dirname(args.srf_file)
 if args.out_dir == '':
@@ -42,6 +45,11 @@ labels = ['Slip (cm)', 'Rise Time (s)', 'Rake (deg)']
 hyp_s, hyp_d = srf.get_hypo(args.srf_file, lonlat=False, join_minor=True)
 with open(args.srf_file, 'r') as s:
     planes = srf.read_header(s, idx=True, join_minor=True)
+    if args.plane_order is None:
+        args.plane_order = list(range(len(planes)))
+    else:
+        assert sorted(args.plane_order) == list(range(len(planes)))
+        planes = [planes[i] for i in args.plane_order]
 seg_len = [plane['length'] for plane in planes]
 seg_wid = [plane['width'] for plane in planes]
 # planes are plotted on a row, slip tinit and rake on 3 rows
@@ -161,6 +169,10 @@ tinits = srf.srf2llv_py(args.srf_file, join_minor=True, value='tinit', lonlat=Fa
 trises = srf.srf2llv_py(args.srf_file, join_minor=True, value='trise', lonlat=False)
 rakes = srf.srf2llv_py(args.srf_file, join_minor=True, value = 'rake', \
         flip_rake=True, lonlat=False)
+slips = [slips[i] for i in args.plane_order]
+tinits = [tinits[i] for i in args.plane_order]
+trises = [trises[i] for i in args.plane_order]
+rakes = [rakes[i] for i in args.plane_order]
 slip_values = np.concatenate((slips))[:, 2]
 trise_values = np.concatenate((trises))[:, 2]
 tinit_max = max(np.concatenate((tinits))[:, 2])
@@ -316,7 +328,7 @@ for s, seg in enumerate(planes):
                     acontours = acontour, font_size = annot_size, \
                     contour_thickness = scale_factor, contour_colour = 'black')
             # and hypocentre if first segment
-            if s == 0:
+            if s == args.plane_order.index(0):
                 p.points('%s %s' % (hyp_s, hyp_d), is_file = False, \
                         shape = 'a', size = (scale_factor * 0.6), \
                         line = 'red', line_thickness = '%sp' % (scale_factor))
