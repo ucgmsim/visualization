@@ -154,7 +154,7 @@ def load_file(station_file):
                     cpt_max[i] = round(cpt_max[i], \
                             - int(np.floor(np.log10(abs(cpt_max[i])))))
                 if val_pool[i].min() < 0:
-                    cpt_min.append(-cpt_max)
+                    cpt_min.append(-cpt_max[i])
                 else:
                     cpt_min.append(0)
                 cpt_inc.append(cpt_max[i] / 10.)
