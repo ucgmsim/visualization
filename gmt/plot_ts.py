@@ -225,8 +225,9 @@ def combine_slice(n):
     Sandwitch midde layer (time dependent) between basemap and top (labels etc).
     """
     png = '%s/ts%.4d.png' % (png_dir, n)
-    gmt.overlay('%s/bottom.png' % (gmt_temp), png, png)
-    gmt.overlay(png, '%s/top.png' % (gmt_temp), png)
+    mid = '%s/bm%.4d.png' % (png_dir, n)
+    gmt.overlay('%s/bottom.png' % (gmt_temp), png, mid)
+    gmt.overlay(mid, '%s/top.png' % (gmt_temp), png)
 
 ###
 ### start rendering
