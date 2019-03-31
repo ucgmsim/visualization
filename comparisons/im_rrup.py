@@ -22,11 +22,9 @@ from qcore.formats import load_im_file
 from qcore.nputil import argsearch
 from qcore.utils import setup_dir
 
-import sys
-sys.path.append('/nesi/transit/nesi00213/Empirical_Engine')
-import calculate_empirical
-import empirical_factory
-from GMM_models import classdef
+from empirical.scripts import calculate_empirical
+from empirical.util import empirical_factory
+from empirical.GMM_models import classdef
 
 
 def load_args():
