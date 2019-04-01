@@ -23,8 +23,7 @@ from qcore.nputil import argsearch
 from qcore.utils import setup_dir
 
 from empirical.scripts import calculate_empirical
-from empirical.util import empirical_factory
-from empirical.GMM_models import classdef
+from empirical.util import empirical_factory, classdef
 
 
 def load_args():
