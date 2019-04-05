@@ -231,11 +231,11 @@ for s, seg in enumerate(planes):
             p.text(seg['length'] * (s % 2), seg['width'], 'L (km)', \
                     dy = - x_text_gap, align = '%sT' % align, size = base_size)
             p.text(seg['length'] * (s % 2), seg['width'], \
-                    'strike %s\260' % (', '.join(map(str, seg['strike']))), \
+                    'strike %s\\260' % (', '.join(map(str, seg['strike']))), \
                     dy = - x_text_gap - base_gap, \
                     align = '%sT' % align, size = base_size)
             p.text(seg['length'] * (s % 2), seg['width'], \
-                    'dip %s\260' % (seg['dip']), \
+                    'dip %s\\260' % (seg['dip']), \
                     dy = - x_text_gap - base_gap * 2, \
                     align = '%sT' % align, size = base_size)
         # dip (y) label
