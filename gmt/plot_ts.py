@@ -45,7 +45,6 @@ arg('--land-crop', help='crop to land (slow)', action='store_true')
 arg('--scale', help='speed of animation. 1.0 is realtime, 2.0 is double time', \
     type=float, default=2.0)
 args = parser.parse_args()
-print("args, args.xyts", args, args.xyts)
 assert(os.path.isfile(args.xyts))
 assert(args.nproc > 0)
 if args.nproc == 1:
