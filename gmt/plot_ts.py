@@ -161,7 +161,7 @@ def top_template():
     if ll_region[1] - ll_region[0] > 3:
         t.sites(gmt.sites_major)
     else:
-        t.sites(gmt.sites.keys())
+        t.sites(list(gmt.sites.keys()))
     t.coastlines()
     # simulation domain
     t.path(cnr_str, is_file=False, split='-', close=True, width='0.4p', \
@@ -238,14 +238,14 @@ pool = Pool(args.nproc)
 b_template = pool.apply_async(bottom_template, ())
 t_template = pool.apply_async(top_template, ())
 # middle layers
-pool.map(render_slice, xrange(xyts.t0, xyts.nt - xyts.t0))
+pool.map(render_slice, range(xyts.t0, xyts.nt - xyts.t0))
 # wait for bottom and top layers
 print('waiting for templates to finish...')
 t_template.get()
 b_template.get()
 print('templates finished, combining layers...')
 # combine layers
-pool.map(combine_slice, xrange(xyts.t0, xyts.nt - xyts.t0))
+pool.map(combine_slice, range(xyts.t0, xyts.nt - xyts.t0))
 print('layers combined, creating animation...')
 # images -> animation
 gmt.make_movie('%s/ts%%04d.png' % (png_dir), args.output, \
