@@ -291,7 +291,7 @@ for s, seg in enumerate(planes):
                 # distances from midpoint
                 mr = ((ix + 0.5) * dx_rake - rakes[s][:, 0]) ** 2 \
                         + ((iy + 0.5) * dy_rake - rakes[s][:, 1]) ** 2
-                for x in xrange(gridpoints):
+                for x in range(gridpoints):
                     try:
                         # position with the smallest distance to midpoint
                         mid = np.where(ip == x)[0][np.argmin(mr[ip == x])]
@@ -302,7 +302,7 @@ for s, seg in enumerate(planes):
                     sp[x] = slips[s][mid, 2]
 
             output = []
-            for x in xrange(gridpoints):
+            for x in range(gridpoints):
                 if not np.isnan(rk[x]):
                     output.append('%f %f %f %f\n' % (grid[x][0], grid[x][1], \
                             -rk[x], \

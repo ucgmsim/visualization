@@ -7,6 +7,8 @@ TODO:
 
 from argparse import ArgumentParser
 from multiprocessing import Pool
+import sys
+print("sys",sys.path)
 import os
 from shutil import rmtree
 from tempfile import mkdtemp
@@ -15,6 +17,8 @@ from time import time
 import qcore.gmt as gmt
 from qcore.xyts import XYTSFile
 
+from distutils.spawn import find_executable
+ffmpeg = find_executable("ffmpeg")
 # size of plotting area
 PAGE_WIDTH = 16
 PAGE_HEIGHT = 9
@@ -45,6 +49,7 @@ arg('--land-crop', help='crop to land (slow)', action='store_true')
 arg('--scale', help='speed of animation. 1.0 is realtime, 2.0 is double time', \
     type=float, default=2.0)
 args = parser.parse_args()
+print("args, args.xyts", args, args.xyts)
 assert(os.path.isfile(args.xyts))
 assert(args.nproc > 0)
 if args.nproc == 1:
@@ -161,7 +166,7 @@ def top_template():
     if ll_region[1] - ll_region[0] > 3:
         t.sites(gmt.sites_major)
     else:
-        t.sites(gmt.sites.keys())
+        t.sites(list(gmt.sites.keys()))
     t.coastlines()
     # simulation domain
     t.path(cnr_str, is_file=False, split='-', close=True, width='0.4p', \
@@ -238,14 +243,14 @@ pool = Pool(args.nproc)
 b_template = pool.apply_async(bottom_template, ())
 t_template = pool.apply_async(top_template, ())
 # middle layers
-pool.map(render_slice, xrange(xyts.t0, xyts.nt - xyts.t0))
+pool.map(render_slice, range(xyts.t0, xyts.nt - xyts.t0))
 # wait for bottom and top layers
 print('waiting for templates to finish...')
 t_template.get()
 b_template.get()
 print('templates finished, combining layers...')
 # combine layers
-pool.map(combine_slice, xrange(xyts.t0, xyts.nt - xyts.t0))
+pool.map(combine_slice, range(xyts.t0, xyts.nt - xyts.t0))
 print('layers combined, creating animation...')
 # images -> animation
 gmt.make_movie('%s/ts%%04d.png' % (png_dir), args.output, \
