@@ -7,8 +7,6 @@ TODO:
 
 from argparse import ArgumentParser
 from multiprocessing import Pool
-import sys
-print("sys",sys.path)
 import os
 from shutil import rmtree
 from tempfile import mkdtemp
@@ -17,8 +15,6 @@ from time import time
 import qcore.gmt as gmt
 from qcore.xyts import XYTSFile
 
-from distutils.spawn import find_executable
-ffmpeg = find_executable("ffmpeg")
 # size of plotting area
 PAGE_WIDTH = 16
 PAGE_HEIGHT = 9
