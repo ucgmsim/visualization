@@ -82,7 +82,7 @@ if finite_fault:
     # get all tinit values, set a sane countour interval
     # contour interval should probably also depend on area
     tinit = srf.srf2llv_py(srf_file, value = 'tinit')
-    tinit_max = max([np.max(tinit[p][:, 2]) for p in xrange(len(bounds))])
+    tinit_max = max([np.max(tinit[p][:, 2]) for p in range(len(bounds))])
     contour_int = 2
     if tinit_max < 10:
         contour_int = 1
@@ -100,7 +100,7 @@ if finite_fault:
     plot_region = (x_min - 0.1, x_max + 0.1, y_min - 0.1, y_max + 0.1)
     # read all max slip values (all at once is much faster)
     seg_llslips = srf.srf2llv_py(srf_file, value = 'slip')
-    for seg in xrange(len(bounds)):
+    for seg in range(len(bounds)):
         # create binary llv file for GMT overlay
         seg_llslips[seg].astype(np.float32).tofile( \
                 '%s/PLANES/slip_map_%d.bin' % (out_dir, seg))
@@ -147,7 +147,7 @@ if finite_fault:
         cf.write('>corners for each segment\n')
         for c, corners in enumerate(bounds):
             cf.write('>segment %d\n' % (c))
-            for i in xrange(5):
+            for i in range(5):
                 cf.write('%f %f\n' % tuple(corners[i % 4]))
 else:
     hypocentre = srf.get_hypo(srf_file, depth = True)
@@ -195,7 +195,7 @@ p.spacial('M', plot_region, sizing = zoom_width, \
 p.basemap(land = 'lightgray', topo_cpt = 'grey1')
 if plot_faults:
     p.path(faults, is_file = True, close = False, width = '0.4p', colour = 'red')
-for seg in xrange(len(bounds)):
+for seg in range(len(bounds)):
     p.overlay('%s/PLANES/slip_map_%d.bin' % (out_dir, seg), \
             '%s/slip.cpt' % (out_dir), dx = plot_dx, dy = plot_dy, \
             climit = 2, crop_grd = '%s/PLANES/plane_%s.mask' % (out_dir, seg), \
