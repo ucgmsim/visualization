@@ -4,7 +4,7 @@ Plots 3 components for simulated and observed seismograms.
 USAGE: run with -h parameter
 
 sample command:
-python waveforms_sim_obs.py /nesi/projects/nesi00213/dev/impp_datasets/Darfield/sim/Vel /nesi/projects/nesi00213/dev/impp_datasets/Darfield/obs/velBB/ ~/test_mpl/waveforms
+python waveforms_sim_obs.py /nesi/project/nesi00213/dev/impp_datasets/Darfield/sim/Vel /nesi/project/nesi00213/dev/impp_datasets/Darfield/obs/velBB/ ~/test_mpl/waveforms
 """
 
 import matplotlib as mpl

@@ -32,9 +32,9 @@ from srf import *
 from geo import *
 
 # illumination file should be in the same directory
-topo = '/nesi/projects/nesi00213/PlottingData/Topo/srtm_all_filt_nz.grd'
-topo_low = '/nesi/projects/nesi00213/PlottingData/Topo/nztopo.grd'
-faults = '/nesi/projects/nesi00213/PlottingData/Paths/faults/FAULTS_20161219.ll'
+topo = '/nesi/project/nesi00213/PlottingData/Topo/srtm_all_filt_nz.grd'
+topo_low = '/nesi/project/nesi00213/PlottingData/Topo/nztopo.grd'
+faults = '/nesi/project/nesi00213/PlottingData/Paths/faults/FAULTS_20161219.ll'
 cpt = CPTS['slip']
 
 # can specify here or pass as command line argument

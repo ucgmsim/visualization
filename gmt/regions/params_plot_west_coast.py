@@ -13,8 +13,8 @@ vel_model = 'NZVM v1.65 h=<HH>km'
 region = None
 
 # topography at different resolutions
-topo_file_low = '/nesi/projects/nesi00213/PlottingData/Topo/nztopo.grd'
-topo_file_high = '/nesi/projects/nesi00213/PlottingData/Topo/srtm_all_filt_nz.grd'
+topo_file_low = '/nesi/project/nesi00213/PlottingData/Topo/nztopo.grd'
+topo_file_high = '/nesi/project/nesi00213/PlottingData/Topo/srtm_all_filt_nz.grd'
 
 # timeslice plotting
 class TS:
