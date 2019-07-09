@@ -36,7 +36,7 @@ srf_files = ['20161114 Kaikoura Ian02_s103245.srf', \
         'Cook Strait 012017.srf', \
         '2014Jan20_Eketahuna_m6p3.srf']
 srf_files = []
-faults = '/nesi/projects/nesi00213/PlottingData/Paths/faults/FAULTS_20161219.ll'
+faults = '/nesi/project/nesi00213/PlottingData/Paths/faults/FAULTS_20161219.ll'
 # convert to absolute paths
 rel2abs = lambda fault_file : os.path.join(faults_folder, fault_file)
 faults_historic = map(rel2abs, faults_historic)
@@ -202,11 +202,11 @@ for i in ['ni']:
                 plane_width = 0.8, top_width = 1.2, hyp_width = 0.8, \
                 plane_colour = 'blue', top_colour = 'blue', hyp_colour = 'blue')
     # beachballs on top as they are smaller than fault planes
-    #p.beachballs('/nesi/projects/nesi00213/PlottingData/Earthquakes/CMTData_Mw3p5_5_20170118_Cant_yesFtp.meca', \
+    #p.beachballs('/nesi/project/nesi00213/PlottingData/Earthquakes/CMTData_Mw3p5_5_20170118_Cant_yesFtp.meca', \
     #        is_file = True, scale = 0.05, colour = 'black')
-    #p.beachballs('/nesi/projects/nesi00213/PlottingData/Earthquakes/Hoby.meca', \
+    #p.beachballs('/nesi/project/nesi00213/PlottingData/Earthquakes/Hoby.meca', \
     #        is_file = True, scale = 0.05, colour = 'black')
-    #p.beachballs('/nesi/projects/nesi00213/PlottingData/Earthquakes/Ahsan.meca', \
+    #p.beachballs('/nesi/project/nesi00213/PlottingData/Earthquakes/Ahsan.meca', \
     #        is_file = True, scale = 0.05, colour = 'blue')
     if i == 'si' or i == 'ni':
         # loop through srfs and planes

@@ -6,11 +6,11 @@ Generate non_uniform.xyz and sim/obs.xyz file
 
 Command:
 To generate .xyz:
-python im_plot.py ~/darfield_sim/darfield_sim.csv /nesi/projects/nesi00213/dev/impp_datasets/Darfield/non_uniform_whole_nz_with_real_stations-hh100_17062017.ll -o ~/test_emp_plot
+python im_plot.py ~/darfield_sim/darfield_sim.csv /nesi/project/nesi00213/dev/impp_datasets/Darfield/non_uniform_whole_nz_with_real_stations-hh100_17062017.ll -o ~/test_emp_plot
 python im_plot.py ~/darfield_sim/darfield_sim.csv ~/rrup.csv -o ~/test_emp_plot
 
 To plot:
-python plot_stations.py ~/test_emp_plot/sim_im_plot_map_darfield_sim.xyz --srf_cnrs /nesi/projects/nesi00213/dev/impp_datasets/Darfield/bev01_s103246Allsegm_v8_23.srf --model_params /nesi/projects/nesi00213/dev/impp_datasets/Darfield/model_params_nz01-h0.100 --out_dir ~/test_emp_plot/sim_im_plot_map
+python plot_stations.py ~/test_emp_plot/sim_im_plot_map_darfield_sim.xyz --srf_cnrs /nesi/project/nesi00213/dev/impp_datasets/Darfield/bev01_s103246Allsegm_v8_23.srf --model_params /nesi/project/nesi00213/dev/impp_datasets/Darfield/model_params_nz01-h0.100 --out_dir ~/test_emp_plot/sim_im_plot_map
 """
 
 import os

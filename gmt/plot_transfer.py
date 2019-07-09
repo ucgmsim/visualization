@@ -77,8 +77,8 @@ def retrieve(src, bd):
     """
     Retrieve packaged plotting dependencies from `src` to `wd`.
     src: remote package file
-        eg: fitzroy:/nesi/projects/nesi00213/scratch/temp.tar
-        or: user@fitzroy:/nesi/projects/nesi00213/scratch/temp.tar
+        eg: fitzroy:/nesi/project/nesi00213/scratch/temp.tar
+        or: user@fitzroy:/nesi/project/nesi00213/scratch/temp.tar
         same username on fitzroy as local is ideal
         ssh keys setup (no password entry) is ideal
     bd: base directory to extract mini sim_dir in
@@ -136,7 +136,7 @@ elif sys.argv[1] == 'auto':
     lbase = os.path.abspath(os.path.dirname(__file__))
     # remote temp dir
     # TODO: remove this hardcoded value and add to external config
-    rtemp = '/nesi/projects/nesi00213/scratch/%s/data_transfers' % (ruser)
+    rtemp = '/nesi/project/nesi00213/scratch/%s/data_transfers' % (ruser)
     # make sure user has temp directory
     Popen(['ssh', '%s@fitzroy.nesi.org.nz' % (ruser), \
             'mkdir -p %s' % (rtemp)]).wait()

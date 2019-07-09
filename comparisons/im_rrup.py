@@ -6,7 +6,7 @@ To see help message:
 python im_rrup.py -h
 
 Sample command:
-python im_rrup.py ~/darfield_obs/rrups.csv  ~/darfield_sim/darfield_sim.csv ~/darfield_obs/darfield_obs.csv --config ~/Empirical_Engine/model_config.yaml --srf /nesi/projects/nesi00213/dev/impp_datasets/Darfield/source.info --out_dir darfield_emp_new_rrup4 --run_name 20100904_Darfield_m7p1_201705011613
+python im_rrup.py ~/darfield_obs/rrups.csv  ~/darfield_sim/darfield_sim.csv ~/darfield_obs/darfield_obs.csv --config ~/Empirical_Engine/model_config.yaml --srf /nesi/project/nesi00213/dev/impp_datasets/Darfield/source.info --out_dir darfield_emp_new_rrup4 --run_name 20100904_Darfield_m7p1_201705011613
 """
 
 import matplotlib as mpl
