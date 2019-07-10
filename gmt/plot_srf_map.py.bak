@@ -47,7 +47,7 @@ if len(sys.argv) > 3 and sys.argv[3] == 'active_faults':
 
 srf_file = os.path.abspath(srf_file)
 if not os.path.exists(srf_file):
-    print(('SRF file %s not found.' % (srf_file)))
+    print('SRF file %s not found.' % (srf_file))
     exit(1)
 srf_dir = os.path.dirname(srf_file)
 if srf_dir == '':
@@ -214,7 +214,7 @@ else:
             strike, dip, rake, mw, hypocentre[0], hypocentre[1]), \
             is_file = False, fmt = 'a', scale = 0.4)
 
-p.sites(list(gmt.sites.keys()))
+p.sites(gmt.sites.keys())
 major_tick, minor_tick = gmt.auto_tick(plot_region[0], plot_region[1], \
         zoom_width)
 p.ticks(major = '%sd' % (major_tick), \
