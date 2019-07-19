@@ -21,7 +21,6 @@ setup(
         "visualization/comparisons/im_rrup.py",
         "visualization/comparisons/psa_ratios_rrup.py",
         "visualization/comparisons/psa_sim_obs.py",
-        "visualization/test/test_im_plotting/test_im_plot.py",
         "visualization/im_plotting/im_plot.py",
         "visualization/gmt/plot_items.py",
         "visualization/gmt/plot_faults.py",
