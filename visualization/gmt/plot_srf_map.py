@@ -47,7 +47,7 @@ if len(sys.argv) > 3 and sys.argv[3] == 'active_faults':
 
 srf_file = os.path.abspath(srf_file)
 if not os.path.exists(srf_file):
-    print(('SRF file %s not found.' % (srf_file)))
+    print('SRF file %s not found.' % (srf_file))
     exit(1)
 srf_dir = os.path.dirname(srf_file)
 if srf_dir == '':

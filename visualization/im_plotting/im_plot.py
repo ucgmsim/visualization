@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 """
 Assumption: (1) im_values.csv and im_values_[imcalc|empirical].info are in the same location and
             (2) .csv and _[imcalc|empirical].info have the same prefix
