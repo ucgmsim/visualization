@@ -26,7 +26,7 @@ arg('--rake-average', help='use averaging in rake arrow area', action='store_tru
 args = parser.parse_args()
 
 if args.plane_order is not None:
-    args.plane_order = map(int, args.plane_order.split('-'))
+    args.plane_order = list(map(int, args.plane_order.split('-')))
 if args.out_dir is None:
     args.out_dir = os.path.dirname(args.srf_file)
 if args.out_dir == '':

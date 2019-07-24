@@ -214,7 +214,7 @@ else:
             strike, dip, rake, mw, hypocentre[0], hypocentre[1]), \
             is_file = False, fmt = 'a', scale = 0.4)
 
-p.sites(gmt.sites.keys())
+p.sites(list(gmt.sites.keys()))
 major_tick, minor_tick = gmt.auto_tick(plot_region[0], plot_region[1], \
         zoom_width)
 p.ticks(major = '%sd' % (major_tick), \
