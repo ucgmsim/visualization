@@ -1,0 +1,19 @@
+language: python
+python:
+  - "3.6"
+dist: xenial
+before_install:
+  - cd /home/travis/build/ucgmsim/
+  - git clone https://github.com/ucgmsim/qcore.git
+
+install:
+  - cd /home/travis/build/ucgmsim/visualization
+  - pip install -r requirements.txt
+  - cd /home/travis/build/ucgmsim/
+  - pip install --no-deps ./qcore/
+
+script:
+  - cd /home/travis/build/ucgmsim/visualization/visualization
+  - pytest --black --ignore=test
+  - cd ./test
+  - pytest
