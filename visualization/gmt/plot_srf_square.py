@@ -26,7 +26,7 @@ arg('--rake-average', help='use averaging in rake arrow area', action='store_tru
 args = parser.parse_args()
 
 if args.plane_order is not None:
-    args.plane_order = list(map(int, args.plane_order.split('-')))
+    args.plane_order = map(int, args.plane_order.split('-'))
 if args.out_dir is None:
     args.out_dir = os.path.dirname(args.srf_file)
 if args.out_dir == '':
@@ -248,7 +248,7 @@ for s, seg in enumerate(planes):
         avg = round(np.average(row_data[:, 2]), 1)
         mx = round(max(row_data[:, 2]), 1)
         if r == 2:
-            mn, avg, mx = list(map(int, [mn, avg, mx]))
+            mn, avg, mx = map(int, [mn, avg, mx])
         p.text(seg['length'] * (s % 2), 0, '%s / %s / %s' % (mn, avg, mx), \
                 dy = 0.04, align = '%sB' % align, size = annot_size)
 
