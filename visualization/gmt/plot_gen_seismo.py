@@ -38,7 +38,7 @@ stats = []
 obs_vts = []
 sim_vts = []
 max_v = 0
-xy = open(seismoplot.plot_stats, 'r')
+xy = open(seismoplot.plot_stats, "r")
 for line in xy:
     lon, lat, stat = line.split()
     lat = float(lat)
@@ -49,14 +49,14 @@ for line in xy:
     # first try simulated as the station may be outside domain
     # TODO: optionally read lower resolution data from XYTS file
     try:
-        svt = read_ascii(data_sim, t0 = True)
+        svt = read_ascii(data_sim, t0=True)
         sim_vts.append(svt)
     except:
-        print('Could not open SIM data for station: %s' % (data_sim))
+        print("Could not open SIM data for station: %s" % (data_sim))
         continue
 
     # add corresponding observed seismogram
-    ovt = read_ascii(data_obs, t0 = True)
+    ovt = read_ascii(data_obs, t0=True)
     obs_vts.append(ovt)
 
     # store metadata
@@ -66,10 +66,10 @@ for line in xy:
 
     # PGV
     max_v = max(np.max(np.abs(ovt)), np.max(np.abs(svt)), max_v)
-    #max_v = max(np.max(np.abs(ovt)), max_v)
+    # max_v = max(np.max(np.abs(ovt)), max_v)
 xy.close()
 
-print('Max Velocity: %s' % (max_v))
+print("Max Velocity: %s" % (max_v))
 
 # y scaling factor based on overall max (km)
 yfac = float(yamp) / max_v
@@ -97,20 +97,20 @@ for s, stat in enumerate(stats):
         yazim = seismoplot.ts_xaz + 90
 
     # show the extending line to source
-    lls_obs = ['%f %f\n' % (lons[s], lats[s])]
-    lls_sim = ['%f %f\n' % (lons[s], lats[s])]
+    lls_obs = ["%f %f\n" % (lons[s], lats[s])]
+    lls_sim = ["%f %f\n" % (lons[s], lats[s])]
     for i, value in enumerate(sim_vts[s]):
         dy = value * yfac
         dx = i * xfac
-        lls_sim.append('%f %f\n' % (lon0_sim + dx, lat0_sim + dy))
+        lls_sim.append("%f %f\n" % (lon0_sim + dx, lat0_sim + dy))
     for i, value in enumerate(obs_vts[s]):
         dy = value * yfac
         dx = i * xfac
-        lls_obs.append('%f %f\n' % (lon0_obs + dx, lat0_obs + dy))
+        lls_obs.append("%f %f\n" % (lon0_obs + dx, lat0_obs + dy))
 
-    with open(seismoplot.sim_src, 'a') as sp:
-        sp.write('> station at %f %f\n' % (lons[s], lats[s]))
-        sp.write(''.join(lls_sim))
-    with open(seismoplot.obs_src, 'a') as sp:
-        sp.write('> station at %f %f\n' % (lons[s], lats[s]))
-        sp.write(''.join(lls_obs))
+    with open(seismoplot.sim_src, "a") as sp:
+        sp.write("> station at %f %f\n" % (lons[s], lats[s]))
+        sp.write("".join(lls_sim))
+    with open(seismoplot.obs_src, "a") as sp:
+        sp.write("> station at %f %f\n" % (lons[s], lats[s]))
+        sp.write("".join(lls_obs))

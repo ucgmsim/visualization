@@ -26,18 +26,20 @@ from qcore import utils
 
 SIM_HOT = "hot-karim:invert 0.2 80/0/0 0/0/80"
 NON_UNIFORM_HOT = "hot-karim:invert,t-30,overlays-blue 1k:g-surface,nns-12m,contours"
-SIM_TEMPLATE = 'sim_im_plot_map_{}.xyz'
-OBS_TEMPLATE = 'obs_im_plot_map_{}.xyz'
-EMP_TEMPLATE = 'emp_im_plot_map_{}.xyz'
-NON_UNI_EMP_TEMPLATE = 'nonuniform_im_plot_map_{}_empirical.xyz'
-NON_UNI_SIM_TEMPLATE = 'nonuniform_im_plot_map_{}_sim.xyz'
-NON_UNI_OBS_TEMPLATE = 'nonuniform_im_plot_map_{}_obs.xyz'
-TEMPLATE_DICT = {'simulated': (SIM_TEMPLATE, NON_UNI_SIM_TEMPLATE),
-                 'observed': (OBS_TEMPLATE, NON_UNI_OBS_TEMPLATE),
-                 'empirical': (EMP_TEMPLATE, NON_UNI_EMP_TEMPLATE)}
-COMPS = ['geom', '090', '000', 'ver']
-DEFAULT_OUTPUT_DIR = '/home/{}/im_plot_map_xyz'.format(getpass.getuser())
-META_PATTERN = ['_imcalc.info', '_empirical.info']
+SIM_TEMPLATE = "sim_im_plot_map_{}.xyz"
+OBS_TEMPLATE = "obs_im_plot_map_{}.xyz"
+EMP_TEMPLATE = "emp_im_plot_map_{}.xyz"
+NON_UNI_EMP_TEMPLATE = "nonuniform_im_plot_map_{}_empirical.xyz"
+NON_UNI_SIM_TEMPLATE = "nonuniform_im_plot_map_{}_sim.xyz"
+NON_UNI_OBS_TEMPLATE = "nonuniform_im_plot_map_{}_obs.xyz"
+TEMPLATE_DICT = {
+    "simulated": (SIM_TEMPLATE, NON_UNI_SIM_TEMPLATE),
+    "observed": (OBS_TEMPLATE, NON_UNI_OBS_TEMPLATE),
+    "empirical": (EMP_TEMPLATE, NON_UNI_EMP_TEMPLATE),
+}
+COMPS = ["geom", "090", "000", "ver"]
+DEFAULT_OUTPUT_DIR = "/home/{}/im_plot_map_xyz".format(getpass.getuser())
+META_PATTERN = ["_imcalc.info", "_empirical.info"]
 
 
 def check_get_meta(csv_filepath):
@@ -45,12 +47,12 @@ def check_get_meta(csv_filepath):
     :param csv_filepath: user input path to summary im/emp .csv file
     :return: runname, meta_info_file path
     """
-    csv_filename = csv_filepath.split('/')[-1]
+    csv_filename = csv_filepath.split("/")[-1]
     csv_dir = os.path.abspath(os.path.dirname(csv_filepath))
-    runname = csv_filename.split('.')[0]
+    runname = csv_filename.split(".")[0]
     meta_filename = []
     for p in META_PATTERN:
-        meta_filename.extend(glob.glob1(csv_dir, '{}{}'.format(runname, p)))
+        meta_filename.extend(glob.glob1(csv_dir, "{}{}".format(runname, p)))
     if len(meta_filename) == 1:
         return runname, os.path.join(csv_dir, meta_filename[0])
     else:
@@ -63,9 +65,9 @@ def get_runtype(meta_filepath):
     :param meta_filepath: user input
     :return: run_type
     """
-    with open(meta_filepath, 'r') as meta_file:
+    with open(meta_filepath, "r") as meta_file:
         meta_file.readline()  # skip header
-        run_type = meta_file.readline().strip().split(',')[2]
+        run_type = meta_file.readline().strip().split(",")[2]
     return run_type
 
 
@@ -76,7 +78,7 @@ def get_data(csv_path):
     :return: lines from summary data csv file
     """
     try:
-        with open(csv_path, 'r') as csv_file:
+        with open(csv_path, "r") as csv_file:
             buf = csv_file.readlines()
         return buf
     except IOError:
@@ -91,32 +93,32 @@ def get_measures_header(data_header, is_non_uniform):
     :param is_non_uniform:
     :return:
     """
-    measures = data_header.strip().split(',')[2:]
+    measures = data_header.strip().split(",")[2:]
     i = 0
     keep_indexes = []
     new_measures = []
     while i < len(measures):
         new_measure = measures[i]
 
-        if 'sigma' in new_measure:
+        if "sigma" in new_measure:
             i += 1
             continue
-        
-        if 'pSA' in new_measure:
+
+        if "pSA" in new_measure:
             if len(new_measure) > 9:
                 i += 1
                 continue
             else:
-                new_measure = new_measure.replace('_', ' (') + 's)'
+                new_measure = new_measure.replace("_", " (") + "s)"
 
         if is_non_uniform:
-            if new_measure == 'MMI':
+            if new_measure == "MMI":
                 i += 1
                 continue
         new_measures.append(new_measure)
         keep_indexes.append(i)
         i += 1
-    new_measures_header = ', '.join(new_measures)
+    new_measures_header = ", ".join(new_measures)
     return new_measures_header, keep_indexes
 
 
@@ -128,14 +130,14 @@ def get_coords_dict(file_path):
     """
     coords_dict = {}
 
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         lines = f.readlines()
         try:
             for line in lines:
-                if '.ll' in file_path:
+                if ".ll" in file_path:
                     lon, lat, station_name = line.strip().split()
                 else:
-                    station_name, lon, lat, _, _, _ = line.strip().split(',')
+                    station_name, lon, lat, _, _, _ = line.strip().split(",")
                 coords_dict[station_name] = (lon, lat)
 
         except ValueError:
@@ -153,9 +155,13 @@ def get_coords(station_name, coords_dict):
     """
     try:
         lon, lat = coords_dict[station_name]
-        return '{} {}'.format(lon, lat)
+        return "{} {}".format(lon, lat)
     except KeyError:
-        print("{} does not exist in the rrup or station file that you provided".format(station_name))
+        print(
+            "{} does not exist in the rrup or station file that you provided".format(
+                station_name
+            )
+        )
         return None
 
 
@@ -169,7 +175,7 @@ def get_im_values(im_values_list, keep_indexes):
     new_values = []
     for index in keep_indexes:
         new_values.append(im_values_list[index])
-    new_values = ' '.join(new_values)
+    new_values = " ".join(new_values)
     return new_values
 
 
@@ -192,7 +198,7 @@ def write_lines(output_dir, filename, data, coords_dict, component, is_non_unifo
     else:
         hot_type = SIM_HOT
 
-    with open(output_path, 'w') as fp:
+    with open(output_path, "w") as fp:
         fp.write("IM Plot\n")
         fp.write("IM\n")
         fp.write("{}\n".format(hot_type))
@@ -200,13 +206,15 @@ def write_lines(output_dir, filename, data, coords_dict, component, is_non_unifo
 
         measures, mmi_index = get_measures_header(data[0], is_non_uniform)
 
-        total_measures = len(measures.split(','))  # number of measures contains either mmi or not
+        total_measures = len(
+            measures.split(",")
+        )  # number of measures contains either mmi or not
 
-        fp.write('{} black\n'.format(total_measures))
-        fp.write('{}\n'.format(measures))
+        fp.write("{} black\n".format(total_measures))
+        fp.write("{}\n".format(measures))
 
         for line in data[1:]:
-            segs = line.strip().split(',')
+            segs = line.strip().split(",")
             comp = segs[1]
             if comp == component:  # only get data with specified comp
                 station_name = segs[0]
@@ -214,14 +222,18 @@ def write_lines(output_dir, filename, data, coords_dict, component, is_non_unifo
                 values = get_im_values(im_values, mmi_index)
                 coords = get_coords(station_name, coords_dict)
                 if coords is not None:
-                    if not is_non_uniform:  # uniform.xyz only writes non_virtual station
+                    if (
+                        not is_non_uniform
+                    ):  # uniform.xyz only writes non_virtual station
                         if not shared.is_virtual_station(station_name):
-                            fp.write('{} {}\n'.format(coords, values))
+                            fp.write("{} {}\n".format(coords, values))
                     else:  # non_uniform.xyz writes all stations regardless virtual or not
-                        fp.write('{} {}\n'.format(coords, values))
+                        fp.write("{} {}\n".format(coords, values))
 
 
-def generate_im_plot_map(run_name, run_type, data, coords_dict, output_dir, comp, is_non_uniform):
+def generate_im_plot_map(
+    run_name, run_type, data, coords_dict, output_dir, comp, is_non_uniform
+):
     """
     writes im_plot .xyz file
     :param run_name: row2_colum1 string from .info metadata file
@@ -247,7 +259,7 @@ def validate_filepath(parser, file_path):
     """
     if os.path.isfile(file_path):
         try:
-            with open(file_path, 'r') as f:
+            with open(file_path, "r") as f:
                 return
         except (IOError, OSError):
             parser.error("Can't open {}".format(file_path))
@@ -263,7 +275,7 @@ def validate_dir(parser, dir_path):
     :return:
     """
     if not os.path.isdir(dir_path):
-        parser.error('No such directory {}'.format(dir_path))
+        parser.error("No such directory {}".format(dir_path))
 
 
 def validate_component(parser, comp):
@@ -279,10 +291,24 @@ def validate_component(parser, comp):
 
 def generate_maps():
     parser = argparse.ArgumentParser()
-    parser.add_argument('csv_filepath', help='path to input csv file')
-    parser.add_argument('rrup_or_station_filepath', help='path to inpurt rrup_csv/station_ll file path')
-    parser.add_argument('-o', '--output_path', default=DEFAULT_OUTPUT_DIR, help='path to store output xyz files')
-    parser.add_argument('-c', '--component', default='geom', help="which component of the intensity measure. Available compoents are {}. Default is 'geom'".format(COMPS))
+    parser.add_argument("csv_filepath", help="path to input csv file")
+    parser.add_argument(
+        "rrup_or_station_filepath", help="path to inpurt rrup_csv/station_ll file path"
+    )
+    parser.add_argument(
+        "-o",
+        "--output_path",
+        default=DEFAULT_OUTPUT_DIR,
+        help="path to store output xyz files",
+    )
+    parser.add_argument(
+        "-c",
+        "--component",
+        default="geom",
+        help="which component of the intensity measure. Available compoents are {}. Default is 'geom'".format(
+            COMPS
+        ),
+    )
     args = parser.parse_args()
 
     utils.setup_dir(args.output_path)
@@ -297,12 +323,15 @@ def generate_maps():
     data = get_data(args.csv_filepath)
     coords_dict = get_coords_dict(args.rrup_or_station_filepath)
 
-    generate_im_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component, 0)
-    generate_im_plot_map(run_name, run_type, data, coords_dict, args.output_path, args.component, 1)
+    generate_im_plot_map(
+        run_name, run_type, data, coords_dict, args.output_path, args.component, 0
+    )
+    generate_im_plot_map(
+        run_name, run_type, data, coords_dict, args.output_path, args.component, 1
+    )
 
     print("xyz files are output to {}".format(args.output_path))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     generate_maps()
-
