@@ -14,5 +14,6 @@ install:
 
 script:
   - cd /home/travis/build/ucgmsim/visualization/visualization
-  - pytest
   - pytest --black --ignore=test
+  - cd test
+  - pytest
