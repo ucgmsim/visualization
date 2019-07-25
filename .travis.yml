@@ -17,3 +17,4 @@ script:
   - pytest --black --ignore=test
   - cd test
   - pytest
+  
