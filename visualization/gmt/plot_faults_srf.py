@@ -106,7 +106,7 @@ for i, f in enumerate(srf_files):
     #    print('SKIPPING %s' % (name))
         #cnrs = '%s/bad_%d.cnrs' % (gmt_temp, len(bad_cnrs))
         try:
-            print 'bad corners'
+            print('bad corners')
             srf.srf2corners(f, cnrs = '%s/%s.bad_cnrs' % (gmt_temp, i))
         except ValueError:
             pass
