@@ -67,10 +67,14 @@ def load_args():
 
 
 def get_print_name(im, comp):
-    if im.startswith("pSA_"):
-        im = "pSA(%dp%s" % (float(im.split("_")[-1]), im.split(".")[-1])
-        im = "%s)" % (im.rstrip("p0"))
-    return "%s_comp_%s" % (im, comp)
+    if im.startswith('pSA_'):
+        whole, decimal = im.split('_')[-1].split('.')
+        if int(decimal) == 0:
+            decimal = ''
+        else:
+            decimal = "p{}".format(decimal)
+        im = "pSA({}{})".format(whole, decimal)
+    return "{}_comp_{}".format(im, comp)
 
 
 def validate_args(args):
