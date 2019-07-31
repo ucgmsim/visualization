@@ -67,10 +67,17 @@ def load_args():
 
 
 def get_print_name(im, comp):
-    if im.startswith('pSA_'):
-        whole, decimal = im.split('_')[-1].split('.')
+    """Takes in an im and component and creates a printable name from them
+    In the case of pSA ims the period is processed such that the letter p is used in place of a decimal point and any
+    trailing 0s are trimmed.
+    pSA_0.02 -> pSA(0p02)
+    pSA_0.5 -> pSA(0.5)
+    pSA_1.0 -> pSA(1)
+    pSA_10.0 -> pSA(10)"""
+    if im.startswith("pSA_"):
+        whole, decimal = im.split("_")[-1].split(".")
         if int(decimal) == 0:
-            decimal = ''
+            decimal = ""
         else:
             decimal = "p{}".format(decimal)
         im = "pSA({}{})".format(whole, decimal)
