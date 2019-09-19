@@ -29,12 +29,16 @@ from qcore import xyts
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
 
+
 def get_args():
     parser = ArgumentParser()
     arg = parser.add_argument
     arg("-t", "--title", help="title text", default="")
     arg(
-        "-f", "--filename", default="plot_items", help="output filename excluding extention"
+        "-f",
+        "--filename",
+        default="plot_items",
+        help="output filename excluding extention",
     )
     arg("--fast", help="no topography, low resolution coastlines", action="store_true")
     arg(
@@ -43,6 +47,8 @@ def get_args():
         action="append",
         help="SRF files to plot, use wildcards, repeat as needed",
     )
+    arg("--logo-pos", help="logo position LCR, TMB eg: 'LT'", default="LT")
+    arg("--nologo", help="don't include logo", action="store_true")
     arg(
         "-c",
         "--srf-only-outline",
@@ -57,7 +63,10 @@ def get_args():
     )
     arg("-b", "--bb-scale", help="beachball scale", type=float, default=0.05)
     arg(
-        "--slip-max", help="maximum slip (cm/s) on colour scale", type=float, default=1000.0
+        "--slip-max",
+        help="maximum slip (cm/s) on colour scale",
+        type=float,
+        default=1000.0,
     )
     arg("-r", "--region", help="Region to plot in the form xmin/xmax/ymin/ymax.")
     arg(
@@ -70,25 +79,54 @@ def get_args():
         "-x",
         "--xyts-corners",
         action="append",
-        help="xyts.e3d to plot outlines for, use wildcards, repeat as needed")
+        help="xyts.e3d to plot outlines for, use wildcards, repeat as needed",
+    )
     arg("--xyz", help="path to file containing lon, lat, value_1 .. value_N")
     arg("--xyz-landmask", help="only show overlay over land", action="store_true")
+    arg(
+        "--xyz-distmask",
+        help="mask areas more than (km) from nearest point",
+        type=float,
+    )
     arg("--xyz-size", help="size of points or grid spacing eg: 1c or 1k")
     arg("--xyz-shape", help="shape of points eg: t,c,s...", default="t")
+    arg(
+        "--xyz-transparency",
+        help="overlay transparency 0-100 (invisible)",
+        type=float,
+        default=0,
+    )
     arg("--xyz-cpt", help="CPT to use for overlay data", default="hot")
     arg("--xyz-cpt-invert", help="inverts CPT", action="store_true")
-    arg("--xyz-cpt-categorical", help="colour scale as discreet values", action="store_true")
-    arg("--xyz-cpt-intervals", help="if categorical, display value intervals", action="store_true")
-    arg("--xyz-cpt-label", help="colour scale label", default="values")
-    arg("--xyz-cpt-min", help="CPT minimum value")
-    arg("--xyz-cpt-max", help="CPT maximum value")
-    arg("--xyz-cpt-inc", help="CPT colour increments")
-    arg("--xyz-cpt-tick", help="CPT legend annotation spacing")
-    arg("--xyz-cpt-bg", help="overlay colour below CPT min")
-    arg("--xyz-cpt-fg", help="overlay colour above CPT max")
+    arg(
+        "--xyz-cpt-categorical",
+        help="colour scale as discreet values",
+        action="store_true",
+    )
+    arg(
+        "--xyz-cpt-intervals",
+        help="if categorical, display value intervals",
+        action="store_true",
+    )
+    arg("--xyz-cpt-labels", help="colour scale labels", default=["values"], nargs="+")
+    arg("--xyz-cpt-min", help="CPT minimum values, '-' to keep automatic", nargs="+")
+    arg("--xyz-cpt-max", help="CPT maximum values, '-' to keep automatic", nargs="+")
+    arg("--xyz-cpt-inc", help="CPT colour increments, '-' to keep automatic", nargs="+")
+    arg(
+        "--xyz-cpt-tick",
+        help="CPT legend annotation spacing, '-' to keep automatic",
+        nargs="+",
+    )
+    arg("--xyz-cpt-bg", help="overlay colour below CPT min, above max if invert")
+    arg("--xyz-cpt-fg", help="overlay colour above CPT max, below min if invert")
     arg("--xyz-grid", help="display as grid instead of points", action="store_true")
+    arg("--xyz-grid-automask", help="crop area further than dist from points eg: 8k")
+    arg("--xyz-grid-contours", help="add contour lines", action="store_true")
     arg("--xyz-grid-type", help="interpolation program to use", default="surface")
-    arg("--xyz-grid-nns", help="search radius for interpolation")
+    arg(
+        "--xyz-grid-search",
+        help="search radius for interpolation eg: 5k (only m|s units for surface)",
+    )
     arg("-n", "--nproc", help="max number of processes", type=int, default=1)
     arg("-d", "--dpi", help="render DPI", type=int, default=300)
 
@@ -154,6 +192,7 @@ def load_xyts_corners(xyts_path):
     x = xyts.XYTSFile(xyts_path[0], meta_only=True)
     return x.corners(gmt_format=True)[1]
 
+
 def load_xyz(args):
     if args.xyz is None:
         return
@@ -164,7 +203,9 @@ def load_xyz(args):
     xyz_info["region"] = x_min, x_max, y_min, y_max
     if args.xyz_size is None:
         # very rough default
-        xyz_info["dxy"] = str(geo.ll_dist(xy[0][0], xy[0][1], xy[1][0], xy[1][1]) * 0.7) + "k"
+        xyz_info["dxy"] = (
+            str(geo.ll_dist(xy[0][0], xy[0][1], xy[1][0], xy[1][1]) * 0.7) + "k"
+        )
     else:
         xyz_info["dxy"] = args.xyz_size
     # these corners are without projection, will hold all points, should be cropped
@@ -173,32 +214,62 @@ def load_xyz(args):
     return xyz_info
 
 
-def load_xyz_col(args_info_i):
-    args, xyz_info, i = args_info_i
+def load_xyz_col(args, xyz_info, i):
     swd = os.path.join(gmt_temp, "_xyz%d" % (i))
-    os.makedirs(swd)    
+    os.makedirs(swd)
 
     xyz_val = np.loadtxt(args.xyz, usecols=(0, 1, i + 2), dtype="f")
-    # prepare cpt
-    cpt_max = np.percentile(xyz_val[:, 2], 99.5)
-    if cpt_max > 115:
-        # 2 significant figures
-        cpt_max = round(
-            cpt_max, 1 - int(np.floor(np.log10(abs(cpt_max))))
-        )
+
+    # prepare cpt values auto/manual
+    if args.xyz_cpt_max is None or (
+        len(args.xyz_cpt_max) > 1 and args.xyz_cpt_max[i] == "-"
+    ):
+        cpt_max = np.percentile(xyz_val[:, 2], 99.5)
+        if cpt_max > 115:
+            # 2 significant figures
+            cpt_max = round(cpt_max, 1 - int(np.floor(np.log10(abs(cpt_max)))))
+        else:
+            # 1 significant figures
+            cpt_max = round(cpt_max, -int(np.floor(np.log10(abs(cpt_max)))))
     else:
-        # 1 significant figures
-        cpt_max = round(
-            cpt_max, -int(np.floor(np.log10(abs(cpt_max))))
+        cpt_max = (
+            args.xyz_cpt_max[0] if len(args.xyz_cpt_max) == 1 else args.xyz_cpt_max[i]
         )
-    if xyz_val[:, 2].min() < 0:
-        cpt_min = -cpt_max
+
+    if args.xyz_cpt_min is None or (
+        len(args.xyz_cpt_min) > 1 and args.xyz_cpt_min[i] == "-"
+    ):
+        if xyz_val[:, 2].min() < 0:
+            cpt_min = -cpt_max
+        else:
+            cpt_min = 0
     else:
-        cpt_min = 0
-    cpt_inc = (cpt_max / 10.0)
-    cpt_tick = (cpt_inc * 2.0)
-    col_cpt = os.path.join(swd, "cpt.cpt")
+        cpt_min = (
+            args.xyz_cpt_min[0] if len(args.xyz_cpt_min) == 1 else args.xyz_cpt_min[i]
+        )
+
+    if args.xyz_cpt_inc is None or (
+        len(args.xyz_cpt_inc) > 1 and args.xyz_cpt_inc[i] == "-"
+    ):
+        cpt_inc = cpt_max / 10.0
+    else:
+        cpt_inc = (
+            args.xyz_cpt_inc[0] if len(args.xyz_cpt_inc) == 1 else args.xyz_cpt_inc[i]
+        )
+
+    if args.xyz_cpt_tick is None or (
+        len(args.xyz_cpt_tick) > 1 and args.xyz_cpt_tick[i] == "-"
+    ):
+        cpt_tick = cpt_inc * 2.0
+    else:
+        cpt_tick = (
+            args.xyz_cpt_tick[0]
+            if len(args.xyz_cpt_tick) == 1
+            else args.xyz_cpt_tick[i]
+        )
+
     # overlay colour scale
+    col_cpt = os.path.join(swd, "cpt.cpt")
     gmt.makecpt(
         args.xyz_cpt,
         col_cpt,
@@ -206,10 +277,42 @@ def load_xyz_col(args_info_i):
         cpt_max,
         inc=cpt_inc,
         invert=args.xyz_cpt_invert,
+        bg=args.xyz_cpt_bg,
+        fg=args.xyz_cpt_fg,
         wd=swd,
     )
 
-    return {"min":cpt_min, "max":cpt_max, "inc":cpt_inc, "tick":cpt_tick}
+    # grid
+    if args.xyz_grid:
+        grd_file = "%s/overlay.nc" % (swd)
+        # TODO: don't repeat mask generation
+        grd_mask = "%s/overlay_mask.nc" % (swd)
+        cols = "0,1,%d" % (i + 2)
+        gmt.table2grd(
+            args.xyz,
+            grd_file,
+            file_input=True,
+            grd_type=args.xyz_grid_type,
+            region=xyz_info["region"],
+            dx=xyz_info["dxy"],
+            climit=cpt_inc * 0.5,
+            wd=swd,
+            geo=True,
+            sectors=4,
+            min_sectors=1,
+            search=args.xyz_grid_search,
+            cols=cols,
+            automask=None if args.xyz_grid_automask is None else grd_mask,
+            mask_dist=args.xyz_grid_automask,
+        )
+        if args.xyz_grid_automask is not None:
+            temp = "%s/overlay_mask_result.nc" % (swd)
+            gmt.grdmath([grd_file, grd_mask, "MUL", "=", temp], wd=swd)
+            copy(temp, grd_file)
+        if not os.path.isfile(grd_file):
+            raise FileNotFoundError("overlay grid not created")
+
+    return {"min": cpt_min, "max": cpt_max, "inc": cpt_inc, "tick": cpt_tick}
 
 
 def find_srfs(args, gmt_temp):
@@ -238,7 +341,7 @@ def find_xyts(args):
     if args.xyts_corners is not None:
         for ex in args.xyts_corners:
             xyts_files.extend(glob(ex))
-    
+
     return xyts_files
 
 
@@ -270,7 +373,7 @@ def load_vm_corners(args):
     return vm_corners
 
 
-def load_sizing(wd):
+def load_sizing(xyz_info, wd):
     pwd = os.path.join(wd, "_size")
     ps_file = "%s/size.ps" % (pwd)
     os.makedirs(pwd)
@@ -279,29 +382,44 @@ def load_sizing(wd):
 
     p = gmt.GMTPlot(ps_file)
     if args.region is None:
-        # auto region?
-        region = gmt.nz_region
+        if xyz_info is not None:
+            region = xyz_info["region"]
+            x_diff = (region[1] - region[0]) * 0.05
+            y_diff = (region[3] - region[2]) * 0.05
+            region = (
+                region[0] - x_diff,
+                region[1] + x_diff,
+                region[2] - y_diff,
+                region[3] + y_diff,
+            )
+        else:
+            region = gmt.nz_region
     else:
         region = list(map(float, args.region.split("/")))
     if region[1] < -90 and region[0] > 90:
         region[1] += 360
     p.spacial("M", region, sizing="%si" % (map_width))
-    size = gmt.mapproject(
-        region[1], region[3], wd=pwd, unit="inch"
-    )
+    size = gmt.mapproject(region[1], region[3], wd=pwd, unit="inch")
     p.leave()
 
     page_width = size[0] + 2 + 0.5
     page_height = size[1] + 2 + 1
     gmt.gmt_defaults(ps_media="Custom_{}ix{}i".format(page_width, page_height), wd=wd)
-    
-    return {"size":size, "region":region, "page_width":page_width, "page_height":page_height}
+
+    return {
+        "size": size,
+        "region": region,
+        "page_width": page_width,
+        "page_height": page_height,
+    }
 
 
 def basemap(args, sizing, wd):
     ps_file = "%s/%s.ps" % (wd, args.filename)
     p = gmt.GMTPlot(ps_file, reset=False)
-    p.spacial("M", sizing["region"], sizing="%si" % (sizing["size"][0]), x_shift=2, y_shift=2)
+    p.spacial(
+        "M", sizing["region"], sizing="%si" % (sizing["size"][0]), x_shift=2, y_shift=2
+    )
     if args.fast:
         p.basemap(res="f", land="lightgray", topo=None, road=None, highway=None)
     else:
@@ -309,7 +427,14 @@ def basemap(args, sizing, wd):
     # border tick labels
     p.ticks(major=2, minor=0.2)
     # QuakeCoRE logo
-    p.image("L", "T", "%s/quakecore-logo.png" % (script_dir), width="3i", pos="rel")
+    if not args.nologo:
+        p.image(
+            args.logo_pos[0],
+            args.logo_pos[1],
+            "%s/quakecore-logo.png" % (script_dir),
+            width="3i",
+            pos="rel",
+        )
     # title
     if args.title is not None:
         p.text(
@@ -390,7 +515,7 @@ def add_items(args, p, gmt_temp):
         )
 
 
-def render_xyz_col(sizing, xyz_i):
+def render_xyz_col(sizing, xyz_info, xyz_i):
     i, xyz = xyz_i
     pwd = os.path.join(gmt_temp, "_xyz{}".format(i))
     ps_file = os.path.join(pwd, "{}_{}.ps".format(args.filename, i))
@@ -413,39 +538,33 @@ def render_xyz_col(sizing, xyz_i):
             cpt="cpt.cpt",
             cols="0,1,%d" % (i + 2),
         )
+    else:
+        grd_file = "%s/overlay.nc" % (pwd)
+        p.overlay(grd_file, "cpt.cpt", transparency=args.xyz_transparency)
+        if args.xyz_grid_contours:
+            # use intervals from cpt file
+            p.contours(grd_file, interval="cpt.cpt")
     if args.xyz_landmask:
         p.clip()
 
     # colour scale
-    if args.xyz_cpt_categorical:
-        p.cpt_scale(
-            "C"
-            "B",
-            "cpt.cpt",
-            pos="rel_out",
-            dy=0.5,
-            length=sizing["size"][0] * 0.8,
-            label=args.xyz_cpt_label,
-            arrow_f=False,
-            arrow_b=False,
-            gap=meta["cpt_gap"],
-            intervals=args.xyz_cpt_intervals,
-            categorical=True,
-        )
-    else:
-        p.cpt_scale(
-            "C",
-            "B",
-            "cpt.cpt",
-            xyz["tick"],
-            xyz["inc"],
-            pos="rel_out",
-            dy=0.5,
-            length=sizing["size"][0] * 0.8,
-            label=args.xyz_cpt_label,
-            arrow_f=xyz["max"] > 0,
-            arrow_b=xyz["min"] < 0,
-        )
+    p.cpt_scale(
+        "C",
+        "B",
+        "cpt.cpt",
+        major=None if args.xyz_cpt_categorical else xyz["tick"],
+        minor=None if args.xyz_cpt_categorical else xyz["inc"],
+        pos="rel_out",
+        dy=0.5,
+        length=sizing["size"][0] * 0.8,
+        label=args.xyz_cpt_labels[0]
+        if len(args.xyz_cpt_labels) == 1
+        else args.xyz_cpt_labels[i],
+        arrow_f=False if args.xyz_cpt_categorical else xyz["max"] > 0,
+        arrow_b=False if args.xyz_cpt_categorical else xyz["min"] < 0,
+    )
+    
+    p.sites(gmt.sites_major)
 
     p.finalise()
     p.png(out_dir=".", dpi=args.dpi, background="white")
@@ -459,25 +578,31 @@ xyz_ncol = find_xyz_ncol(args.xyz)
 
 pool = Pool(args.nproc)
 xyz_info = pool.apply_async(load_xyz, [args])
-i_srf_data = pool.map_async(load_srf, zip(range(srf_0, srf_0 + len(srf_files)), srf_files))
+i_srf_data = pool.map_async(
+    load_srf, zip(range(srf_0, srf_0 + len(srf_files)), srf_files)
+)
 xyts_corners = pool.map_async(load_xyts_corners, xyts_files)
 vm_corners = load_vm_corners(args)
 
-sizing = load_sizing(gmt_temp)
+xyz_info = xyz_info.get()
+xyz_cols = pool.map_async(partial(load_xyz_col, args, xyz_info), range(0, xyz_ncol))
+
+sizing = load_sizing(xyz_info, gmt_temp)
 p = basemap(args, sizing, gmt_temp)
 
-xyz_info = xyz_info.get()
-xyz = pool.map_async(load_xyz_col, zip([args] * xyz_ncol, [xyz_info] * xyz_ncol, range(0, xyz_ncol)))
-
-xyz = xyz.get()
+xyz_cols = xyz_cols.get()
 i_srf_data = i_srf_data.get()
 xyts_corners = xyts_corners.get()
 
 add_items(args, p, gmt_temp)
 if args.xyz:
-    xyz_pngs = pool.map_async(partial(render_xyz_col, sizing), enumerate(xyz))
+    p.leave()
+    xyz_pngs = pool.map_async(
+        partial(render_xyz_col, sizing, xyz_info), enumerate(xyz_cols)
+    )
     xyz_pngs = xyz_pngs.get()
 else:
+    p.sites(gmt.sites_major)
     p.finalise()
     p.png(out_dir=".", dpi=args.dpi, background="white")
 rmtree(gmt_temp)
