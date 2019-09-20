@@ -243,6 +243,7 @@ def load_xyz_col(args, xyz_info, i):
     if args.xyz_cpt_min is None or (
         len(args.xyz_cpt_min) > 1 and args.xyz_cpt_min[i] == "-"
     ):
+        # cpt starts at 0 unless there are negative values in which case it is symmetric
         if xyz_val[:, 2].min() < 0:
             cpt_min = -cpt_max
         else:
