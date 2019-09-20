@@ -24,6 +24,7 @@ import numpy as np
 
 from qcore import geo
 from qcore import gmt
+from qcore.shared import get_corners
 from qcore import srf
 from qcore import xyts
 
@@ -90,6 +91,7 @@ def get_args():
     )
     arg("--xyz-size", help="size of points or grid spacing eg: 1c or 1k")
     arg("--xyz-shape", help="shape of points eg: t,c,s...", default="t")
+    arg("--xyz-model-params", help="crop xyz overlay with vm corners")
     arg(
         "--xyz-transparency",
         help="overlay transparency 0-100 (invisible)",
@@ -210,7 +212,9 @@ def load_xyz(args):
         xyz_info["dxy"] = args.xyz_size
     # these corners are without projection, will hold all points, should be cropped
 
-    corners = [[x_min, y_min], [x_max, y_min], [x_max, y_max], [x_min, y_max]]
+    # used for cropping interpolated values outside domain
+    if args.xyz_model_params is not None:
+        xyz_info["perimiter"] = get_corners(args.xyz_model_params, gmt_format=True)[1]
     return xyz_info
 
 
@@ -526,6 +530,8 @@ def render_xyz_col(sizing, xyz_info, xyz_i):
 
     if args.xyz_landmask:
         p.clip(path=gmt.LINZ_COAST["150k"], is_file=True)
+    if "perimiter" in xyz_info:
+        p.clip(path=xyz_info["perimiter"])
     if not args.xyz_grid:
         if args.xyz_size is None:
             args.xyz_size = "6p"
@@ -544,7 +550,7 @@ def render_xyz_col(sizing, xyz_info, xyz_i):
         if args.xyz_grid_contours:
             # use intervals from cpt file
             p.contours(grd_file, interval="cpt.cpt")
-    if args.xyz_landmask:
+    if args.xyz_landmask or "perimiter" in xyz_info:
         p.clip()
 
     # colour scale
@@ -563,7 +569,7 @@ def render_xyz_col(sizing, xyz_info, xyz_i):
         arrow_f=False if args.xyz_cpt_categorical else xyz["max"] > 0,
         arrow_b=False if args.xyz_cpt_categorical else xyz["min"] < 0,
     )
-    
+
     p.sites(gmt.sites_major)
 
     p.finalise()
