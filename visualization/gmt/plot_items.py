@@ -96,7 +96,7 @@ def get_args():
         "--xyz-transparency",
         help="overlay transparency 0-100 (invisible)",
         type=float,
-        default=0,
+        default=30,
     )
     arg("--xyz-cpt", help="CPT to use for overlay data", default="hot")
     arg("--xyz-cpt-invert", help="inverts CPT", action="store_true")
