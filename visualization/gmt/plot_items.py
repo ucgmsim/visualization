@@ -48,8 +48,8 @@ def get_args():
         action="append",
         help="SRF files to plot, use wildcards, repeat as needed",
     )
+    arg("--logo", help="don't include logo", action="store_true")
     arg("--logo-pos", help="logo position LCR, TMB eg: 'LT'", default="LT")
-    arg("--nologo", help="don't include logo", action="store_true")
     arg(
         "-c",
         "--srf-only-outline",
@@ -82,7 +82,7 @@ def get_args():
         action="append",
         help="xyts.e3d to plot outlines for, use wildcards, repeat as needed",
     )
-    arg("--xyz", help="path to file containing lon, lat, value_1 .. value_N")
+    arg("--xyz", help="path to file containing lon, lat, value_1 .. value_N (no header)")
     arg("--xyz-landmask", help="only show overlay over land", action="store_true")
     arg(
         "--xyz-distmask",
@@ -432,7 +432,7 @@ def basemap(args, sizing, wd):
     # border tick labels
     p.ticks(major=2, minor=0.2)
     # QuakeCoRE logo
-    if not args.nologo:
+    if args.logo:
         p.image(
             args.logo_pos[0],
             args.logo_pos[1],
