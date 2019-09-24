@@ -48,7 +48,7 @@ def get_args():
         action="append",
         help="SRF files to plot, use wildcards, repeat as needed",
     )
-    arg("--logo", help="don't include logo", action="store_true")
+    arg("--logo", help="include logo", action="store_true")
     arg("--logo-pos", help="logo position LCR, TMB eg: 'LT'", default="LT")
     arg(
         "-c",
