@@ -82,7 +82,9 @@ def get_args():
         action="append",
         help="xyts.e3d to plot outlines for, use wildcards, repeat as needed",
     )
-    arg("--xyz", help="path to file containing lon, lat, value_1 .. value_N (no header)")
+    arg(
+        "--xyz", help="path to file containing lon, lat, value_1 .. value_N (no header)"
+    )
     arg("--xyz-landmask", help="only show overlay over land", action="store_true")
     arg(
         "--xyz-distmask",
