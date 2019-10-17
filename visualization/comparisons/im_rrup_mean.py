@@ -3,10 +3,10 @@
 IM vs RRUP plot
 
 To see help message:
-python im_rrup.py -h
+python im_rrup_mean.py -h
 
 Sample command:
-python im_rrup.py ~/darfield_obs/rrups.csv  ~/darfield_sim/darfield_sim.csv ~/darfield_obs/darfield_obs.csv --config ~/Empirical_Engine/model_config.yaml --srf /nesi/project/nesi00213/dev/impp_datasets/Darfield/source.info --out_dir darfield_emp_new_rrup4 --run_name 20100904_Darfield_m7p1_201705011613
+python im_rrup_mean.py ~/darfield_obs/rrups.csv  ~/darfield_sim/darfield_sim.csv ~/darfield_obs/darfield_obs.csv --config ~/Empirical_Engine/model_config.yaml --srf /nesi/project/nesi00213/dev/impp_datasets/Darfield/source.info --out_dir darfield_emp_new_rrup4 --run_name 20100904_Darfield_m7p1_201705011613
 """
 
 import matplotlib as mpl
@@ -37,11 +37,13 @@ def load_args():
     """
     # read
     parser = ArgumentParser()
-    parser.add_argument("rrup", help="path to RRUP file")
-    parser.add_argument("sim", help="path to SIMULATED IM file")
-    parser.add_argument("obs", help="path to OBSERVED IM file")
-    parser.add_argument("--config", help="path to .yaml empirical config file")
-    parser.add_argument("--srf", help="path to srf info file")
+    parser.add_argument("rrup", help="path to RRUP file", type=os.path.abspath)
+    parser.add_argument("sim", help="path to SIMULATED IM file", type=os.path.abspath)
+    parser.add_argument("obs", help="path to OBSERVED IM file", type=os.path.abspath)
+    parser.add_argument(
+        "--config", help="path to .yaml empirical config file", type=os.path.abspath
+    )
+    parser.add_argument("--srf", help="path to srf info file", type=os.path.abspath)
     parser.add_argument(
         "--dist_min", default=0.1, type=float, help="GMPE param DistMin, default 0.1 km"
     )
@@ -54,7 +56,12 @@ def load_args():
     parser.add_argument(
         "--n_val", default=51.0, type=float, help="GMPE param n_val, default 51.0"
     )
-    parser.add_argument("--out_dir", help="output folder to place plot", default=".")
+    parser.add_argument(
+        "--out_dir",
+        help="output folder to place plot",
+        default=".",
+        type=os.path.abspath,
+    )
     parser.add_argument(
         "--run_name",
         help="run_name - should automate?",
@@ -62,10 +69,6 @@ def load_args():
     )
     parser.add_argument("--comp", help="component", default="geom")
     args = parser.parse_args()
-
-    args.sim = os.path.abspath(args.sim)
-    args.obs = os.path.abspath(args.obs)
-    args.rrup = os.path.abspath(args.rrup)
 
     validate_args(args)
 
@@ -148,7 +151,9 @@ def main():
     sim_ims = load_im_file(args.sim, comp=args.comp)
     obs_ims = load_im_file(args.obs, comp=args.comp)
 
-    im_names = ['pSA_5.0'] # np.intersect1d(obs_ims.dtype.names[2:], sim_ims.dtype.names[2:])
+    im_names = [
+        "pSA_5.0"
+    ]  # np.intersect1d(obs_ims.dtype.names[2:], sim_ims.dtype.names[2:])
 
     os_idx = argsearch(obs_ims.station, sim_ims.station)
     ls_idx = argsearch(name_rrup["f0"], sim_ims.station)
@@ -164,9 +169,15 @@ def main():
     min_logged_rrup = np.min(logged_rrups)
     bucket_range = (max_logged_rrup - min_logged_rrup) / N_BUCKETS
 
-    masks = [(min_logged_rrup+(i+1)*bucket_range >= logged_rrups) * (logged_rrups > min_logged_rrup+i*bucket_range) for i in range(N_BUCKETS)]
+    masks = [
+        (min_logged_rrup + (i + 1) * bucket_range >= logged_rrups)
+        * (logged_rrups > min_logged_rrup + i * bucket_range)
+        for i in range(N_BUCKETS)
+    ]
     masks[0] = masks[0] + (logged_rrups == min_logged_rrup)
-    bucket_rrups = np.exp([min_logged_rrup+(i+0.5)*bucket_range for i in range(N_BUCKETS)])
+    bucket_rrups = np.exp(
+        [min_logged_rrup + (i + 0.5) * bucket_range for i in range(N_BUCKETS)]
+    )
 
     # empirical calc
     if args.srf is not None:
@@ -174,7 +185,11 @@ def main():
         fault = calculate_empirical.create_fault_parameters(args.srf)
         fault.tect_type = TectType.SUBDUCTION_INTERFACE
         r_rup_vals = np.exp(
-            np.linspace(np.log(args.dist_min), np.log(max(args.dist_max, max(rrups))), args.n_val)
+            np.linspace(
+                np.log(args.dist_min),
+                np.log(max(args.dist_max, max(rrups))),
+                args.n_val,
+            )
         )
 
     # plot
@@ -250,7 +265,9 @@ def main():
         means = np.asarray([np.mean(sim_ys[mask]) for mask in masks])
         stddevs = np.asarray([np.std(sim_ys[mask]) for mask in masks])
 
-        plt.errorbar(bucket_rrups, means, stddevs, fmt='o', zorder=50, color="black", capsize=6)
+        plt.errorbar(
+            bucket_rrups, means, stddevs, fmt="o", zorder=50, color="black", capsize=6
+        )
 
         # plot formatting
         plt.legend(loc="best", fontsize=9, numpoints=1)
@@ -261,13 +278,16 @@ def main():
         ymax = max(np.max(sim_ys), np.max(obs_ys))
         ymin = min(np.min(sim_ys), np.min(obs_ys))
         plt.ylim(top=ymax * 1.27)
-        plt.xlim(1e-1, max(1e2, np.max(rrups)*1.1))
+        plt.xlim(1e-1, max(1e2, np.max(rrups) * 1.1))
         fig.set_tight_layout(True)
         plt.savefig(
-            os.path.join(args.out_dir, "%s_with_Rrup_%s.png" % (print_name, args.run_name)), dpi=400
+            os.path.join(
+                args.out_dir, "%s_with_Rrup_%s.png" % (print_name, args.run_name)
+            ),
+            dpi=400,
         )
         plt.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
