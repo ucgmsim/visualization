@@ -32,12 +32,18 @@ def load_args():
     # read
     parser = ArgumentParser(
         description="Plots 3 components for simulated seismograms. "
-                    "One is taken as a benchmark, with the other a comparison."
+        "One is taken as a benchmark, with the other a comparison."
     )
 
-    parser.add_argument("benchmark", help="path to benchmark binary file", type=os.path.abspath)
-    parser.add_argument("comparison", help="path binary file to compare with", type=os.path.abspath)
-    parser.add_argument("out", help="output folder to place plots", type=os.path.abspath)
+    parser.add_argument(
+        "benchmark", help="path to benchmark binary file", type=os.path.abspath
+    )
+    parser.add_argument(
+        "comparison", help="path binary file to compare with", type=os.path.abspath
+    )
+    parser.add_argument(
+        "out", help="output folder to place plots", type=os.path.abspath
+    )
     parser.add_argument(
         "--n_stations",
         default=-1,
@@ -78,12 +84,21 @@ def load_station_inter(benchmark_bb: BBSeis, comparison_bb: BBSeis, verbose=Fals
     both = np.isin(benchmark_stations, comparison_stations)
     if verbose:
         print(
-            "n_stations: {} benchmark, {} comparison, intersection: {}".format(benchmark_stations.size, comparison_stations.size, np.sum(both))
+            "n_stations: {} benchmark, {} comparison, intersection: {}".format(
+                benchmark_stations.size, comparison_stations.size, np.sum(both)
+            )
         )
     return benchmark_stations[both]
 
 
-def plot_station(station_name, output_directory, benchmark_bb, comparison_bb, tmax=None, verbose=False):
+def plot_station(
+    station_name,
+    output_directory,
+    benchmark_bb,
+    comparison_bb,
+    tmax=None,
+    verbose=False,
+):
     """Creates a waveform plot for a specific station.
     """
 
@@ -161,7 +176,7 @@ def plot_station(station_name, output_directory, benchmark_bb, comparison_bb, tm
                     linewidth=1,
                 )
             if j == 2:
-                line.set_label(['Benchmark', 'Comparison'][i])
+                line.set_label(["Benchmark", "Comparison"][i])
                 ax.legend()
 
             if i == 1 and j == 0:
@@ -219,7 +234,9 @@ def main():
         stations = np.random.choice(stations, args.n_stations, replace=False)
 
     p = Pool(args.nproc)
-    msgs = [(s, args.out, benchmark_bb, comparison_bb, args.tmax, args.v) for s in stations]
+    msgs = [
+        (s, args.out, benchmark_bb, comparison_bb, args.tmax, args.v) for s in stations
+    ]
     p.starmap(plot_station, msgs)
 
 
