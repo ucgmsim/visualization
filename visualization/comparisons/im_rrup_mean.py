@@ -151,9 +151,7 @@ def main():
     sim_ims = load_im_file(args.sim, comp=args.comp)
     obs_ims = load_im_file(args.obs, comp=args.comp)
 
-    im_names = [
-        "pSA_5.0"
-    ]  # np.intersect1d(obs_ims.dtype.names[2:], sim_ims.dtype.names[2:])
+    im_names = np.intersect1d(obs_ims.dtype.names[2:], sim_ims.dtype.names[2:])
 
     os_idx = argsearch(obs_ims.station, sim_ims.station)
     ls_idx = argsearch(name_rrup["f0"], sim_ims.station)
@@ -221,7 +219,7 @@ def main():
             markeredgewidth=None,
             markersize=1,
             markeredgecolor="#666666",
-            label="Observed",
+            label="Empiricals with correct vs30",
         )
 
         # emp plot
@@ -262,11 +260,23 @@ def main():
                     linewidth=3,
                 )
 
-        means = np.asarray([np.mean(sim_ys[mask]) for mask in masks])
-        stddevs = np.asarray([np.std(sim_ys[mask]) for mask in masks])
+        means = np.asarray([np.mean(np.log(sim_ys[mask])) for mask in masks])
+        stddevs = np.asarray([np.std(np.log(sim_ys[mask])) for mask in masks])
 
+        # The top row of the error bar array must be the bottom error, the bottom row is the top error
         plt.errorbar(
-            bucket_rrups, means, stddevs, fmt="o", zorder=50, color="black", capsize=6
+            bucket_rrups,
+            np.exp(means),
+            np.vstack(
+                (
+                    np.exp(means) - np.exp(means - stddevs),
+                    np.exp(means + stddevs) - np.exp(means),
+                )
+            ),
+            fmt="o",
+            zorder=50,
+            color="black",
+            capsize=6,
         )
 
         # plot formatting
