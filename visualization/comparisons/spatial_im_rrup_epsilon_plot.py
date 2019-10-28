@@ -46,7 +46,7 @@ def load_args():
         help="GMPE param DistMax, default 100.0 km",
     )
     parser.add_argument(
-        "--n_val", default=51.0, type=float, help="GMPE param n_val, default 51.0"
+        "--n_val", default=51, type=int, help="GMPE param n_val, default 51"
     )
     parser.add_argument(
         "--out_file",
