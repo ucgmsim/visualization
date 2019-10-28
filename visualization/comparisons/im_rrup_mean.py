@@ -214,11 +214,11 @@ def main():
             rrups,
             obs_ys,
             linestyle="None",
-            color="#666666",
+            color="#000000",
             marker="+",
             markeredgewidth=None,
             markersize=1,
-            markeredgecolor="#666666",
+            markeredgecolor="#000000",
             label="Empiricals with correct vs30",
         )
 

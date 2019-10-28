@@ -467,7 +467,7 @@ def add_items(args, p, gmt_temp):
         if i_s is None:
             continue
         finite_faults = True
-        for plane in xrange(len(i_s[1][1])):
+        for plane in range(len(i_s[1][1])):
             p.overlay(
                 "%s/srf%d_%d_slip.bin" % (gmt_temp, i_s[0], plane),
                 slip_cpt,
