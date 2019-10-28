@@ -68,7 +68,7 @@ def get_print_name(im, comp):
     In the case of pSA ims the period is processed such that the letter p is used in place of a decimal point and any
     trailing 0s are trimmed.
     pSA_0.02 -> pSA(0p02)
-    pSA_0.5 -> pSA(0.5)
+    pSA_0.5 -> pSA(0p5)
     pSA_1.0 -> pSA(1)
     pSA_10.0 -> pSA(10)"""
     if im.startswith("pSA_"):
