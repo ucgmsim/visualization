@@ -231,7 +231,7 @@ def load_xyz_col(args, xyz_info, i):
         len(args.xyz_cpt_max) > 1 and args.xyz_cpt_max[i] == "-"
     ):
         cpt_max = np.percentile(xyz_val[:, 2], 99.5)
-        if cpt_max > 115:
+        if cpt_max > 115 or cpt_max < 4:
             # 2 significant figures
             cpt_max = round(cpt_max, 1 - int(np.floor(np.log10(abs(cpt_max)))))
         else:
@@ -239,7 +239,9 @@ def load_xyz_col(args, xyz_info, i):
             cpt_max = round(cpt_max, -int(np.floor(np.log10(abs(cpt_max)))))
     else:
         cpt_max = (
-            args.xyz_cpt_max[0] if len(args.xyz_cpt_max) == 1 else args.xyz_cpt_max[i]
+            float(args.xyz_cpt_max[0])
+            if len(args.xyz_cpt_max) == 1
+            else float(args.xyz_cpt_max[i])
         )
 
     if args.xyz_cpt_min is None or (
@@ -252,7 +254,9 @@ def load_xyz_col(args, xyz_info, i):
             cpt_min = 0
     else:
         cpt_min = (
-            args.xyz_cpt_min[0] if len(args.xyz_cpt_min) == 1 else args.xyz_cpt_min[i]
+            float(args.xyz_cpt_min[0])
+            if len(args.xyz_cpt_min) == 1
+            else float(args.xyz_cpt_min[i])
         )
 
     if args.xyz_cpt_inc is None or (
@@ -261,7 +265,9 @@ def load_xyz_col(args, xyz_info, i):
         cpt_inc = cpt_max / 10.0
     else:
         cpt_inc = (
-            args.xyz_cpt_inc[0] if len(args.xyz_cpt_inc) == 1 else args.xyz_cpt_inc[i]
+            float(args.xyz_cpt_inc[0])
+            if len(args.xyz_cpt_inc) == 1
+            else float(args.xyz_cpt_inc[i])
         )
 
     if args.xyz_cpt_tick is None or (
@@ -270,9 +276,9 @@ def load_xyz_col(args, xyz_info, i):
         cpt_tick = cpt_inc * 2.0
     else:
         cpt_tick = (
-            args.xyz_cpt_tick[0]
+            float(args.xyz_cpt_tick[0])
             if len(args.xyz_cpt_tick) == 1
-            else args.xyz_cpt_tick[i]
+            else float(args.xyz_cpt_tick[i])
         )
 
     # overlay colour scale
