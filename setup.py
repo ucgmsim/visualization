@@ -33,7 +33,6 @@ setup(
         "visualization/gmt/plot_obs.py",
         "visualization/gmt/plot_ts.py",
         "visualization/gmt/plot_ts_sum.py",
-        "visualization/gmt/plot_transfer.py",
         "visualization/gmt/plot_faults_srf.py",
         "visualization/gmt/plot_srf_animation.py",
         "visualization/gmt/plot_deagg.py",
