@@ -577,6 +577,8 @@ def render_xyz_col(sizing, xyz_info, xyz_i):
         else args.xyz_cpt_labels[i],
         arrow_f=False if args.xyz_cpt_categorical else xyz["max"] > 0,
         arrow_b=False if args.xyz_cpt_categorical else xyz["min"] < 0,
+        categorical=args.xyz_cpt_categorical,
+        intervals=args.xyz_cpt_intervals,
     )
 
     p.sites(gmt.sites_major)
