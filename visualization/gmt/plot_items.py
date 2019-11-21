@@ -103,8 +103,19 @@ def get_args():
     arg("--xyz-cpt", help="CPT to use for overlay data", default="hot")
     arg("--xyz-cpt-invert", help="inverts CPT", action="store_true")
     arg(
+        "--xyz-cpt-continuous",
+        help="generate continuous colour change CPT",
+        action="store_true",
+    )
+    arg(
+        "--xyz-cpt-continuing",
+        help="background/foreground matches colors at ends of CPT",
+        action="store_true",
+    )
+    arg("--xyz-cpt-asis", help="don't processes input CPT", action="store_true")
+    arg(
         "--xyz-cpt-categorical",
-        help="colour scale as discreet values",
+        help="colour scale as discreet values, implies --xyz-cpt-asis",
         action="store_true",
     )
     arg(
@@ -125,7 +136,16 @@ def get_args():
     arg("--xyz-cpt-fg", help="overlay colour above CPT max, below min if invert")
     arg("--xyz-grid", help="display as grid instead of points", action="store_true")
     arg("--xyz-grid-automask", help="crop area further than dist from points eg: 8k")
-    arg("--xyz-grid-contours", help="add contour lines", action="store_true")
+    arg(
+        "--xyz-grid-contours",
+        help="add contour lines from CPT increments",
+        action="store_true",
+    )
+    arg(
+        "--xyz-grid-contours-inc",
+        help="add contour lines with this increment",
+        type=float,
+    )
     arg("--xyz-grid-type", help="interpolation program to use", default="surface")
     arg(
         "--xyz-grid-search",
@@ -283,17 +303,23 @@ def load_xyz_col(args, xyz_info, i):
 
     # overlay colour scale
     col_cpt = os.path.join(swd, "cpt.cpt")
-    gmt.makecpt(
-        args.xyz_cpt,
-        col_cpt,
-        cpt_min,
-        cpt_max,
-        inc=cpt_inc,
-        invert=args.xyz_cpt_invert,
-        bg=args.xyz_cpt_bg,
-        fg=args.xyz_cpt_fg,
-        wd=swd,
-    )
+    if args.xyz_cpt_categorical or args.xyz_cpt_asis:
+        # still using auto increment calculated for table2grd climit
+        copy(args.xyz_cpt, col_cpt)
+    else:
+        gmt.makecpt(
+            args.xyz_cpt,
+            col_cpt,
+            cpt_min,
+            cpt_max,
+            inc=cpt_inc,
+            invert=args.xyz_cpt_invert,
+            continuous=args.xyz_cpt_continuous,
+            continuing=args.xyz_cpt_continuing,
+            bg=args.xyz_cpt_bg,
+            fg=args.xyz_cpt_fg,
+            wd=swd,
+        )
 
     # grid
     if args.xyz_grid:
@@ -556,7 +582,9 @@ def render_xyz_col(sizing, xyz_info, xyz_i):
     else:
         grd_file = "%s/overlay.nc" % (pwd)
         p.overlay(grd_file, "cpt.cpt", transparency=args.xyz_transparency)
-        if args.xyz_grid_contours:
+        if args.xyz_grid_contours_inc is not None:
+            p.contours(grd_file, interval=args.xyz_grid_contours_inc)
+        elif args.xyz_grid_contours:
             # use intervals from cpt file
             p.contours(grd_file, interval="cpt.cpt")
     if args.xyz_landmask or "perimiter" in xyz_info:
