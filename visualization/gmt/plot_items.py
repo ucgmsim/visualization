@@ -121,7 +121,7 @@ def get_args():
     arg(
         "--xyz-cpt-gap",
         help="if categorical: gap between CPT scale values, centre align labels",
-        type=float,
+        default="",
     )
     arg(
         "--xyz-cpt-intervals",
@@ -612,7 +612,7 @@ def render_xyz_col(sizing, xyz_info, xyz_i):
         arrow_b=False if args.xyz_cpt_categorical else xyz["min"] < 0,
         categorical=args.xyz_cpt_categorical,
         intervals=args.xyz_cpt_intervals,
-        gap=str(args.xyz_cpt_gap) if args.xyz_cpt_gap is not None else "",
+        gap=args.xyz_cpt_gap,
     )
 
     p.sites(gmt.sites_major)
