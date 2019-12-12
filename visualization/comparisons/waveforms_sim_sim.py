@@ -6,6 +6,7 @@ USAGE: run with -h parameter
 sample command:
 python waveforms_sim_sim.py BB1/Acc/BB.bin BB2/Acc/BB.bin output_directory
 """
+from typing import Union
 
 import matplotlib as mpl
 
@@ -18,11 +19,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from qcore.timeseries import BBSeis
+from qcore.timeseries import BBSeis, LFSeis, HFSeis
 
 # files that contain the 3 components (text based)
 # must be in same order as binary results (x, y, z)
 extensions = [".000", ".090", ".ver"]
+
+BINARY_FORMATS = {"BB": BBSeis, "LF": LFSeis, "HF": HFSeis}
 
 
 def load_args():
@@ -44,6 +47,7 @@ def load_args():
     parser.add_argument(
         "out", help="output folder to place plots", type=os.path.abspath
     )
+    parser.add_argument("--type", default="BB", choices=BINARY_FORMATS)
     parser.add_argument(
         "--n_stations",
         default=-1,
@@ -60,8 +64,14 @@ def load_args():
     args = parser.parse_args()
 
     # validate
-    assert os.path.isfile(args.benchmark)
-    assert os.path.isfile(args.comparison)
+    if args.type == "LF":
+        # LF uses the directory
+        assert os.path.isdir(args.benchmark)
+        assert os.path.isdir(args.comparison)
+    else:
+        # HF and BB have files
+        assert os.path.isfile(args.benchmark)
+        assert os.path.isfile(args.comparison)
 
     if args.tmax is not None and args.tmax <= 0:
         parser.error("Duration -t/--tmax must be greater than 0")
@@ -71,14 +81,18 @@ def load_args():
     return args
 
 
-def load_station_inter(benchmark_bb: BBSeis, comparison_bb: BBSeis, verbose=False):
+def load_station_inter(
+    benchmark_binary: Union[BBSeis, LFSeis, HFSeis],
+    comparison_binary: Union[BBSeis, LFSeis, HFSeis],
+    verbose=False,
+):
     """
     Determine stations available for plotting.
     returns numpy array of intersecting station names
     """
     # stations available in sim
-    benchmark_stations = benchmark_bb.stations.name
-    comparison_stations = comparison_bb.stations.name
+    benchmark_stations = benchmark_binary.stations.name
+    comparison_stations = comparison_binary.stations.name
 
     # interested only if station available in both
     both = np.isin(benchmark_stations, comparison_stations)
@@ -94,8 +108,8 @@ def load_station_inter(benchmark_bb: BBSeis, comparison_bb: BBSeis, verbose=Fals
 def plot_station(
     station_name,
     output_directory,
-    benchmark_bb,
-    comparison_bb,
+    benchmark_binary: Union[BBSeis, LFSeis, HFSeis],
+    comparison_binary: Union[BBSeis, LFSeis, HFSeis],
     tmax=None,
     verbose=False,
 ):
@@ -110,16 +124,18 @@ def plot_station(
 
     # Load sim data
     bench_yx = (
-        benchmark_bb.vel(station_name).transpose(),
-        np.arange(benchmark_bb.nt) * benchmark_bb.dt + benchmark_bb.start_sec,
+        benchmark_binary.vel(station_name).transpose(),
+        np.arange(benchmark_binary.nt) * benchmark_binary.dt
+        + benchmark_binary.start_sec,
     )
     x_max = max(x_max, bench_yx[1][-1])
     data_to_plot.append(bench_yx)
 
     # Load sim data
     comparison_yx = (
-        comparison_bb.vel(station_name).transpose(),
-        np.arange(comparison_bb.nt) * comparison_bb.dt + comparison_bb.start_sec,
+        comparison_binary.vel(station_name).transpose(),
+        np.arange(comparison_binary.nt) * comparison_binary.dt
+        + comparison_binary.start_sec,
     )
     x_max = max(x_max, comparison_yx[1][-1])
     data_to_plot.append(comparison_yx)
@@ -224,10 +240,16 @@ def plot_station(
 def main():
     args = load_args()
 
-    benchmark_bb = BBSeis(args.benchmark)
-    comparison_bb = BBSeis(args.comparison)
+    binary_loader = BINARY_FORMATS[args.type]
+    benchmark_binary = binary_loader(args.benchmark)
+    comparison_binary = binary_loader(args.comparison)
+    global extensions
+    extensions = [
+        f".{binary_loader.COMP_NAME[key]}"
+        for key in sorted(binary_loader.COMP_NAME.keys())
+    ]
 
-    stations = load_station_inter(benchmark_bb, comparison_bb, args.v)
+    stations = load_station_inter(benchmark_binary, comparison_binary, args.v)
 
     # Select stations randomly
     if 0 < args.n_stations < stations.shape[0]:
@@ -235,7 +257,8 @@ def main():
 
     p = Pool(args.nproc)
     msgs = [
-        (s, args.out, benchmark_bb, comparison_bb, args.tmax, args.v) for s in stations
+        (s, args.out, benchmark_binary, comparison_binary, args.tmax, args.v)
+        for s in stations
     ]
     p.starmap(plot_station, msgs)
 
