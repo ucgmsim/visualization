@@ -244,7 +244,10 @@ def main():
     benchmark_binary = binary_loader(args.benchmark)
     comparison_binary = binary_loader(args.comparison)
     global extensions
-    extensions = [f".{binary_loader.COMP_NAME[key]}" for key in sorted(binary_loader.COMP_NAME.keys())]
+    extensions = [
+        f".{binary_loader.COMP_NAME[key]}"
+        for key in sorted(binary_loader.COMP_NAME.keys())
+    ]
 
     stations = load_station_inter(benchmark_binary, comparison_binary, args.v)
 
