@@ -12,7 +12,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 corners = os.path.join(script_dir, "resources", "SimAtlasFaults.csv")
 balls = os.path.join(script_dir, "resources", "gmt.bb")
 
-mom2mag = lambda mom : (2 / 3. * math.log(mom) / math.log(10.0)) - 10.7
+mom2mag = lambda mom: (2 / 3.0 * math.log(mom) / math.log(10.0)) - 10.7
 
 parser = ArgumentParser()
 arg = parser.add_argument
@@ -22,19 +22,41 @@ args = parser.parse_args()
 
 p = gmt.GMTPlot("proximity_plot.ps")
 # in a future release of GMT, this might be possible
-#p.spacial("M" + str(args.lon) + "/" + str(args.lat) + "/", ("-200", "200", "-200", "200+uk"), sizing=8, x_shift=2, y_shift=2)
-p.spacial("M", (args.lon-1.3, args.lon+1.3, args.lat-1, args.lat+1), sizing=8, x_shift=1, y_shift=1)
+# p.spacial("M" + str(args.lon) + "/" + str(args.lat) + "/", ("-200", "200", "-200", "200+uk"), sizing=8, x_shift=2, y_shift=2)
+p.spacial(
+    "M",
+    (args.lon - 1.3, args.lon + 1.3, args.lat - 1, args.lat + 1),
+    sizing=8,
+    x_shift=1,
+    y_shift=1,
+)
 p.basemap()
 
 paths = []
 with open(corners, "r") as c:
     c.readline()
     for l in c:
-        paths.append(l.split(",")[9].replace("]|", "\n").replace("|", " ").replace("[[", ">\n").replace("[", "").replace("]", "").replace("\n ", "\n"))
+        paths.append(
+            l.split(",")[9]
+            .replace("]|", "\n")
+            .replace("|", " ")
+            .replace("[[", ">\n")
+            .replace("[", "")
+            .replace("]", "")
+            .replace("\n ", "\n")
+        )
 paths = "".join(paths)
-p.path(paths, is_file=False, close=True, colour="black", width="1.0p", cols='1,0', split="-")
+p.path(
+    paths,
+    is_file=False,
+    close=True,
+    colour="black",
+    width="1.0p",
+    cols="1,0",
+    split="-",
+)
 paths = "\n".join([">\n" + "\n".join(x.split("\n")[1:3]) for x in paths.split(">")])
-p.path(paths, is_file=False, colour="black", width="1.5p", cols='1,0')
+p.path(paths, is_file=False, colour="black", width="1.5p", cols="1,0")
 
 
 p.ticks()
@@ -60,8 +82,18 @@ if len(b56) > 0:
 if len(b6) > 0:
     p.beachballs("\n".join(b6), scale=0.2, colour="red")
 
-p.points("{} {}\n".format(args.lon, args.lat), is_file=False, shape="c", fill="black", size=0.1, line="white", line_thickness="1p")
-p.text(args.lon, args.lat, "site", dy=-0.12, align="CT", size="14p", box_fill="white@40")
+p.points(
+    "{} {}\n".format(args.lon, args.lat),
+    is_file=False,
+    shape="c",
+    fill="black",
+    size=0.1,
+    line="white",
+    line_thickness="1p",
+)
+p.text(
+    args.lon, args.lat, "site", dy=-0.12, align="CT", size="14p", box_fill="white@40"
+)
 p.dist_scale("R", "B", "25", pos="rel", dx=0.5, dy=0.5)
 
 p.finalise()
