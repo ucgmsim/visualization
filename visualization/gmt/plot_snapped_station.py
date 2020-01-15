@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
+import os
+from shutil import copyfile, rmtree
+from tempfile import mkdtemp
 
 from qcore import geo
 from qcore import gmt
 
 GRID = "/nesi/nobackup/nesi00213/seistech/sites/18p6/non_uniform_whole_nz_with_real_stations-hh400_v18p6_land.ll"
+VS30 = "/nesi/nobackup/nesi00213/seistech/vs30/19p1/nz_vs30_nz-specific-v19p1_100m.grd"
 
 parser = ArgumentParser()
 parser.add_argument("closest_lon", type=float)
@@ -24,10 +28,13 @@ min_lat = args.lat - (max_lat - args.lat)
 max_lon = args.lon + (args.lon - min_lon)
 region = (min_lon, max_lon, min_lat, max_lat)
 
-p = gmt.GMTPlot("snapped_station.ps")
+wd = mkdtemp()
+img = os.path.join(wd, "snapped_station")
+cpt = os.path.join(wd, "vs30.cpt")
+p = gmt.GMTPlot(img + ".ps")
 p.spacial("M", region, sizing=9, x_shift=1, y_shift=2)
-gmt.makecpt("rainbow", "vs30.cpt", 100, 800, continuing=True)
-p.overlay("nz_vs30_nz-specific-v19p1_100m.grd", cpt="vs30.cpt")
+gmt.makecpt("rainbow", cpt, 100, 800, continuing=True)
+p.overlay(VS30, cpt=cpt)
 p.points(GRID, shape="x", size=0.4, line_thickness="2p", line="black")
 
 p.points(
@@ -75,7 +82,7 @@ p.ticks(major="0.05d", minor="0.01d")
 p.cpt_scale(
     "R",
     "M",
-    "vs30.cpt",
+    cpt,
     pos="rel_out",
     dx=0.2,
     label="Vs30 (m/s)",
@@ -85,3 +92,7 @@ p.cpt_scale(
 )
 p.finalise()
 p.png(background="white")
+
+# allow setting output location?
+copyfile(img + ".png", "./snapped_station.png")
+rmtree(wd)
