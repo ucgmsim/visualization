@@ -28,6 +28,34 @@ min_lat = args.lat - (max_lat - args.lat)
 max_lon = args.lon + (args.lon - min_lon)
 region = (min_lon, max_lon, min_lat, max_lat)
 
+# automatic label positioning, doesn't work over geographic quadrants
+if abs(args.lat - args.closest_lat) > abs(args.lon - args.closest_lon):
+    # labels above/below
+    dx = 0
+    if args.lat > args.closest_lat:
+        # site label above, closest site label below
+        site_align = "CB"
+        closest_align = "CT"
+        dy = 0.12
+    else:
+        # opposite
+        site_align = "CT"
+        closest_align = "CB"
+        dy = -0.12
+else:
+    # labels to the side
+    dy = 0
+    if args.lon > args.closest_lon:
+        # site label to right, closest site label to left
+        site_align = "LM"
+        closest_align = "RM"
+        dx = -0.12
+    else:
+        # opposite
+        site_align = "RM"
+        closest_align = "LM"
+        dx = 0.12
+
 wd = mkdtemp()
 img = os.path.join(wd, "snapped_station")
 cpt = os.path.join(wd, "vs30.cpt")
@@ -35,7 +63,7 @@ p = gmt.GMTPlot(img + ".ps")
 p.spacial("M", region, sizing=9, x_shift=1, y_shift=2)
 gmt.makecpt("rainbow", cpt, 100, 800, continuing=True)
 p.overlay(VS30, cpt=cpt)
-p.points(GRID, shape="x", size=0.4, line_thickness="2p", line="black")
+p.points(GRID, shape="s", size=0.2, line_thickness="2p", line="black")
 
 p.points(
     "{} {}\n".format(args.lon, args.lat),
@@ -50,30 +78,59 @@ p.points(
     "{} {}\n".format(args.closest_lon, args.closest_lat),
     is_file=False,
     shape="c",
-    size=0.4,
+    size=0.2,
     line_thickness="2p",
     line="white",
 )
 p.text(
-    args.lon, args.lat, "site", dy=-0.12, align="CT", size="14p", box_fill="white@40"
+    args.lon,
+    args.lat,
+    "site",
+    dx=-dx,
+    dy=dy,
+    align=site_align,
+    size="14p",
+    box_fill="white@40",
+)
+p.text(
+    args.closest_lon,
+    args.closest_lat,
+    "closest site",
+    dx=dx * 1.5,
+    dy=-dy * 1.5,
+    align=closest_align,
+    size="14p",
+    box_fill="white@40",
 )
 p.text(
     min_lon,
     min_lat,
-    "Site Vs30: {}".format(args.site_vs30),
+    "Site Vs30: {} {}".format(args.site_vs30, "m/s" * (args.site_vs30 is not None)),
     size="20p",
     align="LB",
     dx=0.2,
-    dy=0.2,
+    dy=0.8,
     box_fill="white@40",
 )
 p.text(
-    max_lon,
+    min_lon,
     min_lat,
-    "Closest Site Vs30: {}".format(args.closest_vs30),
+    "Closest Site Vs30: {} m/s".format(args.closest_vs30),
     size="20p",
-    align="RB",
-    dx=-0.2,
+    align="LB",
+    dx=0.2,
+    dy=0.5,
+    box_fill="white@40",
+)
+p.text(
+    min_lon,
+    min_lat,
+    "Distance: {:.2f} km".format(
+        geo.ll_dist(args.closest_lon, args.closest_lat, args.lon, args.lat)
+    ),
+    size="20p",
+    align="LB",
+    dx=0.2,
     dy=0.2,
     box_fill="white@40",
 )
