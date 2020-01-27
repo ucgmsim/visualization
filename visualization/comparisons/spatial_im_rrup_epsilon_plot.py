@@ -98,6 +98,7 @@ def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
     gmm = empirical_factory.determine_gmm(fault, im, model_dict)
     if gmm is None:
         return np.asarray([]), np.asarray([])
+    gmm = gmm[0]
     # https://github.com/ucgmsim/post-processing/blob/master/im_processing/computations/GMPE.py
     # line 145
     r_jbs_vals = np.sqrt(np.maximum(0, r_rup_vals ** 2 - fault.ztor ** 2))
