@@ -372,7 +372,8 @@ def find_srfs(args, gmt_temp):
             srf_files.extend(glob(ex))
 
     # slip cpt
-    if abs(srf_0) == len(srf_files):
+    print(abs(srf_0) == len(srf_files), len(srf_files), srf_0, "will be plotting slip")
+    if abs(srf_0) != len(srf_files):
         # will be plotting slip
         slip_cpt = "%s/slip.cpt" % (gmt_temp)
         gmt.makecpt(gmt.CPTS["slip"], slip_cpt, 0, args.slip_max)
@@ -555,7 +556,7 @@ def add_items(args, p, gmt_temp):
             pos="rel_out",
             dy="0.5i",
             label="Slip (cm)",
-            length=map_width * 0.618,
+            length=7 * 0.618,
         )
 
 
@@ -615,7 +616,7 @@ def render_xyz_col(sizing, xyz_info, xyz_i):
         gap=args.xyz_cpt_gap,
     )
 
-    p.sites(gmt.sites_major)
+    #p.sites(gmt.sites_major)
 
     p.finalise()
     p.png(out_dir=".", dpi=args.dpi, background="white")
@@ -646,6 +647,12 @@ i_srf_data = i_srf_data.get()
 xyts_corners = xyts_corners.get()
 
 add_items(args, p, gmt_temp)
+
+with open('/scale_wlg_persistent/filesets/home/jmotha/20mar_NZGS_fault_station_map/24_nzgs.xyz') as ll_file:
+    for line in ll_file:
+        lat, lon, label = line.split()
+        p.text(lat, lon, label, dy=0.05)
+
 if args.xyz:
     p.leave()
     xyz_pngs = pool.map_async(
