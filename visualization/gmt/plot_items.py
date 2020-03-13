@@ -156,6 +156,17 @@ def get_args():
         "--xyz-grid-search",
         help="search radius for interpolation eg: 5k (only m|s units for surface)",
     )
+    arg(
+        "--labels-file",
+        help="file containing 'lat lon label' to be added to the map"
+    )
+    arg(
+        "--disable_city_labels",
+        dest="enable_city_labels",
+        help="Flag to disable city_labels - these are plotted by default",
+        default=True,
+        action="store_false"
+    )
     arg("-n", "--nproc", help="max number of processes", type=int, default=1)
     arg("-d", "--dpi", help="render DPI", type=int, default=300)
 
@@ -616,7 +627,8 @@ def render_xyz_col(sizing, xyz_info, xyz_i):
         gap=args.xyz_cpt_gap,
     )
 
-    #p.sites(gmt.sites_major)
+    if args.enable_city_labels:
+        p.sites(gmt.sites_major)
 
     p.finalise()
     p.png(out_dir=".", dpi=args.dpi, background="white")
@@ -648,10 +660,11 @@ xyts_corners = xyts_corners.get()
 
 add_items(args, p, gmt_temp)
 
-with open('/scale_wlg_persistent/filesets/home/jmotha/20mar_NZGS_fault_station_map/24_nzgs.xyz') as ll_file:
-    for line in ll_file:
-        lat, lon, label = line.split()
-        p.text(lat, lon, label, dy=0.05)
+if args.label_file is not None:
+    with open(args.label_file) as ll_file:
+        for line in ll_file:
+            lat, lon, label = line.split()
+            p.text(lat, lon, label, dy=0.05)
 
 if args.xyz:
     p.leave()
