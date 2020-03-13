@@ -29,6 +29,7 @@ from qcore import srf
 from qcore import xyts
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
+MAP_WIDTH = 7
 
 
 def get_args():
@@ -377,19 +378,18 @@ def find_srfs(args, gmt_temp):
         for ex in args.srf_only_outline:
             srf_files.extend(glob(ex))
     # to determine if srf_file is only outline or full
-    srf_0 = -len(srf_files)
+    n_srf_outline = len(srf_files)
     if args.srf_files is not None:
         for ex in args.srf_files:
             srf_files.extend(glob(ex))
 
     # slip cpt
-    print(abs(srf_0) == len(srf_files), len(srf_files), srf_0, "will be plotting slip")
-    if abs(srf_0) != len(srf_files):
+    if n_srf_outline < len(srf_files):
         # will be plotting slip
         slip_cpt = "%s/slip.cpt" % (gmt_temp)
         gmt.makecpt(gmt.CPTS["slip"], slip_cpt, 0, args.slip_max)
 
-    return srf_files, srf_0
+    return srf_files, n_srf_outline
 
 
 def find_xyts(args):
@@ -434,7 +434,7 @@ def load_sizing(xyz_info, wd):
     ps_file = "%s/size.ps" % (pwd)
     os.makedirs(pwd)
 
-    map_width = 7
+    map_width = MAP_WIDTH
 
     p = gmt.GMTPlot(ps_file)
     if args.region is None:
@@ -467,6 +467,7 @@ def load_sizing(xyz_info, wd):
         "region": region,
         "page_width": page_width,
         "page_height": page_height,
+        "map_width": map_width,
     }
 
 
@@ -506,7 +507,7 @@ def basemap(args, sizing, wd):
     return p
 
 
-def add_items(args, p, gmt_temp):
+def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
     # plot velocity model corners
     p.path(vm_corners, is_file=False, close=True, width="0.5p", split="-")
     # add SRF slip
@@ -567,7 +568,7 @@ def add_items(args, p, gmt_temp):
             pos="rel_out",
             dy="0.5i",
             label="Slip (cm)",
-            length=7 * 0.618,
+            length=map_width * 0.618,
         )
 
 
@@ -658,10 +659,10 @@ xyz_cols = xyz_cols.get()
 i_srf_data = i_srf_data.get()
 xyts_corners = xyts_corners.get()
 
-add_items(args, p, gmt_temp)
+add_items(args, p, gmt_temp, map_width=sizing['map_width'])
 
-if args.label_file is not None:
-    with open(args.label_file) as ll_file:
+if args.labels_file is not None:
+    with open(args.labels_file) as ll_file:
         for line in ll_file:
             lat, lon, label = line.split()
             p.text(lat, lon, label, dy=0.05)
