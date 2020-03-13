@@ -437,8 +437,6 @@ def load_sizing(xyz_info, wd):
     ps_file = "%s/size.ps" % (pwd)
     os.makedirs(pwd)
 
-    map_width = MAP_WIDTH
-
     p = gmt.GMTPlot(ps_file)
     if args.region is None:
         if xyz_info is not None:
@@ -457,7 +455,7 @@ def load_sizing(xyz_info, wd):
         region = list(map(float, args.region.split("/")))
     if region[1] < -90 and region[0] > 90:
         region[1] += 360
-    p.spacial("M", region, sizing="%si" % (map_width))
+    p.spacial("M", region, sizing="%si" % (MAP_WIDTH))
     size = gmt.mapproject(region[1], region[3], wd=pwd, unit="inch")
     p.leave()
 
@@ -470,7 +468,7 @@ def load_sizing(xyz_info, wd):
         "region": region,
         "page_width": page_width,
         "page_height": page_height,
-        "map_width": map_width,
+        "map_width": MAP_WIDTH,
     }
 
 
