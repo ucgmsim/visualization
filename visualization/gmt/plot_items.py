@@ -29,6 +29,7 @@ from qcore import srf
 from qcore import xyts
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
+MAP_WIDTH = 7
 
 
 def get_args():
@@ -155,6 +156,14 @@ def get_args():
     arg(
         "--xyz-grid-search",
         help="search radius for interpolation eg: 5k (only m|s units for surface)",
+    )
+    arg("--labels-file", help="file containing 'lat lon label' to be added to the map")
+    arg(
+        "--disable_city_labels",
+        dest="enable_city_labels",
+        help="Flag to disable city_labels - these are plotted by default",
+        default=True,
+        action="store_false",
     )
     arg("-n", "--nproc", help="max number of processes", type=int, default=1)
     arg("-d", "--dpi", help="render DPI", type=int, default=300)
@@ -360,24 +369,30 @@ def load_xyz_col(args, xyz_info, i):
 
 
 def find_srfs(args, gmt_temp):
+    """
+    :param args: argparse arguments
+    :param gmt_temp: GMT temporary working dir
+    :return:  tuple(List of SRF files
+    , negative number of how many outline files there are - this is used in a range later to split the behaviour)
+    """
     # find srf
     srf_files = []
     if args.srf_only_outline is not None:
         for ex in args.srf_only_outline:
             srf_files.extend(glob(ex))
     # to determine if srf_file is only outline or full
-    srf_0 = -len(srf_files)
+    n_srf_outline = len(srf_files)
     if args.srf_files is not None:
         for ex in args.srf_files:
             srf_files.extend(glob(ex))
 
     # slip cpt
-    if abs(srf_0) == len(srf_files):
+    if n_srf_outline < len(srf_files):
         # will be plotting slip
         slip_cpt = "%s/slip.cpt" % (gmt_temp)
         gmt.makecpt(gmt.CPTS["slip"], slip_cpt, 0, args.slip_max)
 
-    return srf_files, srf_0
+    return srf_files, -n_srf_outline
 
 
 def find_xyts(args):
@@ -422,8 +437,6 @@ def load_sizing(xyz_info, wd):
     ps_file = "%s/size.ps" % (pwd)
     os.makedirs(pwd)
 
-    map_width = 7
-
     p = gmt.GMTPlot(ps_file)
     if args.region is None:
         if xyz_info is not None:
@@ -442,7 +455,7 @@ def load_sizing(xyz_info, wd):
         region = list(map(float, args.region.split("/")))
     if region[1] < -90 and region[0] > 90:
         region[1] += 360
-    p.spacial("M", region, sizing="%si" % (map_width))
+    p.spacial("M", region, sizing="%si" % (MAP_WIDTH))
     size = gmt.mapproject(region[1], region[3], wd=pwd, unit="inch")
     p.leave()
 
@@ -455,6 +468,7 @@ def load_sizing(xyz_info, wd):
         "region": region,
         "page_width": page_width,
         "page_height": page_height,
+        "map_width": MAP_WIDTH,
     }
 
 
@@ -494,7 +508,7 @@ def basemap(args, sizing, wd):
     return p
 
 
-def add_items(args, p, gmt_temp):
+def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
     # plot velocity model corners
     p.path(vm_corners, is_file=False, close=True, width="0.5p", split="-")
     # add SRF slip
@@ -615,7 +629,8 @@ def render_xyz_col(sizing, xyz_info, xyz_i):
         gap=args.xyz_cpt_gap,
     )
 
-    p.sites(gmt.sites_major)
+    if args.enable_city_labels:
+        p.sites(gmt.sites_major)
 
     p.finalise()
     p.png(out_dir=".", dpi=args.dpi, background="white")
@@ -645,7 +660,14 @@ xyz_cols = xyz_cols.get()
 i_srf_data = i_srf_data.get()
 xyts_corners = xyts_corners.get()
 
-add_items(args, p, gmt_temp)
+add_items(args, p, gmt_temp, map_width=sizing["map_width"])
+
+if args.labels_file is not None:
+    with open(args.labels_file) as ll_file:
+        for line in ll_file:
+            lat, lon, label = line.split()
+            p.text(lat, lon, label, dy=0.05)
+
 if args.xyz:
     p.leave()
     xyz_pngs = pool.map_async(
