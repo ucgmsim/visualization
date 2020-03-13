@@ -157,16 +157,13 @@ def get_args():
         "--xyz-grid-search",
         help="search radius for interpolation eg: 5k (only m|s units for surface)",
     )
-    arg(
-        "--labels-file",
-        help="file containing 'lat lon label' to be added to the map"
-    )
+    arg("--labels-file", help="file containing 'lat lon label' to be added to the map")
     arg(
         "--disable_city_labels",
         dest="enable_city_labels",
         help="Flag to disable city_labels - these are plotted by default",
         default=True,
-        action="store_false"
+        action="store_false",
     )
     arg("-n", "--nproc", help="max number of processes", type=int, default=1)
     arg("-d", "--dpi", help="render DPI", type=int, default=300)
@@ -372,6 +369,12 @@ def load_xyz_col(args, xyz_info, i):
 
 
 def find_srfs(args, gmt_temp):
+    """
+    :param args: argparse arguments
+    :param gmt_temp: GMT temporary working dir
+    :return:  tuple(List of SRF files
+    , negative number of how many outline files there are - this is used in a range later to split the behaviour)
+    """
     # find srf
     srf_files = []
     if args.srf_only_outline is not None:
@@ -389,7 +392,7 @@ def find_srfs(args, gmt_temp):
         slip_cpt = "%s/slip.cpt" % (gmt_temp)
         gmt.makecpt(gmt.CPTS["slip"], slip_cpt, 0, args.slip_max)
 
-    return srf_files, n_srf_outline
+    return srf_files, -n_srf_outline
 
 
 def find_xyts(args):
@@ -659,7 +662,7 @@ xyz_cols = xyz_cols.get()
 i_srf_data = i_srf_data.get()
 xyts_corners = xyts_corners.get()
 
-add_items(args, p, gmt_temp, map_width=sizing['map_width'])
+add_items(args, p, gmt_temp, map_width=sizing["map_width"])
 
 if args.labels_file is not None:
     with open(args.labels_file) as ll_file:
