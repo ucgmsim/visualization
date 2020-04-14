@@ -22,19 +22,7 @@ import glob
 
 from qcore import shared, utils, constants, formats
 
-SIM_HOT = "hot-karim:invert 0.2 80/0/0 0/0/80"
-NON_UNIFORM_HOT = "hot-karim:invert,t-30,overlays-blue 1k:g-surface,nns-12m,contours"
-SIM_TEMPLATE = "sim_im_plot_map_{}.xyz"
-OBS_TEMPLATE = "obs_im_plot_map_{}.xyz"
-EMP_TEMPLATE = "emp_im_plot_map_{}.xyz"
-NON_UNI_EMP_TEMPLATE = "nonuniform_im_plot_map_{}_empirical.xyz"
-NON_UNI_SIM_TEMPLATE = "nonuniform_im_plot_map_{}_sim.xyz"
-NON_UNI_OBS_TEMPLATE = "nonuniform_im_plot_map_{}_obs.xyz"
-TEMPLATE_DICT = {
-    "simulated": (SIM_TEMPLATE, NON_UNI_SIM_TEMPLATE),
-    "observed": (OBS_TEMPLATE, NON_UNI_OBS_TEMPLATE),
-    "empirical": (EMP_TEMPLATE, NON_UNI_EMP_TEMPLATE),
-}
+
 COMPS = list(constants.Components.iterate_str_values())
 META_PATTERN = ["_imcalc.info", "_empirical.info"]
 
@@ -99,9 +87,7 @@ def validate_dir(parser, dir_path):
 def generate_maps():
     parser = argparse.ArgumentParser()
     parser.add_argument("imcsv_filepath", help="path to input IMcsv file")
-    parser.add_argument(
-        "station_filepath", help="path to input station_ll file path"
-    )
+    parser.add_argument("station_filepath", help="path to input station_ll file path")
     parser.add_argument(
         "-o",
         "--output_path",
@@ -133,18 +119,29 @@ def generate_maps():
     im_df = formats.load_im_file_pd(args.imcsv_filepath)
 
     xyz_df = im_df.merge(stat_df, left_on="station", right_index=True)
-    xyz_real_station_df = xyz_df[[not shared.is_virtual_station(stat) for stat in xyz_df.index.get_level_values(0)]]
+    xyz_real_station_df = xyz_df[
+        [
+            not shared.is_virtual_station(stat)
+            for stat in xyz_df.index.get_level_values(0)
+        ]
+    ]
 
     ims = im_df.columns
     columns = ["lon", "lat", *ims]
 
-    non_uniform_filepath = os.path.join(args.output_path, f'non_uniform_{run_type}_im.xyz')
-    real_station_filepath = os.path.join(args.output_path, f'real_station_{run_type}_im.xyz')
+    non_uniform_filepath = os.path.join(
+        args.output_path, f"non_uniform_{run_type}_im.xyz"
+    )
+    real_station_filepath = os.path.join(
+        args.output_path, f"real_station_{run_type}_im.xyz"
+    )
 
-    xyz_df[columns].to_csv(non_uniform_filepath, sep=' ', header=None, index=None)
-    xyz_real_station_df[columns].to_csv(real_station_filepath, sep=' ', header=None, index=None)
+    xyz_df[columns].to_csv(non_uniform_filepath, sep=" ", header=None, index=None)
+    xyz_real_station_df[columns].to_csv(
+        real_station_filepath, sep=" ", header=None, index=None
+    )
 
-    im_col_file = os.path.join(args.output_path, 'im_order.txt')
+    im_col_file = os.path.join(args.output_path, "im_order.txt")
     with open(im_col_file, "w") as fp:
         fp.write(" ".join(ims))
 
