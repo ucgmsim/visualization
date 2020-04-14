@@ -38,7 +38,7 @@ call(["gmt", "grdconvert", args.geotiff_file, "-G" + temp_nc])
 gmt.makecpt("viridis", temp_cpt, 0, 800)
 
 # would be much faster but need to add metadata
-#with h5open("temp_tiff.nc") as g:
+# with h5open("temp_tiff.nc") as g:
 #    g["x"] = np.linspace(minx, maxx, nx)
 #    g["x"].attrs["CLASS"] = b'DIMENSION_SCALE'
 #    g["x"].attrs["NAME"] = b'x'
@@ -53,7 +53,9 @@ gmt.makecpt("viridis", temp_cpt, 0, 800)
 
 #    g["z"] = array
 
-p = gmt.GMTPlot(os.path.join(wd, os.path.splitext(os.path.basename(args.geotiff_file))[0] + ".ps"))
+p = gmt.GMTPlot(
+    os.path.join(wd, os.path.splitext(os.path.basename(args.geotiff_file))[0] + ".ps")
+)
 p.spacial("X", (minx, maxx, miny, maxy), sizing="12", x_shift=1, y_shift=1)
 p.overlay(temp_nc, temp_cpt)
 p.ticks(major="500000", minor="100000")
