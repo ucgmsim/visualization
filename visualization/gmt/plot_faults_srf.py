@@ -15,7 +15,7 @@ import srf
 # title = 'NZ ERF (Stirling et al., 2012) - Subduction interface ruptures'
 title = ""
 
-faults_folder = "/home/nesi00213/PlottingData/Earthquakes"
+faults_folder = "/home01/hpc11a02/gmsim/PlottingData/Earthquakes"
 faults_historic = [
     "13Juneb2011FaultPlane.xy",
     "22Feb2011FaultPlane.xy",
@@ -45,7 +45,7 @@ srf_files = [
     "2014Jan20_Eketahuna_m6p3.srf",
 ]
 srf_files = []
-faults = "/nesi/project/nesi00213/PlottingData/Paths/faults/FAULTS_20161219.ll"
+faults = "/home01/hpc11a02/gmsim/PlottingData/Paths/faults/FAULTS_20161219.ll"
 # convert to absolute paths
 rel2abs = lambda fault_file: os.path.join(faults_folder, fault_file)
 faults_historic = map(rel2abs, faults_historic)
@@ -244,11 +244,11 @@ for i in ["ni"]:
             hyp_colour="blue",
         )
     # beachballs on top as they are smaller than fault planes
-    # p.beachballs('/nesi/project/nesi00213/PlottingData/Earthquakes/CMTData_Mw3p5_5_20170118_Cant_yesFtp.meca', \
+    # p.beachballs('/home01/hpc11a02/gmsim/PlottingData/Earthquakes/CMTData_Mw3p5_5_20170118_Cant_yesFtp.meca', \
     #        is_file = True, scale = 0.05, colour = 'black')
-    # p.beachballs('/nesi/project/nesi00213/PlottingData/Earthquakes/Hoby.meca', \
+    # p.beachballs('/home01/hpc11a02/gmsim/PlottingData/Earthquakes/Hoby.meca', \
     #        is_file = True, scale = 0.05, colour = 'black')
-    # p.beachballs('/nesi/project/nesi00213/PlottingData/Earthquakes/Ahsan.meca', \
+    # p.beachballs('/home01/hpc11a02/gmsim/PlottingData/Earthquakes/Ahsan.meca', \
     #        is_file = True, scale = 0.05, colour = 'blue')
     if i == "si" or i == "ni":
         # loop through srfs and planes

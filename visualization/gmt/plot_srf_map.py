@@ -31,7 +31,7 @@ import qcore.geo as geo
 import qcore.gmt as gmt
 import qcore.srf as srf
 
-faults = "/nesi/project/nesi00213/PlottingData/Paths/faults/FAULTS_20161219.ll"
+faults = "/home01/hpc11a02/gmsim/PlottingData/Paths/faults/FAULTS_20161219.ll"
 cpt = gmt.CPTS["slip"]
 
 # can specify here or pass as command line argument
