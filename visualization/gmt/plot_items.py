@@ -16,7 +16,6 @@ from glob import glob
 from multiprocessing import Pool
 import os
 from shutil import copy, rmtree
-import sys
 from tempfile import mkdtemp
 
 from h5py import File as h5open
