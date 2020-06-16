@@ -30,7 +30,10 @@ def plot_multiple(
     n_procs: int = 4,
     no_clobber: bool = True,
 ):
-    """
+    """Allows plotting of multiple GMT plots
+    using the specified csv files and the
+    plot_items.py script
+
     Parameters
     ----------
     plot_items_ffp: str
