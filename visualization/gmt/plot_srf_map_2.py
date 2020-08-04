@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from math import floor, log10
 import os
 from shutil import rmtree
+from subprocess import call
 import sys
 from tempfile import mkdtemp
 
@@ -14,6 +15,9 @@ import numpy as np
 import qcore.geo as geo
 import qcore.gmt as gmt
 import qcore.srf as srf
+
+sys.path.append(".")
+from srf2 import perimeter
 
 
 def get_args():
@@ -82,10 +86,14 @@ if finite_fault:
     plot_region = (x_min - 0.1, x_max + 0.1, y_min - 0.1, y_max + 0.1)
     # read all max slip values (all at once is much faster)
     seg_llslips = srf.srf2llv_py(args.srf_file, value="slip")
+    seg_lldepths = srf.srf2llv_py(args.srf_file, value="depth")
     for seg in range(len(bounds)):
         # create binary llv file for GMT overlay
         seg_llslips[seg].astype(np.float32).tofile(
             "%s/PLANES/slip_map_%d.bin" % (gmt_tmp, seg)
+        )
+        seg_lldepths[seg].astype(np.float32).tofile(
+            "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg)
         )
         values = np.append(values, seg_llslips[seg][:, -1])
         # also store tinit values retrieved previously
@@ -195,21 +203,68 @@ full_height = gmt.mapproject(
 # match height of zoomed in map with full size map
 zoom_width, zoom_height = gmt.map_width("M", full_height, plot_region, wd=gmt_tmp)
 p.spacial("M", plot_region, sizing=zoom_width, x_shift=gap, y_shift=2.5)
-p.basemap(land="lightgray", topo_cpt="grey1")
+p.basemap(topo=os.path.join(gmt.GMT_DATA, "Topo/srtm_NZ_1s.grd"), land="lightgray", topo_cpt="grey1")
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.4p", colour="red")
 for seg in range(len(bounds)):
-    p.overlay(
-        "%s/PLANES/slip_map_%d.bin" % (gmt_tmp, seg),
-        "%s/slip.cpt" % (gmt_tmp),
+    gmt.table2grd(
+        "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg),
+        "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
+        region=seg_regions[seg],
         dx=plot_dx,
-        dy=plot_dy,
+        wd=gmt_tmp,
         climit=2,
-        crop_grd="%s/PLANES/plane_%s.mask" % (gmt_tmp, seg),
-        land_crop=False,
-        custom_region=seg_regions[seg],
-        transparency=30,
     )
+    gmt.table2grd(
+        "%s/PLANES/slip_map_%d.bin" % (gmt_tmp, seg),
+        "%s/PLANES/slip_map_%d.grd" % (gmt_tmp, seg),
+        region=seg_regions[seg],
+        dx=plot_dx,
+        wd=gmt_tmp,
+        climit=2,
+        automask="%s/PLANES/mask_map_%d.grd" % (gmt_tmp, seg),
+        mask_dist="2k"
+    )
+    gmt.grdmath([
+        "%s/PLANES/slip_map_%d.grd" % (gmt_tmp, seg),
+        "%s/PLANES/mask_map_%d.grd" % (gmt_tmp, seg),
+        "MUL",
+        "=",
+        "%s/PLANES/slip_cropped_map_%d.grd" % (gmt_tmp, seg),
+    ], wd=gmt_tmp)
+    # TODO: fix working directory
+    call([
+        "gmt",
+        "grdgradient",
+        "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
+        "-G%s/PLANES/illu_map_%d.grd" % (gmt_tmp, seg),
+        "-Ne.5",
+        "-A100"])
+    p.topo(
+        "%s/PLANES/slip_cropped_map_%d.grd" % (gmt_tmp, seg),
+        topo_file_illu="%s/PLANES/illu_map_%d.grd" % (gmt_tmp, seg),
+        cpt="%s/slip.cpt" % (gmt_tmp)
+    )
+    #p.overlay(
+    #    "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
+    #    "%s/slip.cpt" % (gmt_tmp),
+    #    dx=plot_dx,
+    #    climit=2,
+    #    crop_grd="%s/PLANES/plane_%s.mask" % (gmt_tmp, seg),
+    #    land_crop=False,
+    #    transparency=30,
+    #)
+    #p.overlay(
+    #    "%s/PLANES/slip_map_%d.bin" % (gmt_tmp, seg),
+    #    "%s/slip.cpt" % (gmt_tmp),
+    #    dx=plot_dx,
+    #    dy=plot_dy,
+    #    climit=2,
+    #    crop_grd="%s/PLANES/plane_%s.mask" % (gmt_tmp, seg),
+    #    land_crop=False,
+    #    custom_region=seg_regions[seg],
+    #    transparency=30,
+    #)
     p.overlay(
         "%s/PLANES/tinit_map_%d.bin" % (gmt_tmp, seg),
         None,
@@ -223,7 +278,8 @@ for seg in range(len(bounds)):
         contours=contour_int,
     )
 if finite_fault:
-    p.fault(args.srf_file, is_srf=True, hyp_colour="red")
+    #p.fault(args.srf_file, is_srf=True, hyp_colour="red")
+    p.path("\n".join(" ".join(list(map(str, x))) for x in perimeter[0]), is_file=False, colour="blue")
 else:
     p.beachballs(
         "%s %s %s %s %s %s %s %s %s\n"
@@ -261,9 +317,10 @@ window_bottom = gmt.mapproject(plot_region[1], plot_region[2], wd=gmt_tmp)
 window_top = gmt.mapproject(plot_region[1], plot_region[3], wd=gmt_tmp)
 if finite_fault:
     # also draw fault planes / hypocentre
-    p.fault(
-        args.srf_file, is_srf=True, plane_width="0.4p", top_width="0.6p", hyp_colour="red"
-    )
+    #p.fault(
+    #    args.srf_file, is_srf=True, plane_width="0.4p", top_width="0.6p", hyp_colour="red"
+    #)
+    p.path("\n".join(" ".join(list(map(str, x))) for x in perimeter[0]), is_file=False)
 else:
     p.beachballs(
         "%s %s %s %s %s %s %s %s %s\n"
