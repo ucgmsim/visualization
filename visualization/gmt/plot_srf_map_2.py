@@ -16,7 +16,7 @@ import qcore.geo as geo
 import qcore.gmt as gmt
 import qcore.srf as srf
 
-sys.path.append(".")
+sys.path.append(os.path.dirname(__file__))
 from srf2 import perimeter
 
 
@@ -207,6 +207,8 @@ p.basemap(topo=os.path.join(gmt.GMT_DATA, "Topo/srtm_NZ_1s.grd"), land="lightgra
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.4p", colour="red")
 for seg in range(len(bounds)):
+    gmt_outline = "\n".join(" ".join(list(map(str, x))) for x in perimeter[seg])
+    p.clip(path=gmt_outline)
     gmt.table2grd(
         "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg),
         "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
@@ -222,16 +224,7 @@ for seg in range(len(bounds)):
         dx=plot_dx,
         wd=gmt_tmp,
         climit=2,
-        automask="%s/PLANES/mask_map_%d.grd" % (gmt_tmp, seg),
-        mask_dist="2k"
     )
-    gmt.grdmath([
-        "%s/PLANES/slip_map_%d.grd" % (gmt_tmp, seg),
-        "%s/PLANES/mask_map_%d.grd" % (gmt_tmp, seg),
-        "MUL",
-        "=",
-        "%s/PLANES/slip_cropped_map_%d.grd" % (gmt_tmp, seg),
-    ], wd=gmt_tmp)
     # TODO: fix working directory
     call([
         "gmt",
@@ -241,45 +234,29 @@ for seg in range(len(bounds)):
         "-Ne.5",
         "-A100"])
     p.topo(
-        "%s/PLANES/slip_cropped_map_%d.grd" % (gmt_tmp, seg),
+        "%s/PLANES/slip_map_%d.grd" % (gmt_tmp, seg),
         topo_file_illu="%s/PLANES/illu_map_%d.grd" % (gmt_tmp, seg),
         cpt="%s/slip.cpt" % (gmt_tmp)
     )
-    #p.overlay(
-    #    "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
-    #    "%s/slip.cpt" % (gmt_tmp),
-    #    dx=plot_dx,
-    #    climit=2,
-    #    crop_grd="%s/PLANES/plane_%s.mask" % (gmt_tmp, seg),
-    #    land_crop=False,
-    #    transparency=30,
-    #)
-    #p.overlay(
-    #    "%s/PLANES/slip_map_%d.bin" % (gmt_tmp, seg),
-    #    "%s/slip.cpt" % (gmt_tmp),
-    #    dx=plot_dx,
-    #    dy=plot_dy,
-    #    climit=2,
-    #    crop_grd="%s/PLANES/plane_%s.mask" % (gmt_tmp, seg),
-    #    land_crop=False,
-    #    custom_region=seg_regions[seg],
-    #    transparency=30,
-    #)
     p.overlay(
         "%s/PLANES/tinit_map_%d.bin" % (gmt_tmp, seg),
         None,
         dx=plot_dx,
         dy=plot_dy,
         climit=2,
-        crop_grd="%s/PLANES/plane_%s.mask" % (gmt_tmp, seg),
         land_crop=False,
         custom_region=seg_regions[seg],
         transparency=30,
         contours=contour_int,
     )
+    p.clip()
+    p.clip(path=gmt_outline, invert=True)
+    p.path(gmt_outline, is_file=False, colour="black", split="-", width="2p")
+    p.points( is_file=False, shape="a", size="0.35i", line="black", line_thickness="1p")
+    p.clip()
 if finite_fault:
     #p.fault(args.srf_file, is_srf=True, hyp_colour="red")
-    p.path("\n".join(" ".join(list(map(str, x))) for x in perimeter[0]), is_file=False, colour="blue")
+    pass
 else:
     p.beachballs(
         "%s %s %s %s %s %s %s %s %s\n"
