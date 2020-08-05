@@ -17,7 +17,7 @@ import qcore.gmt as gmt
 import qcore.srf as srf
 
 sys.path.append(os.path.dirname(__file__))
-from srf2 import perimeter
+from srf2 import get_perimeter
 
 
 def get_args():
@@ -135,19 +135,7 @@ else:
 ###
 ### OUTPUT 2: corners file for fault plane and hypocentre plot
 ###
-if finite_fault:
-    # find hypocentre, use bounds from previous step
-    hypocentre = srf.get_hypo(args.srf_file)
-    # standard corners file format
-    with open("%s/corners.txt" % (gmt_tmp), "w") as cf:
-        cf.write(">hypocentre\n")
-        cf.write("%f %f\n" % (hypocentre[0], hypocentre[1]))
-        cf.write(">corners for each segment\n")
-        for c, corners in enumerate(bounds):
-            cf.write(">segment %d\n" % (c))
-            for i in range(5):
-                cf.write("%f %f\n" % tuple(corners[i % 4]))
-else:
+if not finite_fault:
     hypocentre = srf.get_hypo(args.srf_file, depth=True)
     plot_region = (
         hypocentre[0] - 0.2,
@@ -178,6 +166,7 @@ plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
 ###
 ### OUTPUT 3: GMT MAP
 ###
+perimeters, top_edges = get_perimeter(args.srf_file)
 nz_region = gmt.nz_region
 if finite_fault:
     gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
@@ -207,7 +196,8 @@ p.basemap(topo=os.path.join(gmt.GMT_DATA, "Topo/srtm_NZ_1s.grd"), land="lightgra
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.4p", colour="red")
 for seg in range(len(bounds)):
-    gmt_outline = "\n".join(" ".join(list(map(str, x))) for x in perimeter[seg])
+    gmt_outline = "\n".join(" ".join(list(map(str, x))) for x in perimeters[seg])
+    gmt_top_edge = "\n".join(" ".join(list(map(str, x))) for x in top_edges[seg])
     p.clip(path=gmt_outline)
     gmt.table2grd(
         "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg),
@@ -252,11 +242,11 @@ for seg in range(len(bounds)):
     p.clip()
     p.clip(path=gmt_outline, invert=True)
     p.path(gmt_outline, is_file=False, colour="black", split="-", width="2p")
-    p.points( is_file=False, shape="a", size="0.35i", line="black", line_thickness="1p")
+    p.path(gmt_top_edge, is_file=False, colour="black", width="4p")
     p.clip()
 if finite_fault:
-    #p.fault(args.srf_file, is_srf=True, hyp_colour="red")
-    pass
+    hypocentre = srf.get_hypo(args.srf_file, depth=False)
+    p.points("{} {}".format(*hypocentre), is_file=False, shape="a", size="0.3i", line="red", line_thickness="1p")
 else:
     p.beachballs(
         "%s %s %s %s %s %s %s %s %s\n"
@@ -278,6 +268,7 @@ else:
 
 p.sites(list(gmt.sites.keys()))
 major_tick, minor_tick = gmt.auto_tick(plot_region[0], plot_region[1], zoom_width)
+major_tick = max(0.1, major_tick)
 p.ticks(major="%sd" % (major_tick), minor="%sd" % (minor_tick), sides="ws")
 
 ### PART B: NZ map
@@ -293,11 +284,8 @@ p.path(plot_bounds, is_file=False, close=True, colour="black")
 window_bottom = gmt.mapproject(plot_region[1], plot_region[2], wd=gmt_tmp)
 window_top = gmt.mapproject(plot_region[1], plot_region[3], wd=gmt_tmp)
 if finite_fault:
-    # also draw fault planes / hypocentre
-    #p.fault(
-    #    args.srf_file, is_srf=True, plane_width="0.4p", top_width="0.6p", hyp_colour="red"
-    #)
-    p.path("\n".join(" ".join(list(map(str, x))) for x in perimeter[0]), is_file=False)
+    for seg in range(len(bounds)):
+        p.path("\n".join(" ".join(list(map(str, x))) for x in perimeters[seg]), is_file=False)
 else:
     p.beachballs(
         "%s %s %s %s %s %s %s %s %s\n"

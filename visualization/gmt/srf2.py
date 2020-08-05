@@ -1,8 +1,9 @@
 
-import numpy as np
 import alphashape
+import numpy as np
 
 from qcore.srf import *
+
 
 def get_perimeter(srf_file, depth=True, plot=False):
     """
@@ -17,6 +18,7 @@ def get_perimeter(srf_file, depth=True, plot=False):
 
 
     perimeters = []
+    top_edges = []
     if depth:
         value = "depth"
     else:
@@ -44,7 +46,19 @@ def get_perimeter(srf_file, depth=True, plot=False):
                 plt.show()
                 plt.close()
 
-    return perimeters
+            # try to find edges, assume srf points are arranged "square" and corners are fixed
+            c1 = np.argwhere(np.minimum.reduce(perimeters[-1] == points[0], axis=1))[0][0]
+            c2 = np.argwhere(np.minimum.reduce(perimeters[-1] == points[nstk - 1], axis=1))[0][0]
+            # assume shorter edge is top edge
+            if abs(c2 - c1) < len(perimeters[-1]) / 2:
+                # edge doesn't wrap array
+                start = min(c1, c2)
+                end = max(c1, c2)
+                top_edges.append(perimeters[-1][start:end + 1])
+            else:
+                # edge wraps array ends
+                start = max(c1, c2)
+                end = min(c1, c2)
+                top_edges.append(np.vstack((perimeters[-1][start:], perimeters[-1][:end + 1])))
 
-# test
-perimeter = get_perimeter("Hossack_REL01.srf")
+    return perimeters, top_edges
