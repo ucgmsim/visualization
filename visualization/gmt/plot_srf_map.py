@@ -48,8 +48,8 @@ if finite_fault:
     text_dy = "%s km" % (dy)
     # plot at greater resolution to increase smoothness
     # also considering rotation and roughness, grid will not be exactly matching
-    plot_dx = "%sk" % (dx * 0.3)
-    plot_dy = "%sk" % (dy * 0.3)
+    plot_dx = "%sk" % (dx * 0.6)
+    plot_dy = "%sk" % (dy * 0.6)
     # output for plane data
     os.makedirs(os.path.join(gmt_tmp, "PLANES"))
 else:
@@ -434,5 +434,5 @@ if finite_fault:
     )
 
 p.finalise()
-p.png(dpi=args.dpi, background="white", out_dir=".")
+p.png(dpi=args.dpi * 4, downscale=4, background="white", out_dir=".")
 rmtree(gmt_tmp)
