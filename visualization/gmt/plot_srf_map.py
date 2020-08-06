@@ -1,27 +1,12 @@
 #!/usr/bin/env python
 """
-1.
-Creates binary files with LONG, LAT, VALUE for each segment.
-Same format as a timeslice to be plotted in GMT.
-Creates corresponding path files for masking area and GMT mask files.
-
-2.
-Creates a standard corners file to plot fault planes.
-
-3.
-Creates a GMT plot of the SRF file.
-
-USAGE:
-with internally set defaults:
-plot_srf.py
-standard usage:
-plot_srf.py <srf_file> <dpi_override> <'active_faults' to plot faults>
-plot_srf.py mysrf.srf 300 active_faults
 """
 
+from argparse import ArgumentParser
 from math import floor, log10
 import os
 from shutil import rmtree
+from subprocess import call
 import sys
 from tempfile import mkdtemp
 
@@ -31,57 +16,55 @@ import qcore.geo as geo
 import qcore.gmt as gmt
 import qcore.srf as srf
 
+
+def get_args():
+    parser = ArgumentParser()
+    arg = parser.add_argument
+
+    arg("srf_file", help="srf file to plot")
+    arg("--dpi", help="render dpi", type=int, default=300)
+    arg("--active-faults", help="show active faults", action="store_true")
+    arg("--cpt", help="CPT for SRF slip", default=gmt.CPTS["slip"])
+
+    args = parser.parse_args()
+    args.srf_file = os.path.abspath(args.srf_file)
+    if not os.path.exists(args.srf_file):
+        sys.exit("SRF file not found.")
+
+    return args
+
+
 faults = "/nesi/project/nesi00213/PlottingData/Paths/faults/FAULTS_20161219.ll"
-cpt = gmt.CPTS["slip"]
 
-# can specify here or pass as command line argument
-srf_file = "default.srf"
-dpi = 300
-plot_faults = False
-if len(sys.argv) > 1:
-    srf_file = sys.argv[1]
-if len(sys.argv) > 2:
-    dpi = int(sys.argv[2])
-if len(sys.argv) > 3 and sys.argv[3] == "active_faults":
-    plot_faults = True
+args = get_args()
+# output directory for srf resources
+gmt_tmp = os.path.abspath(mkdtemp())
 
-srf_file = os.path.abspath(srf_file)
-if not os.path.exists(srf_file):
-    print("SRF file %s not found." % (srf_file))
-    exit(1)
-srf_dir = os.path.dirname(srf_file)
-if srf_dir == "":
-    srf_dir = "."
 # whether we are plotting a finite fault or point source
-finite_fault = srf.is_ff(srf_file)
-
+finite_fault = srf.is_ff(args.srf_file)
 if finite_fault:
-    dx, dy = srf.srf_dxy(srf_file)
+    dx, dy = srf.srf_dxy(args.srf_file)
     text_dx = "%s km" % (dx)
     text_dy = "%s km" % (dy)
     # plot at greater resolution to increase smoothness
-    # also considering rotation, grid will not be exactly matching
-    plot_dx = "%sk" % (dx * 0.6)
-    plot_dy = "%sk" % (dy * 0.6)
+    # also considering rotation and roughness, grid will not be exactly matching
+    plot_dx = "%sk" % (dx * 0.3)
+    plot_dy = "%sk" % (dy * 0.3)
+    # output for plane data
+    os.makedirs(os.path.join(gmt_tmp, "PLANES"))
 else:
     text_dx = "N/A"
     text_dy = "N/A"
-
-# output directory for srf resources
-out_dir = os.path.abspath(mkdtemp(prefix="_GMT_WD_SRF_", dir="."))
-if finite_fault:
-    # output for plane data
-    os.makedirs(os.path.join(out_dir, "PLANES"))
 
 ###
 ### OUTPUT 1: binary file for GMT grid plotting
 ###
 if finite_fault:
     # get all corners
-    bounds = srf.get_bounds(srf_file)
+    bounds = srf.get_bounds(args.srf_file)
     # get all tinit values, set a sane countour interval
     # contour interval should probably also depend on area
-    tinit = srf.srf2llv_py(srf_file, value="tinit")
+    tinit = srf.srf2llv_py(args.srf_file, value="tinit")
     tinit_max = max([np.max(tinit[p][:, 2]) for p in range(len(bounds))])
     contour_int = 2
     if tinit_max < 10:
@@ -99,30 +82,36 @@ if finite_fault:
     x_max, y_max = np.max(np.max(np_bounds, axis=0), axis=0)
     plot_region = (x_min - 0.1, x_max + 0.1, y_min - 0.1, y_max + 0.1)
     # read all max slip values (all at once is much faster)
-    seg_llslips = srf.srf2llv_py(srf_file, value="slip")
+    seg_llslips = srf.srf2llv_py(args.srf_file, value="slip")
+    seg_lldepths = srf.srf2llv_py(args.srf_file, value="depth")
+    depth_max = 0.0
     for seg in range(len(bounds)):
         # create binary llv file for GMT overlay
         seg_llslips[seg].astype(np.float32).tofile(
-            "%s/PLANES/slip_map_%d.bin" % (out_dir, seg)
+            "%s/PLANES/slip_map_%d.bin" % (gmt_tmp, seg)
+        )
+        seg_lldepths[seg].astype(np.float32).tofile(
+            "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg)
         )
         values = np.append(values, seg_llslips[seg][:, -1])
+        depth_max = max(depth_max, np.max(seg_lldepths[seg][:, -1]))
         # also store tinit values retrieved previously
         tinit[seg].astype(np.float32).tofile(
-            "%s/PLANES/tinit_map_%d.bin" % (out_dir, seg)
+            "%s/PLANES/tinit_map_%d.bin" % (gmt_tmp, seg)
         )
         # create a mask path for GMT overlay
         geo.path_from_corners(
             corners=bounds[seg],
             min_edge_points=100,
-            output="%s/PLANES/plane_%d.bounds" % (out_dir, seg),
+            output="%s/PLANES/plane_%d.bounds" % (gmt_tmp, seg),
         )
         # create mask from path
         x_min, y_min = np.min(np_bounds[seg], axis=0)
         x_max, y_max = np.max(np_bounds[seg], axis=0)
         seg_regions.append((x_min, x_max, y_min, y_max))
         gmt.grd_mask(
-            "%s/PLANES/plane_%d.bounds" % (out_dir, seg),
-            "%s/PLANES/plane_%d.mask" % (out_dir, seg),
+            "%s/PLANES/plane_%d.bounds" % (gmt_tmp, seg),
+            "%s/PLANES/plane_%d.mask" % (gmt_tmp, seg),
             dx=plot_dx,
             dy=plot_dy,
             region=seg_regions[seg],
@@ -145,20 +134,8 @@ else:
 ###
 ### OUTPUT 2: corners file for fault plane and hypocentre plot
 ###
-if finite_fault:
-    # find hypocentre, use bounds from previous step
-    hypocentre = srf.get_hypo(srf_file)
-    # standard corners file format
-    with open("%s/corners.txt" % (out_dir), "w") as cf:
-        cf.write(">hypocentre\n")
-        cf.write("%f %f\n" % (hypocentre[0], hypocentre[1]))
-        cf.write(">corners for each segment\n")
-        for c, corners in enumerate(bounds):
-            cf.write(">segment %d\n" % (c))
-            for i in range(5):
-                cf.write("%f %f\n" % tuple(corners[i % 4]))
-else:
-    hypocentre = srf.get_hypo(srf_file, depth=True)
+if not finite_fault:
+    hypocentre = srf.get_hypo(args.srf_file, depth=True)
     plot_region = (
         hypocentre[0] - 0.2,
         hypocentre[0] + 0.2,
@@ -166,12 +143,12 @@ else:
         hypocentre[1] + 0.1,
     )
     subfaults = 1
-    maximum = srf.srf2llv_py(srf_file, value="slip")[0][0][-1]
+    maximum = srf.srf2llv_py(args.srf_file, value="slip")[0][0][-1]
     percentile = maximum
     average = maximum
     # arbitrary, only changes size of beachball which is relative anyway
     mw = 8
-    strike, dip, rake = srf.ps_params(srf_file)
+    strike, dip, rake = srf.ps_params(args.srf_file)
 # for plotting region on NZ-wide map
 plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
     plot_region[0],
@@ -188,10 +165,12 @@ plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
 ###
 ### OUTPUT 3: GMT MAP
 ###
+perimeters, top_edges = srf.get_perimeter(args.srf_file)
 nz_region = gmt.nz_region
 if finite_fault:
-    gmt.makecpt(cpt, "%s/slip.cpt" % (out_dir), 0, cpt_max, 1)
-gmt.gmt_defaults(wd=out_dir)
+    gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
+    gmt.makecpt("gray", "%s/depth.cpt" % (gmt_tmp), 0, depth_max, 0.1, invert=True)
+gmt.gmt_defaults(wd=gmt_tmp)
 # gap on left of maps
 gap = 1
 # width of NZ map, if changed, other things also need updating
@@ -200,50 +179,85 @@ full_width = 4
 
 ### PART A: zoomed in map
 p = gmt.GMTPlot(
-    "%s/%s_map.ps" % (out_dir, os.path.splitext(os.path.basename(srf_file))[0])
+    "%s/%s_map.ps" % (gmt_tmp, os.path.splitext(os.path.basename(args.srf_file))[0])
 )
-# cover a larger space, will get cropped at the end
-p.background(20, 15)
 # this is how high the NZ map will end up being
 full_height = gmt.mapproject(
     nz_region[0],
     nz_region[3],
     region=nz_region,
     projection="M%s" % (full_width),
-    wd=out_dir,
+    wd=gmt_tmp,
 )[1]
 # match height of zoomed in map with full size map
-zoom_width, zoom_height = gmt.map_width("M", full_height, plot_region, wd=out_dir)
+zoom_width, zoom_height = gmt.map_width("M", full_height, plot_region, wd=gmt_tmp)
 p.spacial("M", plot_region, sizing=zoom_width, x_shift=gap, y_shift=2.5)
-p.basemap(land="lightgray", topo_cpt="grey1")
-if plot_faults:
+p.basemap(topo=os.path.join(gmt.GMT_DATA, "Topo/srtm_NZ_1s.grd"), land="lightgray", topo_cpt="grey1")
+if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.4p", colour="red")
 for seg in range(len(bounds)):
+    gmt_outline = "\n".join(" ".join(list(map(str, x))) for x in perimeters[seg])
+    gmt_top_edge = "\n".join(" ".join(list(map(str, x))) for x in top_edges[seg])
+    p.clip(path=gmt_outline)
+    gmt.table2grd(
+        "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg),
+        "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
+        region=seg_regions[seg],
+        dx=plot_dx,
+        wd=gmt_tmp,
+        climit=2,
+    )
+    gmt.table2grd(
+        "%s/PLANES/slip_map_%d.bin" % (gmt_tmp, seg),
+        "%s/PLANES/slip_map_%d.grd" % (gmt_tmp, seg),
+        region=seg_regions[seg],
+        dx=plot_dx,
+        wd=gmt_tmp,
+        climit=2,
+    )
     p.overlay(
-        "%s/PLANES/slip_map_%d.bin" % (out_dir, seg),
-        "%s/slip.cpt" % (out_dir),
+        "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg),
+        "%s/depth.cpt" % (gmt_tmp),
         dx=plot_dx,
         dy=plot_dy,
-        climit=2,
-        crop_grd="%s/PLANES/plane_%s.mask" % (out_dir, seg),
+        climit=0.1,
         land_crop=False,
         custom_region=seg_regions[seg],
+        transparency=0,
+    )
+    # TODO: fix working directory
+    call([
+        "gmt",
+        "grdgradient",
+        "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
+        "-G%s/PLANES/illu_map_%d.grd" % (gmt_tmp, seg),
+        "-Ne.5",
+        "-A100"])
+    p.topo(
+        "%s/PLANES/slip_map_%d.grd" % (gmt_tmp, seg),
+        topo_file_illu="%s/PLANES/illu_map_%d.grd" % (gmt_tmp, seg),
+        cpt="%s/slip.cpt" % (gmt_tmp),
         transparency=30,
     )
     p.overlay(
-        "%s/PLANES/tinit_map_%d.bin" % (out_dir, seg),
+        "%s/PLANES/tinit_map_%d.bin" % (gmt_tmp, seg),
         None,
         dx=plot_dx,
         dy=plot_dy,
         climit=2,
-        crop_grd="%s/PLANES/plane_%s.mask" % (out_dir, seg),
         land_crop=False,
         custom_region=seg_regions[seg],
         transparency=30,
         contours=contour_int,
     )
+    p.clip()
+    p.clip(path=gmt_outline, invert=True)
+    p.path(gmt_outline, is_file=False, colour="black", split="-", width="2p")
+    p.path(gmt_top_edge, is_file=False, colour="black", width="4p")
+    p.clip()
 if finite_fault:
-    p.fault(srf_file, is_srf=True, hyp_colour="red")
+    hypocentre = srf.get_hypo(args.srf_file, depth=False)
+    p.points("{} {}".format(*hypocentre), is_file=False, shape="a", size="0.3i", line="red", line_thickness="1p")
 else:
     p.beachballs(
         "%s %s %s %s %s %s %s %s %s\n"
@@ -265,25 +279,24 @@ else:
 
 p.sites(list(gmt.sites.keys()))
 major_tick, minor_tick = gmt.auto_tick(plot_region[0], plot_region[1], zoom_width)
+major_tick = max(0.1, major_tick)
 p.ticks(major="%sd" % (major_tick), minor="%sd" % (minor_tick), sides="ws")
 
 ### PART B: NZ map
 # draw NZ wide map to show rough location in country
 p.spacial("M", nz_region, sizing=full_width, x_shift=zoom_width + gap)
 # height of NZ map
-full_height = gmt.mapproject(nz_region[0], nz_region[3], wd=out_dir)[1]
+full_height = gmt.mapproject(nz_region[0], nz_region[3], wd=gmt_tmp)[1]
 p.basemap(land="lightgray", topo=gmt.TOPO_LOW, topo_cpt="grey1", road=None)
-if plot_faults:
+if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.1p", colour="red")
 p.path(plot_bounds, is_file=False, close=True, colour="black")
 # get displacement of box to draw zoom lines later
-window_bottom = gmt.mapproject(plot_region[1], plot_region[2], wd=out_dir)
-window_top = gmt.mapproject(plot_region[1], plot_region[3], wd=out_dir)
+window_bottom = gmt.mapproject(plot_region[1], plot_region[2], wd=gmt_tmp)
+window_top = gmt.mapproject(plot_region[1], plot_region[3], wd=gmt_tmp)
 if finite_fault:
-    # also draw fault planes / hypocentre
-    p.fault(
-        srf_file, is_srf=True, plane_width="0.4p", top_width="0.6p", hyp_colour="red"
-    )
+    for seg in range(len(bounds)):
+        p.path("\n".join(" ".join(list(map(str, x))) for x in perimeters[seg]), is_file=False)
 else:
     p.beachballs(
         "%s %s %s %s %s %s %s %s %s\n"
@@ -344,7 +357,7 @@ p.spacial(
 p.text(
     total_width / 2.0,
     total_height,
-    os.path.basename(srf_file),
+    os.path.basename(args.srf_file),
     align="CB",
     size="20p",
     dy=0.8,
@@ -413,7 +426,7 @@ if finite_fault:
     p.cpt_scale(
         zoom_width / 2.0,
         -0.5,
-        "%s/slip.cpt" % (out_dir),
+        "%s/slip.cpt" % (gmt_tmp),
         cpt_max / 4.0,
         cpt_max / 8.0,
         label="Slip (cm)",
@@ -421,5 +434,5 @@ if finite_fault:
     )
 
 p.finalise()
-p.png(dpi=dpi, out_dir=srf_dir)
-rmtree(out_dir)
+p.png(dpi=args.dpi, background="white", out_dir=".")
+rmtree(gmt_tmp)
