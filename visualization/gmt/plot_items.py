@@ -677,4 +677,6 @@ else:
     p.sites(gmt.sites_major)
     p.finalise()
     p.png(out_dir=".", dpi=args.dpi, background="white")
+
+pool.close()
 rmtree(gmt_temp)
