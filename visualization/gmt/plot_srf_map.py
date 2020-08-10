@@ -192,7 +192,11 @@ full_height = gmt.mapproject(
 # match height of zoomed in map with full size map
 zoom_width, zoom_height = gmt.map_width("M", full_height, plot_region, wd=gmt_tmp)
 p.spacial("M", plot_region, sizing=zoom_width, x_shift=gap, y_shift=2.5)
-p.basemap(topo=os.path.join(gmt.GMT_DATA, "Topo/srtm_NZ_1s.grd"), land="lightgray", topo_cpt="grey1")
+p.basemap(
+    topo=os.path.join(gmt.GMT_DATA, "Topo/srtm_NZ_1s.grd"),
+    land="lightgray",
+    topo_cpt="grey1",
+)
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.4p", colour="red")
 for seg in range(len(bounds)):
@@ -226,13 +230,16 @@ for seg in range(len(bounds)):
         transparency=0,
     )
     # TODO: fix working directory
-    call([
-        "gmt",
-        "grdgradient",
-        "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
-        "-G%s/PLANES/illu_map_%d.grd" % (gmt_tmp, seg),
-        "-Ne.5",
-        "-A100"])
+    call(
+        [
+            "gmt",
+            "grdgradient",
+            "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
+            "-G%s/PLANES/illu_map_%d.grd" % (gmt_tmp, seg),
+            "-Ne.5",
+            "-A100",
+        ]
+    )
     p.topo(
         "%s/PLANES/slip_map_%d.grd" % (gmt_tmp, seg),
         topo_file_illu="%s/PLANES/illu_map_%d.grd" % (gmt_tmp, seg),
@@ -257,7 +264,14 @@ for seg in range(len(bounds)):
     p.clip()
 if finite_fault:
     hypocentre = srf.get_hypo(args.srf_file, depth=False)
-    p.points("{} {}".format(*hypocentre), is_file=False, shape="a", size="0.3i", line="red", line_thickness="1p")
+    p.points(
+        "{} {}".format(*hypocentre),
+        is_file=False,
+        shape="a",
+        size="0.3i",
+        line="red",
+        line_thickness="1p",
+    )
 else:
     p.beachballs(
         "%s %s %s %s %s %s %s %s %s\n"
@@ -296,7 +310,10 @@ window_bottom = gmt.mapproject(plot_region[1], plot_region[2], wd=gmt_tmp)
 window_top = gmt.mapproject(plot_region[1], plot_region[3], wd=gmt_tmp)
 if finite_fault:
     for seg in range(len(bounds)):
-        p.path("\n".join(" ".join(list(map(str, x))) for x in perimeters[seg]), is_file=False)
+        p.path(
+            "\n".join(" ".join(list(map(str, x))) for x in perimeters[seg]),
+            is_file=False,
+        )
 else:
     p.beachballs(
         "%s %s %s %s %s %s %s %s %s\n"
