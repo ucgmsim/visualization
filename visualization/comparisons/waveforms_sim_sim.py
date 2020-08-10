@@ -185,7 +185,7 @@ def plot_station(
             ax.set_ylim([y_min - y_diff * 0.15, y_max])
 
             if s is not None:
-                line, = ax.plot(
+                (line,) = ax.plot(
                     s[1],
                     s[0][j] * min(y_max / ppgvs[j], y_min / npgvs[j]),
                     color=colours[i],
