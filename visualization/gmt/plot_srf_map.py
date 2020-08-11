@@ -597,7 +597,7 @@ if args.depth:
     p.text(
         total_width + gap + zoom_width / 2.0 + 0.1,
         total_height,
-        "{:.2f} km".format(depth_max),
+        "{:.1f} km".format(depth_max),
         align="LB",
         size="14p",
         dy=0.1,
