@@ -25,6 +25,8 @@ def get_args():
     arg("--dpi", help="render dpi", type=int, default=300)
     arg("--active-faults", help="show active faults", action="store_true")
     arg("--cpt", help="CPT for SRF slip", default=gmt.CPTS["slip"])
+    arg("--depth", help="also make a depth only plot", action="store_true")
+    arg("--downscale", help="render resolution multiplier", type=int, default=4)
 
     args = parser.parse_args()
     args.srf_file = os.path.abspath(args.srf_file)
@@ -42,6 +44,8 @@ gmt_tmp = os.path.abspath(mkdtemp())
 
 # whether we are plotting a finite fault or point source
 finite_fault = srf.is_ff(args.srf_file)
+if not finite_fault:
+    assert not args.depth
 if finite_fault:
     dx, dy = srf.srf_dxy(args.srf_file)
     text_dx = "%s km" % (dx)
@@ -84,6 +88,7 @@ if finite_fault:
     # read all max slip values (all at once is much faster)
     seg_llslips = srf.srf2llv_py(args.srf_file, value="slip")
     seg_lldepths = srf.srf2llv_py(args.srf_file, value="depth")
+    depth_min = 999
     depth_max = 0.0
     for seg in range(len(bounds)):
         # create binary llv file for GMT overlay
@@ -95,6 +100,7 @@ if finite_fault:
         )
         values = np.append(values, seg_llslips[seg][:, -1])
         depth_max = max(depth_max, np.max(seg_lldepths[seg][:, -1]))
+        depth_min = min(depth_min, np.min(seg_lldepths[seg][:, -1]))
         # also store tinit values retrieved previously
         tinit[seg].astype(np.float32).tofile(
             "%s/PLANES/tinit_map_%d.bin" % (gmt_tmp, seg)
@@ -127,6 +133,7 @@ if finite_fault:
     else:
         # 2 sf
         cpt_max = round(percentile, 1 - int(floor(log10(abs(percentile)))))
+    cpt_depth_max = round(depth_max, 1 - int(floor(log10(abs(depth_max)))))
 else:
     bounds = []
 
@@ -169,7 +176,15 @@ perimeters, top_edges = srf.get_perimeter(args.srf_file)
 nz_region = gmt.nz_region
 if finite_fault:
     gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
-    gmt.makecpt("gray", "%s/depth.cpt" % (gmt_tmp), 0, depth_max, 0.1, invert=True)
+    gmt.makecpt(
+        "gray",
+        "%s/depth.cpt" % (gmt_tmp),
+        0,
+        cpt_depth_max,
+        0.1,
+        invert=True,
+        fg="purple",
+    )
 gmt.gmt_defaults(wd=gmt_tmp)
 # gap on left of maps
 gap = 1
@@ -301,13 +316,18 @@ p.ticks(major="%sd" % (major_tick), minor="%sd" % (minor_tick), sides="ws")
 p.spacial("M", nz_region, sizing=full_width, x_shift=zoom_width + gap)
 # height of NZ map
 full_height = gmt.mapproject(nz_region[0], nz_region[3], wd=gmt_tmp)[1]
-p.basemap(land="lightgray", topo=gmt.TOPO_LOW, topo_cpt="grey1", road=None)
+p.basemap(
+    land="lightgray", topo=gmt.TOPO_LOW, topo_cpt="grey1", road=None,
+)
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.1p", colour="red")
 p.path(plot_bounds, is_file=False, close=True, colour="black")
 # get displacement of box to draw zoom lines later
 window_bottom = gmt.mapproject(plot_region[1], plot_region[2], wd=gmt_tmp)
 window_top = gmt.mapproject(plot_region[1], plot_region[3], wd=gmt_tmp)
+if args.depth:
+    window_bottom_left = gmt.mapproject(plot_region[0], plot_region[2], wd=gmt_tmp)
+    window_top_left = gmt.mapproject(plot_region[0], plot_region[3], wd=gmt_tmp)
 if finite_fault:
     for seg in range(len(bounds)):
         p.path(
@@ -334,13 +354,53 @@ else:
     )
 p.ticks(major="2d", minor="30m", sides="ws")
 
+### depth plot
+if args.depth:
+    p.spacial("M", plot_region, sizing=zoom_width, x_shift=full_width + gap)
+    p.basemap(
+        topo=os.path.join(gmt.GMT_DATA, "Topo/srtm_NZ_1s.grd"),
+        land="lightgray",
+        topo_cpt="grey1",
+    )
+    if args.active_faults:
+        p.path(faults, is_file=True, close=False, width="0.4p", colour="red")
+    for seg in range(len(bounds)):
+        gmt_outline = "\n".join(" ".join(list(map(str, x))) for x in perimeters[seg])
+        gmt_top_edge = "\n".join(" ".join(list(map(str, x))) for x in top_edges[seg])
+        p.clip(path=gmt_outline)
+        p.overlay(
+            "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg),
+            "%s/depth.cpt" % (gmt_tmp),
+            dx=plot_dx,
+            dy=plot_dy,
+            climit=0.1,
+            land_crop=False,
+            custom_region=seg_regions[seg],
+            transparency=0,
+        )
+        p.clip()
+        p.clip(path=gmt_outline, invert=True)
+        p.path(gmt_outline, is_file=False, colour="black", split="-", width="2p")
+        p.path(gmt_top_edge, is_file=False, colour="black", width="4p")
+        p.clip()
+        # only works for finite fault but depth plot not available otherwise
+        p.points(
+            "{} {}".format(*hypocentre),
+            is_file=False,
+            shape="a",
+            size="0.3i",
+            line="red",
+            line_thickness="1p",
+        )
+    p.ticks(major="%sd" % (major_tick), minor="%sd" % (minor_tick), sides="ws")
+
 ### PART C: zoom lines
 # draw zoom lines that extend from view box to original plot
 p.spacial(
     "X",
-    (0, window_bottom[0] + gap, 0, max(zoom_height, full_height)),
-    x_shift=-gap,
-    sizing="%s/%s" % (window_top[0] + gap, max(zoom_height, full_height)),
+    (0, full_width + gap + gap, 0, max(zoom_height, full_height)),
+    x_shift=-gap + (-gap - full_width) * args.depth,
+    sizing="%s/%s" % (full_width + gap + gap, max(zoom_height, full_height)),
 )
 p.path(
     "%f %f\n%f %f\n" % (0, 0, window_bottom[0] + gap, window_bottom[1]),
@@ -358,6 +418,30 @@ p.path(
     straight=True,
     colour="black",
 )
+if args.depth:
+    p.path(
+        "%f %f\n%f %f\n"
+        % (full_width + 2 * gap, 0, window_bottom_left[0] + gap, window_bottom_left[1]),
+        width="0.6p",
+        is_file=False,
+        split="-",
+        straight=True,
+        colour="black",
+    )
+    p.path(
+        "%f %f\n%f %f\n"
+        % (
+            full_width + 2 * gap,
+            zoom_height,
+            window_top_left[0] + gap,
+            window_top_left[1],
+        ),
+        width="0.6p",
+        is_file=False,
+        split="-",
+        straight=True,
+        colour="black",
+    )
 
 ### PART D: surrounding info
 # add text and colour palette
@@ -372,7 +456,7 @@ p.spacial(
 )
 # SRF filename
 p.text(
-    total_width / 2.0,
+    total_width - full_width / 2.0 if args.depth else total_width / 2.0,
     total_height,
     os.path.basename(args.srf_file),
     align="CB",
@@ -412,9 +496,16 @@ p.text(
     dy=0.1,
 )
 # planes
-p.text(total_width - 4 / 2.0, total_height, "Planes: ", align="RB", size="14p", dy=0.5)
 p.text(
-    total_width - 4 / 2.0 + 0.1,
+    total_width - full_width / 2.0,
+    total_height,
+    "Planes: ",
+    align="RB",
+    size="14p",
+    dy=0.5,
+)
+p.text(
+    total_width - full_width / 2.0 + 0.1,
     total_height,
     len(bounds),
     align="LB",
@@ -422,9 +513,16 @@ p.text(
     dy=0.5,
 )
 # dx and dy
-p.text(total_width - 4 / 2.0, total_height, "dX, dY: ", align="RB", size="14p", dy=0.3)
 p.text(
-    total_width - 4 / 2.0 + 0.1,
+    total_width - full_width / 2.0,
+    total_height,
+    "dX, dY: ",
+    align="RB",
+    size="14p",
+    dy=0.3,
+)
+p.text(
+    total_width - full_width / 2.0 + 0.1,
     total_height,
     "%s, %s" % (text_dx, text_dy),
     align="LB",
@@ -433,10 +531,20 @@ p.text(
 )
 # subfaults
 p.text(
-    total_width - 4 / 2.0, total_height, "Subfaults: ", align="RB", size="14p", dy=0.1
+    total_width - full_width / 2.0,
+    total_height,
+    "Subfaults: ",
+    align="RB",
+    size="14p",
+    dy=0.1,
 )
 p.text(
-    total_width - 4 / 2.0 + 0.1, total_height, subfaults, align="LB", size="14p", dy=0.1
+    total_width - full_width / 2.0 + 0.1,
+    total_height,
+    subfaults,
+    align="LB",
+    size="14p",
+    dy=0.1,
 )
 if finite_fault:
     # scale
@@ -449,7 +557,57 @@ if finite_fault:
         label="Slip (cm)",
         length=zoom_width,
     )
+if args.depth:
+    p.cpt_scale(
+        zoom_width + gap + gap + full_width + zoom_width / 2.0,
+        -0.5,
+        "%s/depth.cpt" % (gmt_tmp),
+        cpt_depth_max / 5.0,
+        cpt_depth_max / 10.0,
+        label="depth (km)",
+        length=zoom_width,
+        arrow_b=True,
+        arrow_f=True,
+    )
+    # depth range
+    p.text(
+        total_width + gap + zoom_width / 2.0,
+        total_height,
+        "Minimum depth: ",
+        align="RB",
+        size="14p",
+        dy=0.3,
+    )
+    p.text(
+        total_width + gap + zoom_width / 2.0 + 0.1,
+        total_height,
+        "{:.1f} km".format(depth_min),
+        align="LB",
+        size="14p",
+        dy=0.3,
+    )
+    p.text(
+        total_width + gap + zoom_width / 2.0,
+        total_height,
+        "Maximum depth: ",
+        align="RB",
+        size="14p",
+        dy=0.1,
+    )
+    p.text(
+        total_width + gap + zoom_width / 2.0 + 0.1,
+        total_height,
+        "{:.2f} km".format(depth_max),
+        align="LB",
+        size="14p",
+        dy=0.1,
+    )
 
 p.finalise()
-p.png(dpi=args.dpi * 4, downscale=4, background="white", out_dir=".")
+p.png(
+    dpi=args.dpi * args.downscale,
+    downscale=args.downscale,
+    background="white",
+    out_dir=".",
+)
 rmtree(gmt_tmp)
