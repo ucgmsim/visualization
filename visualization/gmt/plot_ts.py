@@ -31,7 +31,7 @@ arg = parser.add_argument
 arg("xyts", help="path to xyts.e3d file")
 arg("--xyts2", help="path to second xyts.e3d file to plot (xyts2 - xyts)")
 arg("--output", help="path to save animation (no extention)")
-arg("--cpt", help="xyts overlay cpt", default=None)
+arg("--cpt", help="xyts overlay cpt (default hot or polar for double xyts plot)")
 arg("-r", "--dpi", help="dpi 80: 720p, [120]: 1080p, 240: 4k", type=int, default=120)
 arg("--title", help="main title", default="Automatically Generated Event")
 arg("--subtitle1", help="top subtitle", default="Automatically generated source model")
@@ -105,9 +105,7 @@ if args.xyts2 is not None:
             assert getattr(xyts, a) == getattr(xyts2, a)
         except AssertionError:
             print(
-                "Values for {} don't match: {}, {}".format(
-                    getattr(xyts, a), getattr(xyts2, a)
-                )
+                f"Values for {a} don't match: {getattr(xyts, a)}, {getattr(xyts2, a)}"
             )
             raise
 # xyts derivatives
