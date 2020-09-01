@@ -52,8 +52,8 @@ if finite_fault:
     text_dy = "%s km" % (dy)
     # plot at greater resolution to increase smoothness
     # also considering rotation and roughness, grid will not be exactly matching
-    plot_dx = "%sk" % (dx * 0.3)
-    plot_dy = "%sk" % (dy * 0.3)
+    plot_dx = "%sk" % (dx * 0.6)
+    plot_dy = "%sk" % (dy * 0.6)
     # output for plane data
     os.makedirs(os.path.join(gmt_tmp, "PLANES"))
 else:
@@ -177,13 +177,16 @@ nz_region = gmt.nz_region
 if finite_fault:
     gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
     gmt.makecpt(
-        "gray",
-        "%s/depth.cpt" % (gmt_tmp),
+        "gray", "%s/depth.cpt" % (gmt_tmp), 0, cpt_depth_max, 0.1, invert=True,
+    )
+    gmt.makecpt(
+        "bilbao",
+        "%s/depth2.cpt" % (gmt_tmp),
         0,
         cpt_depth_max,
         0.1,
-        invert=True,
-        fg="purple",
+        invert=False,
+        bg="purple",
     )
 gmt.gmt_defaults(wd=gmt_tmp)
 # gap on left of maps
@@ -218,24 +221,40 @@ for seg in range(len(bounds)):
     gmt_outline = "\n".join(" ".join(list(map(str, x))) for x in perimeters[seg])
     gmt_top_edge = "\n".join(" ".join(list(map(str, x))) for x in top_edges[seg])
     p.clip(path=gmt_outline)
-    gmt.table2grd(
-        "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg),
-        "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
-        region=seg_regions[seg],
+    gmt.table2block(
+        "%s/PLANES/slip_map_%d.bin" % (gmt_tmp, seg),
+        "%s/PLANES/slip_map_%d.blok" % (gmt_tmp, seg),
         dx=plot_dx,
-        wd=gmt_tmp,
-        climit=2,
+        dy=plot_dy,
+        region=seg_regions[seg],
+        binary=True,
+    )
+    gmt.table2block(
+        "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg),
+        "%s/PLANES/depth_map_%d.blok" % (gmt_tmp, seg),
+        dx=plot_dx,
+        dy=plot_dy,
+        region=seg_regions[seg],
+        binary=True,
     )
     gmt.table2grd(
-        "%s/PLANES/slip_map_%d.bin" % (gmt_tmp, seg),
+        "%s/PLANES/slip_map_%d.blok" % (gmt_tmp, seg),
         "%s/PLANES/slip_map_%d.grd" % (gmt_tmp, seg),
-        region=seg_regions[seg],
         dx=plot_dx,
+        dy=plot_dy,
+        climit=0.1,
         wd=gmt_tmp,
-        climit=2,
+    )
+    gmt.table2grd(
+        "%s/PLANES/depth_map_%d.blok" % (gmt_tmp, seg),
+        "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
+        dx=plot_dx,
+        dy=plot_dy,
+        climit=0.1,
+        wd=gmt_tmp,
     )
     p.overlay(
-        "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg),
+        "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
         "%s/depth.cpt" % (gmt_tmp),
         dx=plot_dx,
         dy=plot_dy,
@@ -372,13 +391,14 @@ if args.depth:
         gmt_top_edge = "\n".join(" ".join(list(map(str, x))) for x in top_edges[seg])
         p.clip(path=gmt_outline)
         p.overlay(
-            "%s/PLANES/depth_map_%d.bin" % (gmt_tmp, seg),
-            "%s/depth.cpt" % (gmt_tmp),
+            "%s/PLANES/depth_map_%d.grd" % (gmt_tmp, seg),
+            "%s/depth2.cpt" % (gmt_tmp),
             dx=plot_dx,
             dy=plot_dy,
             climit=0.1,
             land_crop=False,
             custom_region=seg_regions[seg],
+            contours=cpt_depth_max / 10.0,
             transparency=0,
         )
         p.clip()
@@ -564,9 +584,10 @@ if args.depth:
     p.cpt_scale(
         zoom_width + gap + gap + full_width + zoom_width / 2.0,
         -0.5,
-        "%s/depth.cpt" % (gmt_tmp),
+        "%s/depth2.cpt" % (gmt_tmp),
         cpt_depth_max / 5.0,
         cpt_depth_max / 10.0,
+        cross_tick=cpt_depth_max / 10.0,
         label="depth (km)",
         length=zoom_width,
         arrow_b=True,
