@@ -113,8 +113,7 @@ def plot_station(
     tmax=None,
     verbose=False,
 ):
-    """Creates a waveform plot for a specific station.
-    """
+    """Creates a waveform plot for a specific station."""
 
     if verbose:
         print("Plotting station: {}...".format(station_name))

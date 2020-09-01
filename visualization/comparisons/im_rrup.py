@@ -87,8 +87,8 @@ def get_print_name(im, comp):
 
 def validate_args(args):
     """
-       validates all input args;
-       config arg exists if and only if srf arg exists
+    validates all input args;
+    config arg exists if and only if srf arg exists
     """
     assert os.path.isfile(args.rrup)
     assert os.path.isfile(args.obs)

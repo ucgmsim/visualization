@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 TODO:
 - allow plotting single component, cpt_min would have to be calculated
@@ -11,6 +11,8 @@ import os
 from shutil import rmtree
 from tempfile import mkdtemp
 from time import time
+
+import numpy as np
 
 import qcore.gmt as gmt
 from qcore.xyts import XYTSFile
@@ -27,13 +29,14 @@ MARGIN_RIGHT = 1.7
 parser = ArgumentParser()
 arg = parser.add_argument
 arg("xyts", help="path to xyts.e3d file")
+arg("--xyts2", help="path to second xyts.e3d file to plot (xyts2 - xyts)")
 arg("--output", help="path to save animation (no extention)")
-arg("--cpt", help="xyts overlay cpt", default="hot")
+arg("--cpt", help="xyts overlay cpt (default hot or polar for double xyts plot)")
 arg("-r", "--dpi", help="dpi 80: 720p, [120]: 1080p, 240: 4k", type=int, default=120)
 arg("--title", help="main title", default="Automatically Generated Event")
 arg("--subtitle1", help="top subtitle", default="Automatically generated source model")
 arg("--subtitle2", help="bottom subtitle", default="NZVM v?.?? h=<HH>km")
-arg("--legend", help="colour scale legend text", default="ground motion (cm/s)")
+arg("--legend", help="colour scale legend text")
 arg("-n", "--nproc", help="number of processes to use", type=int, default=1)
 arg("--borders", help="opaque map margins", action="store_true")
 arg("--srf", help="path to srf file")
@@ -48,6 +51,17 @@ arg(
 )
 args = parser.parse_args()
 assert os.path.isfile(args.xyts)
+if args.xyts2 is None:
+    if args.cpt is None:
+        args.cpt = "hot"
+    if args.legend is None:
+        args.legend = "ground motion [cm/s]"
+else:
+    assert os.path.isfile(args.xyts2)
+    if args.cpt is None:
+        args.cpt = "polar"
+    if args.legend is None:
+        args.legend = "sim2 - sim1 ground motion [cm/s]"
 assert args.nproc > 0
 if args.nproc == 1:
     print("warning: only using 1 process, use more by setting nproc parameter")
@@ -67,12 +81,48 @@ os.makedirs(png_dir)
 cpt_file = "%s/motion.cpt" % (gmt_temp)
 # load xyts
 xyts = XYTSFile(args.xyts)
+if args.xyts2 is not None:
+    xyts2 = XYTSFile(args.xyts2)
+    attrs = [
+        "x0",
+        "y0",
+        "z0",
+        "t0",
+        "nx",
+        "ny",
+        "nz",
+        "nt",
+        "dx",
+        "dy",
+        "hh",
+        "mrot",
+        "mlat",
+        "mlon",
+        "dt",
+    ]
+    for a in attrs:
+        try:
+            assert getattr(xyts, a) == getattr(xyts2, a)
+        except AssertionError:
+            print(
+                f"Values for {a} don't match: {getattr(xyts, a)}, {getattr(xyts2, a)}"
+            )
+            raise
 # xyts derivatives
 pgv_file = "%s/PGV.bin" % (gmt_temp)
 xyts.pgv(pgvout=pgv_file)
+cpt_min = 0
 cpt_inc, cpt_max = gmt.xyv_cpt_range(pgv_file)[1:3]
+if args.xyts2 is not None:
+    cpt_max /= 2
+    cpt_min = -cpt_max
+    cpt_inc /= 2
+    lowcut = cpt_max * 0.02
+    highcut = cpt_max * -0.02
+else:
+    lowcut = cpt_max * 0.02
+    highcut = None
 convergence_limit = cpt_inc * 0.2
-lowcut = cpt_max * 0.02
 corners, cnr_str = xyts.corners(gmt_format=True)
 ll_region = xyts.region(corners=corners)
 grd_dxy = "%sk" % (xyts.dx / 2.0)
@@ -95,7 +145,16 @@ if not args.borders:
         bottom=MARGIN_BOTTOM,
     )
 # colour scale
-gmt.makecpt(args.cpt, cpt_file, 0, cpt_max, inc=cpt_inc, invert=True, bg=None, fg=None)
+gmt.makecpt(
+    args.cpt,
+    cpt_file,
+    cpt_min,
+    cpt_max,
+    inc=cpt_inc,
+    invert=args.xyts2 is None,
+    bg=None,
+    fg=None if args.xyts2 is None else "darkred",
+)
 
 
 def bottom_template():
@@ -151,7 +210,7 @@ def bottom_template():
         thickness=0.3,
         dx=0.3,
         arrow_f=cpt_max > 0,
-        arrow_b=0 < 0,
+        arrow_b=cpt_min < 0,
     )
     # stations - split into real and virtual
     if args.stations is not None:
@@ -241,17 +300,30 @@ def render_slice(n):
         dy=0.1,
     )
     # overlay
-    xyts.tslice_get(n, comp=-1, outfile="%s/ts.bin" % (swd))
+    if args.xyts2 is None:
+        xyts.tslice_get(n, comp=-1, outfile="%s/ts.bin" % (swd))
+    else:
+        x1 = xyts.tslice_get(n, comp=-1)
+        x2 = xyts2.tslice_get(n, comp=-1)
+        x2[:, 2] -= x1[:, 2]
+        x2.astype(np.float32).tofile(os.path.join(swd, "ts.bin"))
     s.clip(cnr_str, is_file=False)
     if args.land_crop:
         s.clip(gmt.LINZ_COAST["150k"], is_file=True)
+    gmt.table2grd(
+        os.path.join(swd, "ts.bin"),
+        os.path.join(swd, "ts.grd"),
+        dx=grd_dxy,
+        wd=swd,
+        climit=convergence_limit,
+    )
     s.overlay(
-        "%s/ts.bin" % (swd),
+        os.path.join(swd, "ts.grd"),
         cpt_file,
         dx=grd_dxy,
         dy=grd_dxy,
-        climit=convergence_limit,
         min_v=lowcut,
+        max_v=highcut,
         contours=cpt_inc,
     )
     s.clip()
