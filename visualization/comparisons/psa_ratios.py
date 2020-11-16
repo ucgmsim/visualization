@@ -55,11 +55,11 @@ args = load_args()
 if args.stats.endswith(".csv"):
     # rrup file - station_name,lon,lat,...
     lon_lat_name = np.loadtxt(
-        args.stats, dtype="f,f,|S7", usecols=(1, 2, 0), skiprows=1, delimiter=","
+        args.stats, dtype="f,f,|U7", usecols=(1, 2, 0), skiprows=1, delimiter=","
     )
 else:
     # ll file - lon lat name
-    lon_lat_name = np.loadtxt(args.stats, dtype="f,f,|S7")
+    lon_lat_name = np.loadtxt(args.stats, dtype="f,f,|U7")
 
 # load im files (slow) for component, available pSA columns
 sim_ims = load_im_file(args.sim, all_psa=True)
