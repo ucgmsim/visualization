@@ -177,7 +177,12 @@ nz_region = gmt.nz_region
 if finite_fault:
     gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
     gmt.makecpt(
-        "gray", "%s/depth.cpt" % (gmt_tmp), 0, cpt_depth_max, 0.1, invert=True,
+        "gray", 
+        "%s/depth.cpt" % (gmt_tmp), 
+        0, 
+        cpt_depth_max, 
+        0.1, 
+        invert=True,
     )
     gmt.makecpt(
         "bilbao",
@@ -336,7 +341,10 @@ p.spacial("M", nz_region, sizing=full_width, x_shift=zoom_width + gap)
 # height of NZ map
 full_height = gmt.mapproject(nz_region[0], nz_region[3], wd=gmt_tmp)[1]
 p.basemap(
-    land="lightgray", topo=gmt.TOPO_LOW, topo_cpt="grey1", road=None,
+    land="lightgray", 
+    topo=gmt.TOPO_LOW, 
+    topo_cpt="grey1", 
+    road=None,
 )
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.1p", colour="red")
