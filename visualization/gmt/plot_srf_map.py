@@ -177,11 +177,11 @@ nz_region = gmt.nz_region
 if finite_fault:
     gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
     gmt.makecpt(
-        "gray", 
-        "%s/depth.cpt" % (gmt_tmp), 
-        0, 
-        cpt_depth_max, 
-        0.1, 
+        "gray",
+        "%s/depth.cpt" % (gmt_tmp),
+        0,
+        cpt_depth_max,
+        0.1,
         invert=True,
     )
     gmt.makecpt(
