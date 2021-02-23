@@ -42,7 +42,8 @@ def check_get_meta(csv_filepath):
         return runname, os.path.join(csv_dir, meta_filename[0])
     else:
         print("metainfo file not found for the csv you have provided")
-        return runname,None
+        return runname, None
+
 
 def get_runtype(meta_filepath):
     """
