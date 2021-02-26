@@ -30,7 +30,7 @@ META_PATTERN = ["_imcalc.info", "_empirical.info"]
 def check_get_meta(csv_filepath):
     """
     :param csv_filepath: user input path to summary im/emp .csv file
-    :return: runname, meta_info_file path
+    :return: runname, meta_info_file path (None if not found)
     """
     csv_filename = csv_filepath.split("/")[-1]
     csv_dir = os.path.abspath(os.path.dirname(csv_filepath))
@@ -42,6 +42,7 @@ def check_get_meta(csv_filepath):
         return runname, os.path.join(csv_dir, meta_filename[0])
     else:
         print("metainfo file not found for the csv you have provided")
+        return runname, None
 
 
 def get_runtype(meta_filepath):
