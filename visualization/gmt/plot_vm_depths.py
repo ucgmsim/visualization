@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Plots VM 3D files xy planes over specified distances.
+"""
 
 from argparse import ArgumentParser
 from math import floor
@@ -23,7 +26,7 @@ parser.add_argument("vm_file", help="binary VM file to plot", type=os.path.abspa
 parser.add_argument("--depth", nargs="+", type=float, default=[2, 5, 10, 20])
 parser.add_argument("--out-dir", help="output location", default="./vm_depths")
 parser.add_argument("--cpt", help="overlay cpt", default="hot")
-parser.add_argument("--cpt-invert", help="invert cpt range", action="store_true")
+parser.add_argument("--cpt-invert", help="invert cpt range", action="store_false")
 parser.add_argument("--legend", help="colour scale legend text")
 parser.add_argument(
     "--page-height", help="height of figure * dpi = pixels", type=float, default=9
@@ -46,21 +49,41 @@ args = parser.parse_args()
 with open(os.path.join(args.vm_dir, "vm_params.yaml")) as y:
     vm_conf = yaml.safe_load(y)
 
-xy = (
-    np.vstack(np.mgrid[0 : vm_conf["nx"], 0 : vm_conf["ny"]].T) * vm_conf["hh"]
-    - (np.array([vm_conf["extent_x"], vm_conf["extent_y"]]) - vm_conf["hh"]) / 2
-)
-model_mat = geo.gen_mat(
-    vm_conf["MODEL_ROT"], vm_conf["MODEL_LON"], vm_conf["MODEL_LAT"]
-)[0]
-xyll = geo.xy2ll(xy, model_mat).reshape(vm_conf["ny"], vm_conf["nx"], 2)
-xmin, ymin = np.min(xyll, axis=(1, 0))
-xmax, ymax = np.max(xyll, axis=(1, 0))
-ll_region0 = xmin, xmax, ymin, ymax
-corners = xyll[
-    [0, 0, vm_conf["ny"] - 1, vm_conf["ny"] - 1],
-    [0, vm_conf["nx"] - 1, vm_conf["nx"] - 1, 0],
-]
+
+def process_coords(vm_conf):
+    """
+    Determine datas longitude and latitude positions.
+    """
+    # create lat, lon grid
+    xy = (
+        np.vstack(np.mgrid[0 : vm_conf["nx"], 0 : vm_conf["ny"]].T) * vm_conf["hh"]
+        - (np.array([vm_conf["extent_x"], vm_conf["extent_y"]]) - vm_conf["hh"]) / 2
+    )
+    model_mat = geo.gen_mat(
+        vm_conf["MODEL_ROT"], vm_conf["MODEL_LON"], vm_conf["MODEL_LAT"]
+    )[0]
+    xyll = geo.xy2ll(xy, model_mat).reshape(vm_conf["ny"], vm_conf["nx"], 2)
+
+    # determine extents
+    xyll_shift = np.copy(xyll)
+    xyll_shift[:, :, 0][xyll_shift[:, :, 0] < 0] += 360
+    xyll_shift[:, :, 1][xyll_shift[:, :, 1] < 0] += 180
+    xmin, ymin = np.min(xyll_shift, axis=(1, 0))
+    xmax, ymax = np.max(xyll_shift, axis=(1, 0))
+    ll_region = (
+        xmin if xmin <= 180 else xmin - 360,
+        xmax if xmax <= 180 or xmin <= 180 else xmax - 360,
+        ymin if ymin <= 90 else ymin - 180,
+        ymax if ymax <= 90 or ymin <= 90 else ymax - 180,
+    )
+    corners = xyll[
+        [0, 0, vm_conf["ny"] - 1, vm_conf["ny"] - 1],
+        [0, vm_conf["nx"] - 1, vm_conf["nx"] - 1, 0],
+    ]
+    return xyll, ll_region, corners
+
+
+xyll, ll_region0, corners = process_coords(vm_conf)
 corners_gmt = "\n".join([" ".join(map(str, point)) for point in corners])
 spacing = "{}k".format(vm_conf["hh"] * 0.4)
 vm3d = np.memmap(
@@ -96,7 +119,7 @@ gmt.gmt_defaults(
     wd=gmt_temp, ps_media="Custom_%six%si" % (args.page_width, args.page_height)
 )
 if args.borders:
-    p.background(PAGE_WIDTH, PAGE_HEIGHT, colour="white")
+    p.background(args.page_width, args.page_height, colour="white")
 else:
     p.spacial("M", borderless_region, sizing=map_width_a)
     # topo, water, overlay cpt scale
