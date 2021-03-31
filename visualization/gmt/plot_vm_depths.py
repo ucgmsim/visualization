@@ -26,7 +26,9 @@ def load_args():
     Command line arguments and VM configuration.
     """
     parser = ArgumentParser()
-    parser.add_argument("vm_params", help="path to vm_params.yaml", type=os.path.abspath)
+    parser.add_argument(
+        "vm_params", help="path to vm_params.yaml", type=os.path.abspath
+    )
     parser.add_argument("vm_file", help="binary VM file to plot", type=os.path.abspath)
     parser.add_argument("--depth", nargs="+", type=float, default=[2, 5, 10, 20])
     parser.add_argument("--out-dir", help="output location", default="./vm_depths")
@@ -137,7 +139,9 @@ def template_gs(args, corners_gmt, map_width, map_height, gmt_temp):
             window=(MARGIN_LEFT, MARGIN_RIGHT, MARGIN_TOP, MARGIN_BOTTOM),
         )
     # leave space for left tickmarks and bottom colour scale
-    p.spacial("M", ll_region, sizing=map_width, x_shift=MARGIN_LEFT, y_shift=MARGIN_BOTTOM)
+    p.spacial(
+        "M", ll_region, sizing=map_width, x_shift=MARGIN_LEFT, y_shift=MARGIN_BOTTOM
+    )
     if args.borders:
         # topo, water, overlay cpt scale
         p.basemap(land="lightgray", topo_cpt="grey1", scale=args.downscale)
@@ -163,7 +167,19 @@ def template_gs(args, corners_gmt, map_width, map_height, gmt_temp):
     return gs_file
 
 
-def finish_gs(args, vm_conf, gs_file, depth, map_width, map_height, xyll, vm3d, corners_gmt, ll_region0, gmt_temp):
+def finish_gs(
+    args,
+    vm_conf,
+    gs_file,
+    depth,
+    map_width,
+    map_height,
+    xyll,
+    vm3d,
+    corners_gmt,
+    ll_region0,
+    gmt_temp,
+):
     """
     Add features specific to current depth plot.
     """
@@ -174,7 +190,9 @@ def finish_gs(args, vm_conf, gs_file, depth, map_width, map_height, xyll, vm3d, 
     depth_value = (0.5 + depth_ix) * vm_conf["hh"]
     depth_wd = os.path.join(gmt_temp, str(depth))
     os.makedirs(depth_wd)
-    depth_gs = "{}/{}_{}.ps".format(depth_wd, os.path.basename(args.vm_file).replace(".", "_"), depth)
+    depth_gs = "{}/{}_{}.ps".format(
+        depth_wd, os.path.basename(args.vm_file).replace(".", "_"), depth
+    )
     copyfile(gs_file, depth_gs)
     for setup in ["gmt.conf", "gmt.history"]:
         copyfile(os.path.join(gmt_temp, setup), os.path.join(depth_wd, setup))
@@ -237,22 +255,34 @@ def finish_gs(args, vm_conf, gs_file, depth, map_width, map_height, xyll, vm3d, 
         clip=False,
         out_dir=args.out_dir,
     )
-    
 
-args, vm_conf = load_args()
-xyll, ll_region0, corners = process_coords(vm_conf)
-# locations
-if not os.path.isdir(args.out_dir):
-    os.makedirs(args.out_dir)
-gmt_temp = mkdtemp()
 
-map_width, map_height, ll_region = map_sizing(args, ll_region0, gmt_temp)
-corners_gmt = "\n".join([" ".join(map(str, point)) for point in corners])
-vm3d = np.memmap(
-    args.vm_file, dtype="f4", shape=(vm_conf["ny"], vm_conf["nz"], vm_conf["nx"])
-)
-gs_file = template_gs(args, corners_gmt, map_width, map_height, gmt_temp)
-for depth in args.depth:
-    finish_gs(args, vm_conf, gs_file, depth, map_width, map_height, xyll, vm3d, corners_gmt, ll_region0, gmt_temp)
+if __name__ == "__main__":
+    args, vm_conf = load_args()
+    xyll, ll_region0, corners = process_coords(vm_conf)
+    # locations
+    os.makedirs(args.out_dir, exist_ok=True)
+    gmt_temp = mkdtemp()
 
-rmtree(gmt_temp)
+    map_width, map_height, ll_region = map_sizing(args, ll_region0, gmt_temp)
+    corners_gmt = "\n".join([" ".join(map(str, point)) for point in corners])
+    vm3d = np.memmap(
+        args.vm_file, dtype="f4", shape=(vm_conf["ny"], vm_conf["nz"], vm_conf["nx"])
+    )
+    gs_file = template_gs(args, corners_gmt, map_width, map_height, gmt_temp)
+    for depth in args.depth:
+        finish_gs(
+            args,
+            vm_conf,
+            gs_file,
+            depth,
+            map_width,
+            map_height,
+            xyll,
+            vm3d,
+            corners_gmt,
+            ll_region0,
+            gmt_temp,
+        )
+
+    rmtree(gmt_temp)
