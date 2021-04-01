@@ -150,7 +150,7 @@ def template_gs(args, corners_gmt, map_width, map_height, gmt_temp):
     p.text(
         ll_region[0],
         ll_region[3],
-        "NZVM v{} h={}km".format(vm_conf["model_version"], vm_conf["hh"]),
+        f"NZVM v{vm_conf['model_version']} h={vm_conf['hh']}km",
         size=14,
         align="LB",
         dy=0.3,
@@ -215,7 +215,7 @@ def finish_gs(
         fg=None,
     )
     p.clip(path=corners_gmt)
-    spacing = "{}k".format(vm_conf["hh"] * 0.4)
+    spacing = f"{vm_conf['hh'] * 0.4}k"
     p.overlay(xyz_bin, cpt_file, dx=spacing, dy=spacing, custom_region=ll_region0)
     p.clip()
     p.text(
