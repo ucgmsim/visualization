@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 from math import floor
 import os
 from shutil import copyfile, rmtree
-from tempfile import mkdtemp
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import yaml
@@ -262,7 +262,8 @@ if __name__ == "__main__":
     xyll, ll_region0, corners = process_coords(vm_conf)
     # locations
     os.makedirs(args.out_dir, exist_ok=True)
-    gmt_temp = mkdtemp()
+    temp_object = TemporaryDirectory()
+    gmt_temp = temp_object.name
 
     map_width, map_height, ll_region = map_sizing(args, ll_region0, gmt_temp)
     corners_gmt = "\n".join([" ".join(map(str, point)) for point in corners])
@@ -284,5 +285,3 @@ if __name__ == "__main__":
             ll_region0,
             gmt_temp,
         )
-
-    rmtree(gmt_temp)
