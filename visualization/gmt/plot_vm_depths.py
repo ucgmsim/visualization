@@ -190,8 +190,8 @@ def finish_gs(
     depth_value = (0.5 + depth_ix) * vm_conf["hh"]
     depth_wd = os.path.join(gmt_temp, str(depth))
     os.makedirs(depth_wd)
-    depth_gs = "{}/{}_{}.ps".format(
-        depth_wd, os.path.basename(args.vm_file).replace(".", "_"), depth
+    depth_gs = (
+        f"{depth_wd}/{os.path.basename(args.vm_file).replace('.', '_')}_{depth}.ps"
     )
     copyfile(gs_file, depth_gs)
     for setup in ["gmt.conf", "gmt.history"]:
