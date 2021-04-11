@@ -36,10 +36,10 @@ def load_args():
     parser.add_argument("--cpt-invert", help="invert cpt range", action="store_false")
     parser.add_argument("--legend", help="colour scale legend text")
     parser.add_argument(
-        "--page-height", help="height of figure * dpi = pixels", type=float, default=9
+        "--page-height", help="height of figure (inches)", type=float, default=9
     )
     parser.add_argument(
-        "--page-width", help="width of figure * dpi = pixels", type=float, default=16
+        "--page-width", help="width of figure (inches)", type=float, default=16
     )
     parser.add_argument(
         "--dpi", help="dpi 80: 720p, [120]: 1080p, 240: 4k", type=int, default=120
