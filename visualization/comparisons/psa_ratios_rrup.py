@@ -63,7 +63,7 @@ args = load_args()
 
 # load rrups - station_name,lon,lat,rrup...
 name_rrup = np.loadtxt(
-    args.stats, dtype="|S7,f", usecols=(0, 3), skiprows=1, delimiter=","
+    args.stats, dtype="|U7,f", usecols=(0, 3), skiprows=1, delimiter=","
 )
 
 # load im files (slow) for component, available pSA columns
