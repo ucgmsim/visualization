@@ -53,10 +53,31 @@ def load_args():
     )
     args = parser.parse_args()
 
+    # configuration of view window
+    window_conf = {
+        "borders": args.borders,
+        "downscale": args.downscale,
+        "page_width": args.page_width,
+        "page_height": args.page_height,
+        "dpi": args.dpi,
+    }
+    # configuration of plot contents
+    plot_conf = {
+        "cpt": args.cpt,
+        "cpt_invert": args.cpt_invert,
+        "legend": args.legend,
+        "depths": args.depth,
+    }
+    # locations
+    path_conf = {
+        "out_dir": args.out_dir,
+        "vm_file": args.vm_file,
+    }
+
     with open(os.path.join(args.vm_params)) as y:
         vm_conf = yaml.safe_load(y)
 
-    return args, vm_conf
+    return window_conf, plot_conf, path_conf, vm_conf
 
 
 def process_coords(vm_conf):
@@ -92,36 +113,42 @@ def process_coords(vm_conf):
     return xyll, ll_region, corners
 
 
-def map_sizing(args, ll_region, gmt_temp):
+def map_sizing(window_conf, ll_region, gmt_temp):
     """
     Determine map sizing and region.
     """
-    map_width = args.page_width - MARGIN_LEFT - MARGIN_RIGHT
-    map_height = args.page_height - MARGIN_TOP - MARGIN_BOTTOM
+    map_width = window_conf["page_width"] - MARGIN_LEFT - MARGIN_RIGHT
+    map_height = window_conf["page_height"] - MARGIN_TOP - MARGIN_BOTTOM
     # extend region to fill view window
     map_width, map_height, ll_region = gmt.fill_space(
-        map_width, map_height, ll_region, proj="M", dpi=args.dpi, wd=gmt_temp
+        map_width, map_height, ll_region, proj="M", dpi=window_conf["dpi"], wd=gmt_temp
     )
-    return map_width, map_height, ll_region
+    window_conf["map_width"] = map_width
+    window_conf["map_height"] = map_height
+    window_conf["ll_region"] = ll_region
 
 
-def template_gs(args, corners_gmt, map_width, map_height, gmt_temp):
+def template_gs(window_conf, path_conf):
     """
     Create the common background plot.
     """
-    gs_file = "%s/template.ps" % (gmt_temp)
+    gs_file = "%s/template.ps" % (path_conf["gmt_temp"])
     p = gmt.GMTPlot(gs_file)
     gmt.gmt_defaults(
-        wd=gmt_temp, ps_media="Custom_%six%si" % (args.page_width, args.page_height)
+        wd=path_conf["gmt_temp"],
+        ps_media="Custom_%six%si"
+        % (window_conf["page_width"], window_conf["page_height"]),
     )
-    if args.borders:
-        p.background(args.page_width, args.page_height, colour="white")
+    if window_conf["borders"]:
+        p.background(
+            window_conf["page_width"], window_conf["page_height"], colour="white"
+        )
     else:
         # extend map to cover margins
         map_width_a, map_height_a, borderless_region = gmt.fill_margins(
-            ll_region,
-            map_width,
-            args.dpi,
+            window_conf["ll_region"],
+            window_conf["map_width"],
+            window_conf["dpi"],
             left=MARGIN_LEFT,
             right=MARGIN_RIGHT,
             top=MARGIN_TOP,
@@ -129,7 +156,7 @@ def template_gs(args, corners_gmt, map_width, map_height, gmt_temp):
         )
         p.spacial("M", borderless_region, sizing=map_width_a)
         # topo, water, overlay cpt scale
-        p.basemap(land="lightgray", topo_cpt="grey1", scale=args.downscale)
+        p.basemap(land="lightgray", topo_cpt="grey1", scale=window_conf["downscale"])
         # map margins are semi-transparent
         p.background(
             map_width_a,
@@ -140,25 +167,35 @@ def template_gs(args, corners_gmt, map_width, map_height, gmt_temp):
         )
     # leave space for left tickmarks and bottom colour scale
     p.spacial(
-        "M", ll_region, sizing=map_width, x_shift=MARGIN_LEFT, y_shift=MARGIN_BOTTOM
+        "M",
+        window_conf["ll_region"],
+        sizing=window_conf["map_width"],
+        x_shift=MARGIN_LEFT,
+        y_shift=MARGIN_BOTTOM,
     )
-    if args.borders:
+    if window_conf["borders"]:
         # topo, water, overlay cpt scale
-        p.basemap(land="lightgray", topo_cpt="grey1", scale=args.downscale)
+        p.basemap(land="lightgray", topo_cpt="grey1", scale=window_conf["downscale"])
     # title, fault model and velocity model subtitles
-    p.text(sum(ll_region[:2]) / 2.0, ll_region[3], "Velocity Model", size=20, dy=0.6)
     p.text(
-        ll_region[0],
-        ll_region[3],
+        sum(window_conf["ll_region"][:2]) / 2.0,
+        window_conf["ll_region"][3],
+        "Velocity Model",
+        size=20,
+        dy=0.6,
+    )
+    p.text(
+        window_conf["ll_region"][0],
+        window_conf["ll_region"][3],
         f"NZVM v{vm_conf['model_version']} h={vm_conf['hh']}km",
         size=14,
         align="LB",
         dy=0.3,
     )
     p.text(
-        ll_region[0],
-        ll_region[3],
-        os.path.basename(args.vm_file),
+        window_conf["ll_region"][0],
+        window_conf["ll_region"][3],
+        os.path.basename(path_conf["vm_file"]),
         size=14,
         align="LB",
         dy=0.1,
@@ -168,17 +205,14 @@ def template_gs(args, corners_gmt, map_width, map_height, gmt_temp):
 
 
 def finish_gs(
-    args,
+    window_conf,
+    plot_conf,
+    path_conf,
     vm_conf,
     gs_file,
     depth,
-    map_width,
-    map_height,
     xyll,
     vm3d,
-    corners_gmt,
-    ll_region0,
-    gmt_temp,
 ):
     """
     Add features specific to current depth plot.
@@ -188,14 +222,14 @@ def finish_gs(
         print("skipping depth", depth, "out of range for VM")
         return
     depth_value = (0.5 + depth_ix) * vm_conf["hh"]
-    depth_wd = os.path.join(gmt_temp, str(depth))
+    depth_wd = os.path.join(path_conf["gmt_temp"], str(depth))
     os.makedirs(depth_wd)
-    depth_gs = (
-        f"{depth_wd}/{os.path.basename(args.vm_file).replace('.', '_')}_{depth}.ps"
-    )
+    depth_gs = f"{depth_wd}/{os.path.basename(path_conf['vm_file']).replace('.', '_')}_{depth}.ps"
     copyfile(gs_file, depth_gs)
     for setup in ["gmt.conf", "gmt.history"]:
-        copyfile(os.path.join(gmt_temp, setup), os.path.join(depth_wd, setup))
+        copyfile(
+            os.path.join(path_conf["gmt_temp"], setup), os.path.join(depth_wd, setup)
+        )
     p = gmt.GMTPlot(depth_gs, append=True, reset=False)
     xyz_bin = os.path.join(depth_wd, "xyz.bin")
     surface = np.column_stack((xyll.reshape(-1, 2), vm3d[:, depth_ix, :].flatten()))
@@ -205,22 +239,28 @@ def finish_gs(
     cpt_min = 0
     # colour scale
     gmt.makecpt(
-        args.cpt,
+        plot_conf["cpt"],
         cpt_file,
         cpt_min,
         cpt_max,
         continuous=True,
-        invert=args.cpt_invert,
+        invert=plot_conf["cpt_invert"],
         bg=None,
         fg=None,
     )
-    p.clip(path=corners_gmt)
+    p.clip(path=plot_conf["corners_gmt"])
     spacing = f"{vm_conf['hh'] * 0.4}k"
-    p.overlay(xyz_bin, cpt_file, dx=spacing, dy=spacing, custom_region=ll_region0)
+    p.overlay(
+        xyz_bin,
+        cpt_file,
+        dx=spacing,
+        dy=spacing,
+        custom_region=plot_conf["ll_region_data"],
+    )
     p.clip()
     p.text(
-        ll_region[1],
-        ll_region[3],
+        window_conf["ll_region"][1],
+        window_conf["ll_region"][3],
         f"depth: {depth_value:.2f}km",
         size=14,
         align="RB",
@@ -232,8 +272,8 @@ def finish_gs(
         cpt_file,
         cpt_inc,
         cpt_inc,
-        label=args.legend,
-        length=map_height,
+        label=plot_conf["legend"],
+        length=window_conf["map_height"],
         horiz=False,
         pos="rel_out",
         align="LB",
@@ -242,46 +282,51 @@ def finish_gs(
         arrow_f=cpt_max > 0,
         arrow_b=cpt_min < 0,
     )
-    p.path(corners_gmt, is_file=False, close=True, width="1p", split="-")
+    p.path(plot_conf["corners_gmt"], is_file=False, close=True, width="1p", split="-")
 
     # ticks on top otherwise parts of map border may be drawn over
-    major, minor = gmt.auto_tick(ll_region[0], ll_region[1], map_width)
+    major, minor = gmt.auto_tick(
+        *window_conf["ll_region"][0:2], window_conf["map_width"]
+    )
     p.ticks(major=major, minor=minor, sides="ws")
     # render
     p.finalise()
     p.png(
-        dpi=args.dpi * args.downscale,
-        downscale=args.downscale,
+        dpi=window_conf["dpi"] * window_conf["downscale"],
+        downscale=window_conf["downscale"],
         clip=False,
-        out_dir=args.out_dir,
+        out_dir=path_conf["out_dir"],
     )
 
 
 if __name__ == "__main__":
-    args, vm_conf = load_args()
-    xyll, ll_region0, corners = process_coords(vm_conf)
-    # locations
-    os.makedirs(args.out_dir, exist_ok=True)
-    temp_object = TemporaryDirectory()
-    gmt_temp = temp_object.name
+    window_conf, plot_conf, path_conf, vm_conf = load_args()
 
-    map_width, map_height, ll_region = map_sizing(args, ll_region0, gmt_temp)
-    corners_gmt = "\n".join([" ".join(map(str, point)) for point in corners])
-    vm3d = np.memmap(
-        args.vm_file, dtype="f4", shape=(vm_conf["ny"], vm_conf["nz"], vm_conf["nx"])
+    # extend configurations with derived values
+    os.makedirs(path_conf["out_dir"], exist_ok=True)
+    temp_object = TemporaryDirectory()
+    path_conf["gmt_temp"] = temp_object.name
+    xyll, plot_conf["ll_region_data"], corners = process_coords(vm_conf)
+    map_sizing(window_conf, plot_conf["ll_region_data"], path_conf["gmt_temp"])
+    plot_conf["corners_gmt"] = "\n".join(
+        [" ".join(map(str, point)) for point in corners]
     )
-    gs_file = template_gs(args, corners_gmt, map_width, map_height, gmt_temp)
-    for depth in args.depth:
+    vm3d = np.memmap(
+        path_conf["vm_file"],
+        dtype="f4",
+        shape=(vm_conf["ny"], vm_conf["nz"], vm_conf["nx"]),
+    )
+
+    # create plots
+    gs_file = template_gs(window_conf, path_conf)
+    for depth in plot_conf["depths"]:
         finish_gs(
-            args,
+            window_conf,
+            plot_conf,
+            path_conf,
             vm_conf,
             gs_file,
             depth,
-            map_width,
-            map_height,
             xyll,
             vm3d,
-            corners_gmt,
-            ll_region0,
-            gmt_temp,
         )
