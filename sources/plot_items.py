@@ -21,6 +21,7 @@ from tempfile import mkdtemp
 from h5py import File as h5open
 import numpy as np
 
+from visualization.config import data_path
 from qcore import geo
 from qcore import gmt
 from qcore.shared import get_corners
@@ -488,7 +489,7 @@ def basemap(args, sizing, wd):
         p.image(
             args.logo_pos[0],
             args.logo_pos[1],
-            "%s/quakecore-logo.png" % (script_dir),
+            os.path.join(data_path, "quakecore-logo.png"),
             width="3i",
             pos="rel",
         )

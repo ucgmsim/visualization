@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 Plots deagg data.
 
@@ -128,13 +128,12 @@ if args.z == "type":
         for x in range(len(bins_x)):
             if blocks_flt[y, x] > 0:
                 base = blocks_flt[y, x]
-                gmt_in.write("%s %s %s %s %s\n" % (bins_x[x], bins_y[y], base, 0, 0))
+                gmt_in.write(f"{bins_x[x]} {bins_y[y]} {base} 0 0\n")
             else:
                 base = 0
             if blocks_ds[y, x] > 0:
                 gmt_in.write(
-                    "%s %s %s %s %s\n"
-                    % (bins_x[x], bins_y[y], base + blocks_ds[y, x], 2, base)
+                    f"{bins_x[x]} {bins_y[y]} {base + blocks_ds[y, x]} 2 {base}\n"
                 )
     # z axis depends on max contribution tower
     z_inc = int(math.ceil(np.max(np.add.reduce(blocks_flt + blocks_ds, axis=1)) / 5.0))
@@ -150,8 +149,7 @@ else:
                 if blocks[z, y, x] > 0:
                     base = sum(blocks[:z, y, x])
                     gmt_in.write(
-                        "%s %s %s %s %s\n"
-                        % (bins_x[x], bins_y[y], base + blocks[z, y, x], z, base)
+                        f"{bins_x[x]} {bins_y[y]} {base + blocks[z, y, x]} {z} {base}"
                     )
     # z axis depends on max contribution tower
     z_inc = int(math.ceil(np.max(np.add.reduce(blocks, axis=2)) / 5.0))
@@ -162,34 +160,32 @@ else:
 ### PLOT AXES
 ###
 wd = mkdtemp()
-p = gmt.GMTPlot("%s.ps" % os.path.join(wd, args.out_name))
+p = gmt.GMTPlot(f"{os.path.join(wd, args.out_name)}.ps")
 os.remove(os.path.join(wd, "gmt.conf"))
 # setup axes
 p.spacial(
     "X",
     (0, x_max, y_min, y_max, 0, z_max),
-    sizing="%si/%si" % (X_LEN, Y_LEN),
-    z="Z%si" % (Z_LEN),
-    p="%s/%s" % (180 - ROT, 90 - TILT),
+    sizing=f"{X_LEN}i/{Y_LEN}i",
+    z=f"Z{Z_LEN}i",
+    p=f"{180 - ROT}/{90 - TILT}",
     x_shift="5",
     y_shift=5,
 )
 p.ticks_multi(
     [
-        "xa%s+lRupture Distance (km)" % (x_inc),
-        "ya%s+lMagnitude" % (y_inc),
-        "za%sg%s+l%%Contribution" % (z_inc, z_inc),
+        f"xa{x_inc}+lRupture Distance (km)",
+        f"ya{y_inc}+lMagnitude",
+        f"za{z_inc}g{z_inc}+l%Contribution",
         "wESnZ",
     ]
 )
 # GMT will not plot gridlines without box, manually add gridlines
 gridlines = []
-for z in xrange(z_inc, z_max + z_inc, z_inc):
-    gridlines.append(
-        "0 %s %s\n0 %s %s\n%s %s %s" % (y_min, z, y_max, z, x_max, y_max, z)
-    )
-gridlines.append("0 %s 0\n0 %s %s" % (y_max, y_max, z_max))
-gridlines.append("%s %s 0\n%s %s %s" % (x_max, y_max, x_max, y_max, z_max))
+for z in range(z_inc, z_max + z_inc, z_inc):
+    gridlines.append(f"0 {y_min} {z}\n0 {y_max} {z}\n{x_max} {y_max} {z}")
+gridlines.append(f"0 {y_max} 0\n0 {y_max} {z_max}")
+gridlines.append(f"{x_max} {y_max} 0\n{x_max} {y_max} {z_max}")
 p.path("\n>\n".join(gridlines), is_file=False, width="0.5p", z=True)
 
 ###
@@ -203,8 +199,7 @@ p.points(
     z=True,
     line="black",
     shape="o",
-    size="%si/%sib"
-    % (float(X_LEN) / len(bins_x) - 0.05, float(Y_LEN) / len(bins_x) - 0.05),
+    size=f"{float(X_LEN) / len(bins_x) - 0.05}i/{float(Y_LEN) / len(bins_x) - 0.05}ib",
     line_thickness="0.5p",
     cpt=cpt,
 )
@@ -233,10 +228,8 @@ y0 = y_min + (-y_shift * math.cos(angle) + x_shift * math.sin(angle)) * (
 legend_boxes = []
 legend_labels = []
 for i, x in enumerate(np.arange(0, 1.01, 1.0 / (len(colours) - 1.0))):
-    legend_boxes.append(
-        "%s %s %s %s" % (x0 + x * x_end, y0 + x * y_end, z_inc / 2.0, i)
-    )
-    legend_labels.append("%s 0 %s" % (x, labels[i]))
+    legend_boxes.append(f"{x0 + x * x_end} {y0 + x * y_end} {z_inc / 2.0} {i}")
+    legend_labels.append(f"{x} 0 {labels[i]}")
 # cubes and labels of legend
 p.points(
     "\n".join(legend_boxes),
@@ -244,7 +237,7 @@ p.points(
     z=True,
     line="black",
     shape="o",
-    size="%si/%sib0" % (Z_LEN / 10.0, Z_LEN / 10.0),
+    size=f"{Z_LEN / 10.0}i/{Z_LEN / 10.0}ib0",
     line_thickness="0.5p",
     cpt=cpt,
     clip=False,
@@ -252,9 +245,9 @@ p.points(
 p.spacial(
     "X",
     (0, 1, 0, 1),
-    sizing="%si/1i" % (map_width * legend_expand),
-    x_shift="%si" % (x_shift),
-    y_shift="-%si" % (LEGEND_SPACE + 0.2),
+    sizing=f"{map_width * legend_expand}i/1i",
+    x_shift=f"{x_shift}i",
+    y_shift=f"-{LEGEND_SPACE + 0.2}i",
 )
 p.text_multi("\n".join(legend_labels), is_file=False, justify="CT")
 

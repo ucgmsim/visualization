@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 TODO: allow srf.py to retrieve multiple properties at once for major speedup
 """
@@ -158,7 +158,9 @@ while km_inch / major_tick > tick_factor:
 
 # start plot
 p = gmt.GMTPlot(
-    "%s/%s_square.ps" % (gmt_temp, os.path.splitext(os.path.basename(args.srf_file))[0])
+    os.path.join(
+        gmt_temp, f"{os.path.splitext(os.path.basename(args.srf_file))[0]}_square.ps"
+    )
 )
 # override GMT defaults
 gmt.gmt_defaults(
@@ -168,7 +170,7 @@ gmt.gmt_defaults(
     ps_media="A4",
     font_annot_primary=base_size,
     ps_page_orientation="landscape",
-    map_frame_pen="%sp,black" % (scale_factor * 1.5),
+    map_frame_pen=f"{scale_factor * 1.5}p,black",
 )
 p.background(media[0], media[1])
 
@@ -191,7 +193,7 @@ if tinit_max > 20:
     acontour = 2
 elif tinit_max > 10:
     acontour = 1
-cpt_out = ["%s/slip.cpt" % (gmt_temp), "%s/trise.cpt" % (gmt_temp)]
+cpt_out = [os.path.join(gmt_temp, "slip.cpt"), os.path.join(gmt_temp, "trise.cpt")]
 cpt_max = []
 for i, values in enumerate([slip_values, trise_values]):
     cpt_max.append(np.percentile(values, 99))
@@ -202,7 +204,7 @@ for i, values in enumerate([slip_values, trise_values]):
     )
 
 # overlays
-grd_file = "%s/tmp.grd" % (gmt_temp)
+grd_file = os.path.join(gmt_temp, "tmp.grd")
 for s, seg in enumerate(planes):
     for r, row_data in enumerate([slips[s], trises[s], rakes[s]]):
         # shift to plot origin (bottom left corner)
@@ -224,7 +226,7 @@ for s, seg in enumerate(planes):
             )
 
         # only show tick labels on edges
-        tick_labels = "%s%s" % ("w" * (s == 0), "s" * (r == nrow - 1))
+        tick_labels = f"{'w' * (s == 0)}{'s' * (r == nrow - 1)}"
 
         # rake angles have static background
         if r == 2:
@@ -235,7 +237,7 @@ for s, seg in enumerate(planes):
         p.spacial(
             "X",
             (0, seg["length"], 0, seg["width"]),
-            sizing="%s/-%s" % (seg_len_d[s], seg_wid_d[s]),
+            sizing=f"{seg_len_d[s]}/-{seg_wid_d[s]}",
             x_shift=x_shift,
             y_shift=y_shift,
             fill=fill,
@@ -251,23 +253,23 @@ for s, seg in enumerate(planes):
                 seg["width"],
                 "L (km)",
                 dy=-x_text_gap,
-                align="%sT" % align,
+                align=f"{align}T",
                 size=base_size,
             )
             p.text(
                 seg["length"] * (s % 2),
                 seg["width"],
-                "strike %s\\260" % (", ".join(map(str, seg["strike"]))),
+                f"strike {', '.join(map(str, seg['strike']))}\\260",
                 dy=-x_text_gap - base_gap,
-                align="%sT" % align,
+                align=f"{align}T",
                 size=base_size,
             )
             p.text(
                 seg["length"] * (s % 2),
                 seg["width"],
-                "dip %s\\260" % (seg["dip"]),
+                f"dip {seg['dip']}\\260",
                 dy=-x_text_gap - base_gap * 2,
-                align="%sT" % align,
+                align=f"{align}T",
                 size=base_size,
             )
         # dip (y) label
@@ -290,15 +292,17 @@ for s, seg in enumerate(planes):
         p.text(
             seg["length"] * (s % 2),
             0,
-            "%s / %s / %s" % (mn, avg, mx),
+            f"{mn} / {avg} / {mx}",
             dy=0.04,
-            align="%sB" % align,
+            align=f"{align}B",
             size=annot_size,
         )
 
         # overlay data
         if r != 2:
-            grd_table = "\n".join(["%f %f %f" % tuple(row) for row in row_data])
+            grd_table = "\n".join(
+                ["{row[0]:f} {row[1]:f} {row[2]:f}" for row in row_data]
+            )
             gmt.table2grd(
                 grd_table,
                 grd_file,
@@ -360,35 +364,31 @@ for s, seg in enumerate(planes):
             for x in range(gridpoints):
                 if not np.isnan(rk[x]):
                     output.append(
-                        "%f %f %f %f\n"
-                        % (
-                            grid[x][0],
-                            grid[x][1],
-                            -rk[x],
-                            args.rake_scale * sp[x] / max(slip_values),
-                        )
+                        f"{grid[x][0]:f} {grid[x][1]:f} {-rk[x]:f} {args.rake_scale * sp[x] / max(slip_values):f}\n"
                     )
             # RWG default is +a45+ea
             p.points(
                 "".join(output),
                 is_file=False,
                 shape="v",
-                size="%sp+a45+eA+g-" % (scale_factor * 6.0),
+                size=f"{scale_factor * 6.0}p+a45+eA+g-",
                 line="black",
-                line_thickness="%sp" % (scale_factor / 2.0),
+                line_thickness=f"{scale_factor / 2.0}p",
             )
 
         # show where sub planes are split
         for split_km in np.cumsum(seg["length0"][:-1]):
             p.path(
-                "%s 0\n%s %s" % (split_km, split_km, seg["width"]),
+                f"{split_km} 0\n{split_km} {seg['width']}",
                 is_file=False,
-                width="%sp" % (scale_factor / 2.0),
+                width=f"{scale_factor / 2.0}p",
             )
 
         # also show tinit on top of slip
         if r == 0:
-            grd_table = "\n".join(["%f %f %f" % tuple(row) for row in tinits[s]])
+            grd_table = "\n".join(
+                [f"{row[0]:f} {row[1]:f} {row[2]:f}" for row in tinits[s]]
+            )
             gmt.table2grd(
                 grd_table,
                 grd_file,
@@ -411,12 +411,12 @@ for s, seg in enumerate(planes):
             # and hypocentre if first segment
             if s == args.plane_order.index(0):
                 p.points(
-                    "%s %s" % (hyp_s, hyp_d),
+                    f"{hyp_s} {hyp_d}",
                     is_file=False,
                     shape="a",
                     size=(scale_factor * 0.6),
                     line="red",
-                    line_thickness="%sp" % (scale_factor),
+                    line_thickness=f"{scale_factor}p" % (scale_factor),
                 )
 
         # no more tick labels than neccessary

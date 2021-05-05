@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 import matplotlib as mpl
 
@@ -50,9 +50,9 @@ def load_args():
 
 def get_print_name(im, comp):
     if im.startswith("pSA_"):
-        im = "pSA(%dp%s" % (float(im.split("_")[-1]), im.split(".")[-1])
-        im = "%s)" % (im.rstrip("p0"))
-    return "%s_comp_%s" % (im, comp)
+        im = f"pSA({im.split('_')[-1].split('.')[0]:d}p{im.split('.')[-1]}"
+        im = f"{im.rstrip('p0')})"
+    return f"{im}_comp_{comp}"
 
 
 ###
@@ -86,9 +86,8 @@ for im in im_names:
     im_ratios = np.log(obs_ims[im][obs_idx].tolist()) - np.log(
         sim_ims[im][sim_idx].tolist()
     )
-    bias_string = "median=%.2g, sigma=%.2g" % (
-        np.mean(im_ratios),
-        np.std(im_ratios, ddof=1),
+    bias_string = (
+        f"median={np.mean(im_ratios):.2g}, sigma={np.std(im_ratios, ddof=1):.2g}"
     )
 
     # plot
@@ -110,7 +109,7 @@ for im in im_names:
     plt.grid(b=True, axis="x", which="minor")
     fig.set_tight_layout(True)
     plt.legend(loc="best", numpoints=1)
-    plt.ylabel("ln(obs/sim)-%s" % (print_name), fontsize=14)
+    plt.ylabel(f"ln(obs/sim)-{print_name}", fontsize=14)
     plt.xlabel("Source-to-site distance, $R_{rup}$ (km)", fontsize=14)
     plt.title(args.run_name, fontsize=16)
     if not (np.max(im_ratios) < -2.5 or np.min(im_ratios) > 2.5):
@@ -121,7 +120,7 @@ for im in im_names:
 
     plt.savefig(
         os.path.join(
-            args.out_dir, "%s_ObsSimRatio_withRrup_%s.png" % (print_name, args.run_name)
+            args.out_dir, f"{print_name}_ObsSimRatio_withRrup_{args.run_name}.png"
         )
     )
     plt.close()

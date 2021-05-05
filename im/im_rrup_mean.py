@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 IM vs RRUP plot
 
@@ -90,9 +90,9 @@ def get_print_name(im, comp):
         if int(decimal) == 0:
             decimal = ""
         else:
-            decimal = "p{}".format(decimal)
-        im = "pSA({}{})".format(whole, decimal)
-    return "{}_comp_{}".format(im, comp)
+            decimal = f"p{decimal}"
+        im = f"pSA({whole}{decimal})"
+    return f"{im}_comp_{comp}"
 
 
 def validate_args(args):
@@ -291,9 +291,7 @@ def main():
         plt.xlim(1e-1, max(1e2, np.max(rrups) * 1.1))
         fig.set_tight_layout(True)
         plt.savefig(
-            os.path.join(
-                args.out_dir, "%s_with_Rrup_%s.png" % (print_name, args.run_name)
-            ),
+            os.path.join(args.out_dir, f"{print_name}_with_Rrup_{args.run_name}.png"),
             dpi=400,
         )
         plt.close()

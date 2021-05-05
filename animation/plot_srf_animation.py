@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 Plot animation of SRF file showing risetime and finally slip.
 Only for plotting finite faults.
@@ -16,9 +16,6 @@ from qcore.geo import path_from_corners
 import qcore.gmt as gmt
 import qcore.srf as srf
 
-# for repository resources
-script_dir = os.path.dirname(os.path.abspath(__file__))
-
 try:
     srf_file = sys.argv[1]
     assert os.path.exists(srf_file)
@@ -26,7 +23,7 @@ except IndexError:
     print("Missing SRF filepath parameter.")
     exit(1)
 except AssertionError:
-    print("SRF file not found: %s" % (srf_file))
+    print(f"SRF file not found: {srf_file}")
     exit(1)
 srf_file = os.path.abspath(srf_file)
 
@@ -72,32 +69,32 @@ zoom_frames = 50
 srf_ddt = 4
 # subfault dx, dy assuming flat plane
 srf_dx, srf_dy = srf.srf_dxy(srf_file)
-plot_dx = "%sk" % (srf_dx * 0.6)
-plot_dy = "%sk" % (srf_dy * 0.6)
+plot_dx = f"{srf_dx * 0.6}k"
+plot_dy = f"{srf_dy * 0.6}k"
 # bounds for all planes
 srf_bounds = srf.get_bounds(srf_file)
 srf_x_min, srf_y_min = np.min(np.min(srf_bounds, axis=0), axis=0)
 srf_x_max, srf_y_max = np.max(np.max(srf_bounds, axis=0), axis=0)
 # prevent re-calculating SRF corners (speed)
 # yet use the file as initial source (accuracy)
-srf_corners = "%s/srf_corners.txt" % (gwd)
+srf_corners = os.path.join(gwd, "srf_corners.txt")
 srf.srf2corners(srf_file, cnrs=srf_corners)
 # resources for plane processing
 plane_regions = []
-for plane in xrange(len(srf_bounds)):
+for plane in range(len(srf_bounds)):
     # create a mask path for GMT overlay
     path_from_corners(
         corners=srf_bounds[plane],
         min_edge_points=100,
-        output="%s/plane_%d.bounds" % (gwd, plane),
+        output=os.path.join(gwd, f"plane_{plane}.bounds"),
     )
     # create mask from path
     x_min, y_min = np.min(srf_bounds[plane], axis=0)
     x_max, y_max = np.max(srf_bounds[plane], axis=0)
     plane_regions.append((x_min, x_max, y_min, y_max))
     gmt.grd_mask(
-        "%s/plane_%d.bounds" % (gwd, plane),
-        "%s/plane_%d.mask" % (gwd, plane),
+        os.path.join(gwd, f"plane_{plane}.bounds"),
+        os.path.join(gwd, f"plane_{plane}.mask"),
         dx=plot_dx,
         dy=plot_dy,
         region=plane_regions[plane],
@@ -105,7 +102,7 @@ for plane in xrange(len(srf_bounds)):
 
 # total length of rupture
 slip_end = srf.srf2llv_py(srf_file, value="ttotal")
-rup_time = max([max(slip_end[p][:, 2]) for p in xrange(len(slip_end))])
+rup_time = max([max(slip_end[p][:, 2]) for p in range(len(slip_end))])
 srf_dt = srf.srf_dt(srf_file)
 ftime = srf_ddt * srf_dt
 srf_frames = int(ceil(rup_time / ftime))
@@ -122,16 +119,16 @@ map_width, map_height, region_srf = gmt.fill_space(
 ###
 ### STAGE 2: Zoom from NZ Region
 ###
-gmt.gmt_defaults(wd=gwd, ps_media="Custom_%dix%di" % (page_width, page_height))
+gmt.gmt_defaults(wd=gwd, ps_media=f"Custom_{page_width}ix{page_height}i")
 
 
 def zoom_sequence(frame):
     # working directory for this process
-    pwd = "%s/zs%.4d" % (gwd, frame)
+    pwd = os.path.join(gwd, f"zs{frame:04}")
     if not os.path.exists(pwd):
         os.makedirs(pwd)
-    ps_file = "%s/seq_%.4d.ps" % (pwd, frame)
-    copyfile("%s/gmt.conf" % (gwd), "%s/gmt.conf" % (pwd))
+    ps_file = os.path.join(pwd, f"seq_{frame:04}.ps")
+    copyfile(os.path.join(gwd, "gmt.conf"), os.path.join(pwd, "gmt.conf"))
     z = gmt.GMTPlot(ps_file, reset=False)
     plot_region, plot_width, x_margin, y_margin = gmt.region_transition(
         "M",
@@ -204,35 +201,35 @@ def zoom_sequence(frame):
     z.ticks(major=tick_major, minor=tick_minor)
     z.finalise()
     z.png(dpi=dpi, out_dir=out, clip=False)
-    print("Opening zoom sequence %.3d/%.3d complete." % (frame + 1, zoom_frames))
+    print(f"Opening zoom sequence {frame + 1:03}/{zoom_frames:03} complete.")
 
 
 if not draft:
-    # for i in xrange(zoom_frames):
+    # for i in range(zoom_frames):
     #    zoom_sequence(i)
     pool = mp.Pool(40)
-    pool.map(zoom_sequence, xrange(zoom_frames))
+    pool.map(zoom_sequence, range(zoom_frames))
 
 ###
 ### STAGE 3: Slip Animation
 ###
 print("Time series for all subfaults...")
-spec_sr = "sliprate-%s-%s" % (ftime, srf_frames * ftime)
+spec_sr = f"sliprate-{ftime}-{srf_frames * ftime}"
 slip_pos, slip_rate = srf.srf2llv_py(srf_file, value=spec_sr)
 # produce the max sliprate array for colour palette and stats
 sliprate_max = np.array([], dtype=np.float32)
-for plane in xrange(len(slip_rate)):
+for plane in range(len(slip_rate)):
     sliprate_max = np.append(sliprate_max, np.nanmax(slip_rate[plane], axis=1))
 # maximum range to 2 sf
 cpt_max = np.nanpercentile(sliprate_max, 50)
 cpt_max = round(cpt_max, 1 - int(floor(log10(abs(cpt_max)))))
 print("Time series processed.")
 # colour palette for slip
-cpt_sliprate = "%s/sliprate.cpt" % (gwd)
+cpt_sliprate = os.path.join(gwd, "sliprate.cpt")
 gmt.makecpt(gmt.CPTS["slip"], cpt_sliprate, 0, cpt_max, inc=2, invert=False)
 
 # create basemap
-b = gmt.GMTPlot("%s/basemap.ps" % (gwd), reset=False)
+b = gmt.GMTPlot(os.path.join(gwd, "basemap.ps"), reset=False)
 if not draft:
     # extend map to cover margins
     map_width_a, map_height_a, borderless_region = gmt.fill_margins(
@@ -294,13 +291,13 @@ tick_major, tick_minor = gmt.auto_tick(region_srf[0], region_srf[1], map_width)
 
 def slip_sequence(frame):
     # working directory for this process
-    pwd = "%s/ss%.4d" % (gwd, frame)
+    pwd = os.path.join(gwd, f"ss{frame:04}")
     if not os.path.exists(pwd):
         os.makedirs(pwd)
-    ps_file = "%s/seq_%.4d.ps" % (pwd, zoom_frames - zoom_frames * draft + frame)
-    copyfile("%s/basemap.ps" % (gwd), ps_file)
-    copyfile("%s/gmt.conf" % (gwd), "%s/gmt.conf" % (pwd))
-    copyfile("%s/gmt.history" % (gwd), "%s/gmt.history" % (pwd))
+    ps_file = os.path.join(pwd, f"seq_{zoom_frames - zoom_frames * draft + frame}.ps")
+    copyfile(os.path.join(gwd, "basemap.ps"), ps_file)
+    copyfile(os.path.join(gwd, "gmt.conf"), os.path.join(pwd, "gmt.conf"))
+    copyfile(os.path.join(gwd, "gmt.history"), os.path.join(pwd, "gmt.history"))
 
     # finish plot
     s = gmt.GMTPlot(ps_file, append=True, reset=False)
@@ -308,25 +305,25 @@ def slip_sequence(frame):
     s.text(
         region_srf[1],
         region_srf[3],
-        "t = %ss" % (frame * ftime),
+        f"t = {frame * ftime}s",
         dx=0.5,
         dy=0.2,
         align="LB",
         size="16p",
     )
     # prepare overlays
-    for plane in xrange(len(srf_bounds)):
+    for plane in range(len(srf_bounds)):
         plane_data = np.empty((len(slip_pos[plane]), 3))
         plane_data[:, :2] = slip_pos[plane]
         plane_data[:, 2] = slip_rate[plane][:, frame]
         # do not plot if all values are nan (no data at this time in plane)
         if np.min(np.isnan(plane_data[:, 2])):
             continue
-        xyv_file = "%s/plane_%d.bin" % (pwd, plane)
+        xyv_file = os.path.join(pwd, f"plane_{plane}.bin")
         plane_data.astype(np.float32).tofile(xyv_file)
         gmt.table2grd(
             xyv_file,
-            "%s.grd" % (xyv_file),
+            f"{xyv_file}.grd",
             grd_type="nearneighbor",
             sectors=1,
             min_sectors=1,
@@ -334,15 +331,15 @@ def slip_sequence(frame):
             dx=plot_dx,
             dy=plot_dy,
             wd=pwd,
-            search="%sk" % (srf_dx),
+            search=f"{srf_dx}k",
         )
         s.overlay(
-            "%s.grd" % (xyv_file),
+            f"{xyv_file}.grd",
             cpt_sliprate,
             dx=plot_dx,
             dy=plot_dy,
             climit=0.5,
-            crop_grd="%s/plane_%d.mask" % (gwd, plane),
+            crop_grd=os.path.join(gwd, f"plane_{plane}.mask"),
             land_crop=False,
             custom_region=plane_regions[plane],
             transparency=0,
@@ -356,14 +353,14 @@ def slip_sequence(frame):
     s.ticks(major=tick_major, minor=tick_minor)
     s.finalise()
     s.png(dpi=dpi, out_dir=out, clip=False)
-    print("Slip sequence %.3d/%.3d complete." % (frame + 1, srf_frames))
+    print(f"Slip sequence {frame + 1:03}/{srf_frames:03} complete.")
 
 
-# for i in xrange(srf_frames):
+# for i in range(srf_frames):
 #    slip_sequence(i)
 pool = mp.Pool(26)
-pool.map(slip_sequence, xrange(srf_frames))
-# pool.map(slip_sequence, xrange(240))
+pool.map(slip_sequence, range(srf_frames))
+# pool.map(slip_sequence, range(240))
 
 ###
 ### STAGE 4: Show Maximum Sliprate
@@ -375,7 +372,7 @@ pool.map(slip_sequence, xrange(srf_frames))
 ###
 gmt.make_movie(
     os.path.join(out, "seq_%04d.png"),
-    "%s_animation.mov" % os.path.splitext(srf_file)[0],
+    f"{os.path.splitext(srf_file)[0]}_animation.mov",
     fps=20,
 )
 rmtree(gwd)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 import matplotlib as mpl
 
@@ -158,8 +158,6 @@ plt.xlim([0.01, 10])
 if not (np.max(psa_means) < -2.5 or np.min(psa_means) > 2.5):
     plt.ylim([-2.5, 2.5])
 plt.savefig(
-    os.path.join(
-        args.out_dir, "pSAWithPeriod_comp_%s_%s.png" % (args.comp, args.run_name)
-    )
+    os.path.join(args.out_dir, "pSAWithPeriod_comp_{args.comp}_{args.run_name}.png")
 )
 plt.close()

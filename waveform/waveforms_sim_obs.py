@@ -156,7 +156,7 @@ def plot_station(args, name, sim_bb=None):
                 os.path.join(folder, "%s%s%s" % (prefix, name, extensions[i])),
                 meta=True,
             )
-            for i in xrange(len(extensions))
+            for i in range(len(extensions))
         ]
         return (
             [s[0] for s in sim],
@@ -233,7 +233,7 @@ def plot_station(args, name, sim_bb=None):
 
     # subplots
     for i, s in enumerate(data_to_plot):
-        for j in xrange(3):
+        for j in range(3):
             ax = axis[i, j]
             ax.set_axis_off()
             ax.set_ylim([y_min - y_diff * 0.15, y_max])

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 import matplotlib as mpl
 
@@ -113,10 +113,10 @@ if args.have_both:
     stat_idx = enumerate(argsearch(obs_stations, sim_stations))
     stations = sim_stations
 elif args.have_obs:
-    stat_idx = enumerate(xrange(len(obs_stations)))
+    stat_idx = enumerate(range(len(obs_stations)))
     stations = obs_stations
 else:
-    stat_idx = enumerate(xrange(len(sim_stations)))
+    stat_idx = enumerate(range(len(sim_stations)))
     stations = sim_stations
 
 # get ylim
@@ -140,7 +140,7 @@ for obs_idx, sim_idx in stat_idx:
             psa_vals,
             sim_psa[sim_idx],
             color="red",
-            label="%s Sim" % (station),
+            label=f"{station} Sim",
             linewidth=3,
         )
     if args.have_obs:
@@ -148,7 +148,7 @@ for obs_idx, sim_idx in stat_idx:
             psa_vals,
             obs_psa[obs_idx],
             color="black",
-            label="%s Obs" % (station),
+            label=f"{station} Obs",
             linewidth=3,
         )
 
@@ -164,7 +164,7 @@ for obs_idx, sim_idx in stat_idx:
     plt.savefig(
         os.path.join(
             args.out_dir,
-            "pSA_comp_%s_vs_Period_%s_%s.png" % (args.comp, args.run_name, station),
+            f"pSA_comp_{args.comp}_vs_Period_{args.run_name}_{station}.png",
         )
     )
     plt.close()

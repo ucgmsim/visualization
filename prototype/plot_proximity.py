@@ -6,11 +6,11 @@ import os
 
 import numpy as np
 
+from visualization.config import data_path
 from qcore import gmt
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-corners = os.path.join(script_dir, "resources", "SimAtlasFaults.csv")
-balls = os.path.join(script_dir, "resources", "gmt.bb")
+corners = os.path.join(data_path, "SimAtlasFaults.csv")
+balls = os.path.join(data_path, "gmt.bb")
 
 mom2mag = lambda mom: (2 / 3.0 * math.log(mom) / math.log(10.0)) - 10.7
 
