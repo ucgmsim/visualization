@@ -13,12 +13,7 @@ args = parser.parse_args()
 # load IMs and common properties
 im_df_a = pd.read_csv(args.a, header=0)
 im_df_b = pd.read_csv(args.b, header=0)
-ims_a = im_df_a.columns[2:]
-ims_b = im_df_b.columns[2:]
-ims = []
-for im in ims_a:
-    if im in ims_b:
-        ims.append(im)
+ims = np.intersect1d(im_df_a.columns[2:], im_df_b.columns[2:])
 
 # add both IMs into colums IM_x and IM_y
 ratio_df = pd.merge(left=im_df_a, right=im_df_b, on="station")

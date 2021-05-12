@@ -24,9 +24,9 @@ def load_args():
 
     # read
     parser = ArgumentParser()
-    parser.add_argument("obs", help="path to OBSERVED IM file")
-    parser.add_argument("sim", help="path to SIMULATED IM file")
-    parser.add_argument("emp", help="path to EMPIRICAL IM file")
+    parser.add_argument("imcsv1", help="path to first IM file")
+    parser.add_argument("imcsv2", help="path to second IM file to compare with first")
+    parser.add_argument("--imcsv3", help="path to third IM file to compare with first")
     parser.add_argument(
         "-d", "--out-dir", default=".", help="output folder to place plot"
     )
@@ -40,9 +40,10 @@ def load_args():
     args = parser.parse_args()
 
     # validate
-    assert os.path.isfile(args.obs)
-    assert os.path.isfile(args.sim)
-    assert os.path.isfile(args.emp)
+    assert os.path.isfile(args.imcsv1)
+    assert os.path.isfile(args.imcsv2)
+    if args.imcsv3 is not None:
+        assert os.path.isfile(args.imcsv3)
     if not os.path.isdir(args.out_dir):
         os.makedirs(args.out_dir)
 
@@ -64,31 +65,30 @@ def get_ims_psa(arg_sim):
     return sim_ims, sim_psa
 
 
-def calc_ratio(arg_obs, arg_sim):
-    sim_ims, sim_psa = get_ims_psa(arg_sim)
-    obs_ims, obs_psa = get_ims_psa(arg_obs)
+def calc_ratio(arg_im1, arg_im2):
+    ims_2, psa_2 = get_ims_psa(arg_im2)
+    ims_1, psa_1 = get_ims_psa(arg_im1)
 
-    psa_names = np.intersect1d(obs_psa, sim_psa)
+    psa_names = np.intersect1d(psa_1, psa_2)
     psa_vals = np_lstrip(psa_names, chars="pSA_").astype(np.float32)
     # sorted
     sort_idx = np.argsort(psa_vals)
     psa_names = psa_names[sort_idx]
     psa_vals = psa_vals[sort_idx]
-    del sim_psa, sort_idx
 
     # common stations
-    obs_in_sim = argsearch(obs_ims.station, sim_ims.station)
+    obs_in_sim = argsearch(ims_1.station, ims_2.station)
     obs_idx = np.where(obs_in_sim.mask == False)[0]
     sim_idx = obs_in_sim.compressed()
     del obs_in_sim
 
     # plotting data
-    psa_ratios = np.log(obs_ims[psa_names][obs_idx].tolist()) - np.log(
-        sim_ims[psa_names][sim_idx].tolist()
+    psa_ratios = np.log(ims_1[psa_names][obs_idx].tolist()) - np.log(
+        ims_2[psa_names][sim_idx].tolist()
     )
     psa_means = np.mean(psa_ratios, axis=0)
     psa_std = np.std(psa_ratios, axis=0)
-    del sim_ims, obs_idx, sim_idx, psa_names, psa_ratios
+
     return psa_vals, psa_means, psa_std
 
 
@@ -98,8 +98,9 @@ def calc_ratio(arg_obs, arg_sim):
 
 args = load_args()
 
-psa_vals, psa_means, psa_std = calc_ratio(args.obs, args.sim)
-psa_vals_emp, psa_means_emp, psa_std_emp = calc_ratio(args.obs, args.emp)
+psa_vals, psa_means, psa_std = calc_ratio(args.imcsv1, args.imcsv2)
+if args.imcsv3 is not None:
+    psa_vals_emp, psa_means_emp, psa_std_emp = calc_ratio(args.imcsv1, args.imcsv3)
 
 # plot
 fig = plt.figure(figsize=(14, 7.5), dpi=100)
@@ -122,24 +123,25 @@ plt.plot(
     linewidth=5,
     label="Physics-based",
 )
-plt.fill_between(
-    psa_vals_emp,
-    psa_means_emp - psa_std_emp,
-    psa_means_emp + psa_std_emp,
-    facecolor=[0.8, 0.8, 1],
-    edgecolor=[0.2, 0.2, 1],
-    linestyle="dashed",
-    linewidth=0.5,
-    alpha=0.5,
-)
-plt.plot(
-    psa_vals_emp,
-    psa_means_emp,
-    color="blue",
-    linestyle="solid",
-    linewidth=5,
-    label="Empirical",
-)
+if args.imcsv3 is not None:
+    plt.fill_between(
+        psa_vals_emp,
+        psa_means_emp - psa_std_emp,
+        psa_means_emp + psa_std_emp,
+        facecolor=[0.8, 0.8, 1],
+        edgecolor=[0.2, 0.2, 1],
+        linestyle="dashed",
+        linewidth=0.5,
+        alpha=0.5,
+    )
+    plt.plot(
+        psa_vals_emp,
+        psa_means_emp,
+        color="blue",
+        linestyle="solid",
+        linewidth=5,
+        label="Empirical",
+    )
 plt.plot(
     psa_vals, np.zeros_like(psa_vals), color="black", linestyle="dashed", linewidth=3
 )
