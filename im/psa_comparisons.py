@@ -10,10 +10,11 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from qcore.formats import load_im_file
+from qcore.formats import load_im_file_pd
 from qcore.nputil import argsearch
 
 NOT_FOUND = np.ma.masked
+np_endswith = np.core.defchararray.endswith
 np_startswith = np.core.defchararray.startswith
 np_lstrip = np.core.defchararray.lstrip
 
@@ -25,30 +26,27 @@ def load_args():
 
     # read
     parser = ArgumentParser()
-    parser.add_argument("-s", "--sim", help="path to SIMULATED IM file")
-    parser.add_argument("-o", "--obs", help="path to OBSERVED IM file")
+    parser.add_argument("--imcsv", help="path to IM file, repeat as required", action="append")
+    parser.add_argument("--imlabel", help="label for each imcsv, eg: Obs or Sim")
     parser.add_argument(
         "-d", "--out-dir", default=".", help="output folder to place plots"
     )
-    # TODO: automatically retrieved default
     parser.add_argument(
         "--run-name",
-        help="run_name - should automate?",
+        help="run_name",
         default="event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm",
     )
     parser.add_argument("--comp", help="component", default="geom")
     args = parser.parse_args()
 
-    args.have_sim = args.sim is not None
-    args.have_obs = args.obs is not None
-    args.have_both = args.sim is not None and args.obs is not None
-
     # validate
-    assert args.have_sim or args.have_obs
-    if args.have_sim:
-        assert os.path.isfile(args.sim)
-    if args.have_obs:
-        assert os.path.isfile(args.obs)
+    assert args.imcsv is not None
+    for imcsv in args.imcsv:
+        assert os.path.isfile(imcsv)
+    if args.imlabel is None:
+        args.imlabel = [f"IM_{i + 1}" for i in range(len(args.imcsv))]
+    else:
+        assert len(args.imlabel) == len(args.imcsv)
     if not os.path.isdir(args.out_dir):
         os.makedirs(args.out_dir)
 
@@ -60,95 +58,41 @@ def load_args():
 ###
 
 args = load_args()
-if args.have_sim:
-    sim_ims = load_im_file(args.sim, all_psa=True)
-    sim_ims = sim_ims[sim_ims.component == args.comp]
-    sim_psa = [
-        sim_ims.dtype.names[col_i]
-        for col_i in np.where(np_startswith(sim_ims.dtype.names, "pSA_"))[0]
-    ]
-if args.have_obs:
-    obs_ims = load_im_file(args.obs, all_psa=True)
-    obs_ims = obs_ims[obs_ims.component == args.comp]
-    obs_psa = [
-        obs_ims.dtype.names[col_i]
-        for col_i in np.where(np_startswith(obs_ims.dtype.names, "pSA_"))[0]
-    ]
-# only common pSA
-if args.have_both:
-    psa_names = np.intersect1d(obs_psa, sim_psa)
-elif args.have_obs:
-    psa_names = np.array(obs_psa)
-else:
-    psa_names = np.array(sim_psa)
+
+# load im tables
+ims = []
+psas = []
+for imcsv in args.imcsv:
+    ims.append(load_im_file_pd(imcsv, all_ims=True, comp=args.comp))
+    im_names = ims[-1].columns.values.astype(str)
+    psas.append(im_names[np_startswith(im_names, "pSA_") & np.invert(np_endswith(im_names, "_sigma"))])
+
+# only common pSAs
+psa_names = psas[0]
+for psa in psas[1:]:
+    psa_names = np.intersect1d(psa_names, psa)
 psa_vals = np_lstrip(psa_names, chars="pSA_").astype(np.float32)
-
-# get xlim
-x_min = min(psa_vals)
-x_max = max(psa_vals)
-
 # sorted
 sort_idx = np.argsort(psa_vals)
 psa_names = psa_names[sort_idx]
 psa_vals = psa_vals[sort_idx]
-# pSA arrays
-if args.have_sim:
-    sim_psa = np.array(
-        sim_ims.getfield(
-            np.dtype({name: sim_ims.dtype.fields[name] for name in psa_names})
-        ).tolist()
-    )
-    sim_stations = sim_ims.station
-    del sim_ims
-if args.have_obs:
-    obs_psa = np.array(
-        obs_ims.getfield(
-            np.dtype({name: obs_ims.dtype.fields[name] for name in psa_names})
-        ).tolist()
-    )
-    obs_stations = obs_ims.station
-    del obs_ims
+# value range
+y_max = max([ims[i][psa_names].max().max() for i in range(len(ims))])
+y_min = min([ims[i][psa_names].min().min() for i in range(len(ims))])
 
-if args.have_both:
-    stat_idx = enumerate(argsearch(obs_stations, sim_stations))
-    stations = sim_stations
-elif args.have_obs:
-    stat_idx = enumerate(range(len(obs_stations)))
-    stations = obs_stations
-else:
-    stat_idx = enumerate(range(len(sim_stations)))
-    stations = sim_stations
-
-# get ylim
-y_max = max(np.max(obs_psa), np.max(sim_psa))
-y_min = min(np.min(obs_psa), np.min(sim_psa))
-
-
-# in the case of only sim or obs: both indexes are the same
-for obs_idx, sim_idx in stat_idx:
-    if sim_idx is NOT_FOUND:
-        # obs station not found in sim
-        continue
-    station = stations[sim_idx]
-
-    # plot data
-    # fig = plt.figure(figsize = (14, 7.5), dpi = 100)
-    fig = plt.figure(figsize=(7.6, 7.5), dpi=100)  # fig square
+# each station is a plot containing imcsvs as series
+for station in [index[0] for index in ims[0].index]:
+    fig = plt.figure(figsize=(7.6, 7.5), dpi=100)
     plt.rcParams.update({"font.size": 14})
-    if args.have_sim:
+
+    # add a series for each csv
+    for i in range(len(args.imcsv)):
+        if station not in ims[i].index:
+            continue
         plt.loglog(
             psa_vals,
-            sim_psa[sim_idx],
-            color="red",
-            label=f"{station} Sim",
-            linewidth=3,
-        )
-    if args.have_obs:
-        plt.loglog(
-            psa_vals,
-            obs_psa[obs_idx],
-            color="black",
-            label=f"{station} Obs",
+            ims[i].loc[(station, args.comp), psa_names].values,
+            label=f"{station} {args.imlabel[i]}",
             linewidth=3,
         )
 
@@ -158,7 +102,7 @@ for obs_idx, sim_idx in stat_idx:
     plt.xlabel("Vibration period, T (s)", fontsize=14)
     plt.title(args.run_name)
     # plt.xlim([x_min, x_min * 10e4])
-    plt.xlim([x_min, x_max])
+    plt.xlim([psa_vals[0], psa_vals[-1]])
     plt.ylim([max(0.001, y_min), min(5, y_max)])
     # plt.ylim([0.001, 5])
     plt.savefig(
