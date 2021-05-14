@@ -2,17 +2,18 @@
 
 from argparse import ArgumentParser
 
+import numpy as np
 import pandas as pd
 
 parser = ArgumentParser()
-parser.add_argument("a", help="path to first IM csv")
-parser.add_argument("b", help="path to second IM csv")
-parser.add_argument("result", help="path to ratio IM csv")
+parser.add_argument("imcsv1", help="path to first IM csv")
+parser.add_argument("imcsv2", help="path to second IM csv")
+parser.add_argument("result", help="path to result IM csv")
 args = parser.parse_args()
 
 # load IMs and common properties
-im_df_a = pd.read_csv(args.a, header=0)
-im_df_b = pd.read_csv(args.b, header=0)
+im_df_a = pd.read_csv(args.imcsv1, header=0)
+im_df_b = pd.read_csv(args.imcsv2, header=0)
 ims = np.intersect1d(im_df_a.columns[2:], im_df_b.columns[2:])
 
 # add both IMs into colums IM_x and IM_y

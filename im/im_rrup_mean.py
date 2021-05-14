@@ -21,7 +21,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-from qcore.formats import load_im_file
+from qcore.formats import load_im_file_pd
 from qcore.nputil import argsearch
 from qcore.utils import setup_dir
 
@@ -38,8 +38,8 @@ def load_args():
     # read
     parser = ArgumentParser()
     parser.add_argument("rrup", help="path to RRUP file", type=os.path.abspath)
-    parser.add_argument("sim", help="path to SIMULATED IM file", type=os.path.abspath)
-    parser.add_argument("obs", help="path to OBSERVED IM file", type=os.path.abspath)
+    parser.add_argument("--imcsv", help="path to IM file", action="append")
+    parser.add_argument("--imlabel", help="label for each imcsv, eg: Obs or Sim")
     parser.add_argument(
         "--config", help="path to .yaml empirical config file", type=os.path.abspath
     )
@@ -54,7 +54,7 @@ def load_args():
         help="GMPE param DistMax, default 100.0 km",
     )
     parser.add_argument(
-        "--n_val", default=51.0, type=float, help="GMPE param n_val, default 51.0"
+        "--n_val", default=51, type=int, help="GMPE param n_val, default 51"
     )
     parser.add_argument(
         "--out_dir",
@@ -101,8 +101,12 @@ def validate_args(args):
     config arg exists if and only if srf arg exists
     """
     assert os.path.isfile(args.rrup)
-    assert os.path.isfile(args.obs)
-    assert os.path.isfile(args.sim)
+    for imcsv in args.imcsv:
+        assert os.path.isfile(imcsv)
+    if args.imlabel is None:
+        args.imlabel = [f"IM_{i + 1}" for i in range(len(args.imcsv))]
+    else:
+        assert len(args.imlabel) == len(args.imcsv)
 
     if args.srf is not None:
         assert os.path.isfile(args.srf)
@@ -111,7 +115,7 @@ def validate_args(args):
     else:
         if args.config is not None:
             sys.exit(
-                "Please also provide the path to an srf info file for empirical calculation."
+                "srf info file required if yaml config given"
             )
 
 
@@ -141,25 +145,26 @@ def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
 ###
 ### MAIN
 ###
-def main():
+if __name__ == "__main__":
     args = load_args()
+
+    # station name, rrup
     name_rrup = np.loadtxt(
         args.rrup, dtype="|U7,f", usecols=(0, 3), skiprows=1, delimiter=","
     )
 
-    # load im files (slow) for component, available pSA columns
-    sim_ims = load_im_file(args.sim, comp=args.comp)
-    obs_ims = load_im_file(args.obs, comp=args.comp)
+    # load im files for component, available pSA columns
+    ims = []
+    for imcsv in args.imcsv:
+        ims.append(load_im_file_pd(imcsv, comp=args.comp))
+    im_names = ims[0].columns[2:]
+    for im in ims[1:]:
+        im_names = np.intersect1d(im_names, im.columns[2:])
 
-    im_names = np.intersect1d(obs_ims.dtype.names[2:], sim_ims.dtype.names[2:])
-
-    os_idx = argsearch(obs_ims.station, sim_ims.station)
-    ls_idx = argsearch(name_rrup["f0"], sim_ims.station)
-    os_idx.mask += np.isin(os_idx, ls_idx.compressed(), invert=True)
-    obs_idx = np.where(os_idx.mask == False)[0]
-    sim_idx = os_idx.compressed()
-    stations = obs_ims.station[obs_idx]
+    stations = [index[0] for index in ims[0].index]
     name_rrup = name_rrup[argsearch(stations, name_rrup["f0"]).compressed()]
+    # limit stations to those with rrups
+    stations = name_rrup["f0"]
     rrups = name_rrup["f1"]
 
     logged_rrups = np.log(rrups)
@@ -195,32 +200,19 @@ def main():
         print_name = get_print_name(im, args.comp)
         fig = plt.figure(figsize=(14, 7.5), dpi=100)
         plt.rcParams.update({"font.size": 18})
-        sim_ys = sim_ims[im][sim_idx]
-        obs_ys = obs_ims[im][obs_idx]
+        values = []
+        for im_set in ims:
+            values.append(im_set[im][stations].values)
 
-        # sim obs plots
-        plt.loglog(
-            rrups,
-            sim_ys,
-            linestyle="None",
-            color="#aaaaaa",
-            marker="o",
-            markeredgewidth=None,
-            markersize=0.5,
-            markeredgecolor="#aaaaaa",
-            label="Physics-based",
-        )
-        plt.loglog(
-            rrups,
-            obs_ys,
-            linestyle="None",
-            color="#000000",
-            marker="+",
-            markeredgewidth=None,
-            markersize=1,
-            markeredgecolor="#000000",
-            label="Empiricals with correct vs30",
-        )
+        for i, series in enumerate(values):
+            plt.loglog(
+                rrups,
+                series,
+                linestyle="None",
+                markeredgewidth=None,
+                markersize=0.5,
+                label=args.imlabel[i],
+            )
 
         # emp plot
         if args.srf is not None:
@@ -260,9 +252,11 @@ def main():
                     linewidth=3,
                 )
 
-        means = np.asarray([np.mean(np.log(sim_ys[mask])) for mask in masks])
-        stddevs = np.asarray([np.std(np.log(sim_ys[mask])) for mask in masks])
-
+        # something wrong here, these are still 2d
+        means = np.asarray([np.mean(np.log(ims[0].loc[stations[mask]])) for mask in masks])
+        stddevs = np.asarray([np.std(np.log(ims[0].loc[stations[mask]])) for mask in masks])
+        print(bucket_rrups)
+        print(np.exp(means))
         # The top row of the error bar array must be the bottom error, the bottom row is the top error
         plt.errorbar(
             bucket_rrups,
@@ -285,8 +279,8 @@ def main():
         plt.xlabel("Source-to-site distance, $R_{rup}$ (km)")
         plt.minorticks_on()
         plt.title(args.run_name, fontsize=12)
-        ymax = max(np.max(sim_ys), np.max(obs_ys))
-        ymin = min(np.min(sim_ys), np.min(obs_ys))
+        y_max = max([ims[i][im_names].max().max() for i in range(len(ims))])
+        y_min = min([ims[i][im_names].min().min() for i in range(len(ims))])
         plt.ylim(top=ymax * 1.27)
         plt.xlim(1e-1, max(1e2, np.max(rrups) * 1.1))
         fig.set_tight_layout(True)
@@ -295,7 +289,3 @@ def main():
             dpi=400,
         )
         plt.close()
-
-
-if __name__ == "__main__":
-    main()

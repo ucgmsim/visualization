@@ -16,6 +16,13 @@ np_startswith = np.core.defchararray.startswith
 np_endswith = np.core.defchararray.endswith
 np_lstrip = np.core.defchararray.lstrip
 
+# default colours for each imcsv ratio
+FACE_EDGE_COLOURS = [
+    [[1, 0.8, 0.8], [1, 0.2, 0.2], "red"],
+    [[0.8, 0.8, 1], [0.2, 0.2, 1], "blue"],
+    [[0.8, 1, 0.8], [0.2, 1, 0.2], "green"]
+]
+
 
 def load_args():
     """
@@ -24,26 +31,26 @@ def load_args():
 
     # read
     parser = ArgumentParser()
-    parser.add_argument("imcsv1", help="path to first IM file")
-    parser.add_argument("imcsv2", help="path to second IM file to compare with first")
-    parser.add_argument("--imcsv3", help="path to third IM file to compare with first")
+    parser.add_argument("--imcsv", help="path to IM file, will be compared to first one", action="append")
+    parser.add_argument("--imlabel", help="label for each imcsv, eg: Observed, Physics-based, Empirical")
     parser.add_argument(
         "-d", "--out-dir", default=".", help="output folder to place plot"
     )
-    # TODO: automatically retrieved default
     parser.add_argument(
         "--run-name",
-        help="run_name - should automate?",
+        help="run_name (plot title)",
         default="event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm",
     )
     parser.add_argument("--comp", help="component", default="geom")
     args = parser.parse_args()
 
     # validate
-    assert os.path.isfile(args.imcsv1)
-    assert os.path.isfile(args.imcsv2)
-    if args.imcsv3 is not None:
-        assert os.path.isfile(args.imcsv3)
+    for imcsv in args.imcsv:
+        assert os.path.isfile(imcsv)
+    if args.imlabel is None:
+        args.imlabel = [f"IM_{i + 1}" for i in range(len(args.imcsv))]
+    else:
+        assert len(args.imlabel) == len(args.imcsv)
     if not os.path.isdir(args.out_dir):
         os.makedirs(args.out_dir)
 
@@ -98,49 +105,31 @@ def calc_ratio(arg_im1, arg_im2):
 
 args = load_args()
 
-psa_vals, psa_means, psa_std = calc_ratio(args.imcsv1, args.imcsv2)
-if args.imcsv3 is not None:
-    psa_vals_emp, psa_means_emp, psa_std_emp = calc_ratio(args.imcsv1, args.imcsv3)
-
 # plot
 fig = plt.figure(figsize=(14, 7.5), dpi=100)
 plt.rcParams.update({"font.size": 18})
-plt.fill_between(
-    psa_vals,
-    psa_means - psa_std,
-    psa_means + psa_std,
-    facecolor=[1, 0.8, 0.8],
-    edgecolor=[1, 0.2, 0.2],
-    linestyle="dashed",
-    linewidth=0.5,
-    alpha=0.5,
-)
-plt.plot(
-    psa_vals,
-    psa_means,
-    color="red",
-    linestyle="solid",
-    linewidth=5,
-    label="Physics-based",
-)
-if args.imcsv3 is not None:
+
+# data values
+for i in range(1, len(args.imcsv)):
+    psa_vals, psa_means, psa_std = calc_ratio(args.imcsv[0], args.imcsv[i])
+
     plt.fill_between(
-        psa_vals_emp,
-        psa_means_emp - psa_std_emp,
-        psa_means_emp + psa_std_emp,
-        facecolor=[0.8, 0.8, 1],
-        edgecolor=[0.2, 0.2, 1],
+        psa_vals,
+        psa_means - psa_std,
+        psa_means + psa_std,
+        facecolor=FACE_EDGE_COLOURS[i - 1][0],
+        edgecolor=FACE_EDGE_COLOURS[i - 1][1],
         linestyle="dashed",
         linewidth=0.5,
         alpha=0.5,
     )
     plt.plot(
-        psa_vals_emp,
-        psa_means_emp,
-        color="blue",
+        psa_vals,
+        psa_means,
+        color=FACE_EDGE_COLOURS[i - 1][2],
         linestyle="solid",
         linewidth=5,
-        label="Empirical",
+        label=args.imlabel[i],
     )
 plt.plot(
     psa_vals, np.zeros_like(psa_vals), color="black", linestyle="dashed", linewidth=3
@@ -153,13 +142,13 @@ plt.grid(b=True, axis="y", which="major")
 plt.grid(b=True, axis="x", which="minor")
 fig.set_tight_layout(True)
 plt.legend(loc="best")
-plt.ylabel("pSA residual, ln(obs)-ln(GMM)", fontsize=14)
+plt.ylabel(f"pSA residual, ln({args.imlabel[0]})-ln(GMM)", fontsize=14)
 plt.xlabel("Vibration period, T (s)", fontsize=14)
 plt.title(args.run_name, fontsize=16)
 plt.xlim([0.01, 10])
 if not (np.max(psa_means) < -2.5 or np.min(psa_means) > 2.5):
     plt.ylim([-2.5, 2.5])
 plt.savefig(
-    os.path.join(args.out_dir, "pSAWithPeriod_comp_{args.comp}_{args.run_name}.png")
+    os.path.join(args.out_dir, f"pSAWithPeriod_comp_{args.comp}_{args.run_name}.png")
 )
 plt.close()
