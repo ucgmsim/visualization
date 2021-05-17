@@ -29,6 +29,8 @@ from empirical.scripts import calculate_empirical
 from empirical.util import empirical_factory, classdef
 
 N_BUCKETS = 10
+# matplotlib point style for each imcsv
+MARKERS = ["o", "P", "s", "X", "v", "^", "D"]
 
 
 def load_args():
@@ -197,6 +199,10 @@ if __name__ == "__main__":
 
     # plot
     for im in im_names:
+        # skip sigma
+        if im.endswith("_sigma"):
+            continue
+
         print_name = get_print_name(im, args.comp)
         fig = plt.figure(figsize=(14, 7.5), dpi=100)
         plt.rcParams.update({"font.size": 18})
@@ -204,6 +210,7 @@ if __name__ == "__main__":
         for im_set in ims:
             values.append(im_set[im][stations].values)
 
+        # plot points
         for i, series in enumerate(values):
             plt.loglog(
                 rrups,
@@ -211,6 +218,7 @@ if __name__ == "__main__":
                 linestyle="None",
                 markeredgewidth=None,
                 markersize=0.5,
+                marker=MARKERS[i % len(MARKERS)],
                 label=args.imlabel[i],
             )
 
@@ -252,12 +260,9 @@ if __name__ == "__main__":
                     linewidth=3,
                 )
 
-        # something wrong here, these are still 2d
-        means = np.asarray([np.mean(np.log(ims[0].loc[stations[mask]])) for mask in masks])
-        stddevs = np.asarray([np.std(np.log(ims[0].loc[stations[mask]])) for mask in masks])
-        print(bucket_rrups)
-        print(np.exp(means))
-        # The top row of the error bar array must be the bottom error, the bottom row is the top error
+        # plot error bars
+        means = np.asarray([np.mean(np.log(ims[0][im].loc[stations[mask]].values)) for mask in masks])
+        stddevs = np.asarray([np.std(np.log(ims[0][im].loc[stations[mask]].values)) for mask in masks])
         plt.errorbar(
             bucket_rrups,
             np.exp(means),
@@ -281,7 +286,7 @@ if __name__ == "__main__":
         plt.title(args.run_name, fontsize=12)
         y_max = max([ims[i][im_names].max().max() for i in range(len(ims))])
         y_min = min([ims[i][im_names].min().min() for i in range(len(ims))])
-        plt.ylim(top=ymax * 1.27)
+        plt.ylim(top=y_max * 1.27)
         plt.xlim(1e-1, max(1e2, np.max(rrups) * 1.1))
         fig.set_tight_layout(True)
         plt.savefig(
