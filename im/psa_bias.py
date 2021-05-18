@@ -20,7 +20,10 @@ np_lstrip = np.core.defchararray.lstrip
 FACE_EDGE_COLOURS = [
     [[1, 0.8, 0.8], [1, 0.2, 0.2], "red"],
     [[0.8, 0.8, 1], [0.2, 0.2, 1], "blue"],
-    [[0.8, 1, 0.8], [0.2, 1, 0.2], "green"]
+    [[0.8, 1, 0.8], [0.2, 1, 0.2], "green"],
+    [[1, 1, 0.8], [1, 1, 0.2], "yellow"],
+    [[1, 0.8, 1], [1, 0.2, 1], "magenta"],
+    [[0.8, 1, 1], [0.2, 1, 1], "cyan"],
 ]
 
 
@@ -31,7 +34,7 @@ def load_args():
 
     # read
     parser = ArgumentParser()
-    parser.add_argument("--imcsv", help="path to IM file, will be compared to first one", action="append")
+    parser.add_argument("--imcsv", required=True, help="path to IM file, will be compared to first one", action="append")
     parser.add_argument("--imlabel", help="label for each imcsv, eg: Observed, Physics-based, Empirical")
     parser.add_argument(
         "-d", "--out-dir", default=".", help="output folder to place plot"
@@ -45,6 +48,7 @@ def load_args():
     args = parser.parse_args()
 
     # validate
+    assert len(args.imcsv) > 1
     for imcsv in args.imcsv:
         assert os.path.isfile(imcsv)
     if args.imlabel is None:

@@ -40,7 +40,7 @@ def load_args():
     # read
     parser = ArgumentParser()
     parser.add_argument("rrup", help="path to RRUP file", type=os.path.abspath)
-    parser.add_argument("--imcsv", help="path to IM file", action="append")
+    parser.add_argument("--imcsv", required=True, help="path to IM file", action="append")
     parser.add_argument("--imlabel", help="label for each imcsv, eg: Obs or Sim")
     parser.add_argument(
         "--config", help="path to .yaml empirical config file", type=os.path.abspath

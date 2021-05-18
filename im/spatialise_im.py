@@ -24,25 +24,6 @@ from qcore import shared, utils, constants, formats
 
 
 COMPS = list(constants.Components.iterate_str_values())
-META_PATTERN = ["_imcalc.info", "_empirical.info"]
-
-
-def check_get_meta(csv_filepath):
-    """
-    :param csv_filepath: user input path to summary im/emp .csv file
-    :return: runname, meta_info_file path (None if not found)
-    """
-    csv_filename = csv_filepath.split("/")[-1]
-    csv_dir = os.path.abspath(os.path.dirname(csv_filepath))
-    runname = csv_filename.split(".")[0]
-    meta_filename = []
-    for p in META_PATTERN:
-        meta_filename.extend(glob.glob1(csv_dir, "{}{}".format(runname, p)))
-    if len(meta_filename) == 1:
-        return runname, os.path.join(csv_dir, meta_filename[0])
-    else:
-        print("metainfo file not found for the csv you have provided")
-        return runname, None
 
 
 def get_runtype(meta_filepath):
@@ -71,7 +52,7 @@ def validate_filepath(parser, file_path):
         except (IOError, OSError):
             parser.error("Can't open {}".format(file_path))
     else:
-        parser.error("No such file {}".format(file_path))  # might be a dir or not exist
+        parser.error("No such file {}".format(file_path))
 
 
 def validate_dir(parser, dir_path):
@@ -85,7 +66,7 @@ def validate_dir(parser, dir_path):
         parser.error("No such directory {}".format(dir_path))
 
 
-def generate_maps():
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("imcsv_filepath", help="path to input IMcsv file")
     parser.add_argument("station_filepath", help="path to input station_ll file path")
@@ -110,16 +91,14 @@ def generate_maps():
     validate_filepath(parser, args.station_filepath)
     validate_dir(parser, args.output_path)
 
-    run_name, meta_filepath = check_get_meta(args.imcsv_filepath)
-    if meta_filepath is not None:
-        run_type = get_runtype(meta_filepath)
-    else:
-        run_type = ""
+    run_name = args.imcsv_filepath.split("/")[-1].split(".")[0]
 
     stat_df = formats.load_station_file(args.station_filepath)
     im_df = formats.load_im_file_pd(args.imcsv_filepath)
+    # must have compatible index names to merge
+    stat_df.index.rename("station", inplace=True)
 
-    xyz_df = im_df.merge(stat_df, left_on="station", right_index=True)
+    xyz_df = im_df.merge(stat_df, left_index=True, right_index=True, how="inner")
     xyz_real_station_df = xyz_df[
         [
             not shared.is_virtual_station(stat)
@@ -131,10 +110,10 @@ def generate_maps():
     columns = ["lon", "lat", *ims]
 
     non_uniform_filepath = os.path.join(
-        args.output_path, f"non_uniform_{run_type}_im.xyz"
+        args.output_path, "non_uniform_im.xyz"
     )
     real_station_filepath = os.path.join(
-        args.output_path, f"real_station_{run_type}_im.xyz"
+        args.output_path, "real_station_im.xyz"
     )
 
     xyz_df[columns].to_csv(non_uniform_filepath, sep=" ", header=None, index=None)
@@ -147,7 +126,3 @@ def generate_maps():
         fp.write(" ".join(ims))
 
     print("xyz files are output to {}".format(args.output_path))
-
-
-if __name__ == "__main__":
-    generate_maps()
