@@ -1,18 +1,6 @@
 #!/usr/bin/env python3
-
 """
-Assumption: (1) im_values.csv and im_values_[imcalc|empirical].info are in the same location and
-            (2) .csv and _[imcalc|empirical].info have the same prefix
-
 Generate non_uniform.xyz and sim/obs.xyz file
-
-Command:
-To generate .xyz:
-python im_plot.py ~/darfield_sim/darfield_sim.csv /nesi/project/nesi00213/dev/impp_datasets/Darfield/non_uniform_whole_nz_with_real_stations-hh100_17062017.ll -o ~/test_emp_plot
-python im_plot.py ~/darfield_sim/darfield_sim.csv ~/rrup.csv -o ~/test_emp_plot
-
-To plot:
-python plot_stations.py ~/test_emp_plot/sim_im_plot_map_darfield_sim.xyz --srf_cnrs /nesi/project/nesi00213/dev/impp_datasets/Darfield/bev01_s103246Allsegm_v8_23.srf --model_params /nesi/project/nesi00213/dev/impp_datasets/Darfield/model_params_nz01-h0.100 --out_dir ~/test_emp_plot/sim_im_plot_map
 """
 
 import os
@@ -24,18 +12,6 @@ from qcore import shared, utils, constants, formats
 
 
 COMPS = list(constants.Components.iterate_str_values())
-
-
-def get_runtype(meta_filepath):
-    """
-    get the run type for output xyz filename from the '_[imcalc|empirical].info' metadata file
-    :param meta_filepath: user input
-    :return: run_type
-    """
-    with open(meta_filepath, "r") as meta_file:
-        meta_file.readline()  # skip header
-        run_type = meta_file.readline().strip().split(",")[2]
-    return run_type
 
 
 def validate_filepath(parser, file_path):
@@ -109,12 +85,8 @@ if __name__ == "__main__":
     ims = im_df.columns
     columns = ["lon", "lat", *ims]
 
-    non_uniform_filepath = os.path.join(
-        args.output_path, "non_uniform_im.xyz"
-    )
-    real_station_filepath = os.path.join(
-        args.output_path, "real_station_im.xyz"
-    )
+    non_uniform_filepath = os.path.join(args.output_path, "non_uniform_im.xyz")
+    real_station_filepath = os.path.join(args.output_path, "real_station_im.xyz")
 
     xyz_df[columns].to_csv(non_uniform_filepath, sep=" ", header=None, index=None)
     xyz_real_station_df[columns].to_csv(

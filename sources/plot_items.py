@@ -473,7 +473,7 @@ def load_sizing(xyz_info, wd):
 
 
 def basemap(args, sizing, wd):
-    ps_file = "%s/%s.ps" % (wd, args.filename)
+    ps_file = "%s/%s.ps" % (wd, os.path.basename(args.filename))
     p = gmt.GMTPlot(ps_file, reset=False)
     p.spacial(
         "M", sizing["region"], sizing="%si" % (sizing["size"][0]), x_shift=2, y_shift=2
@@ -573,11 +573,11 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
         )
 
 
-def render_xyz_col(sizing, xyz_info, xyz_i):
+def render_xyz_col(basename, out_dir, sizing, xyz_info, xyz_i):
     i, xyz = xyz_i
     pwd = os.path.join(gmt_temp, "_xyz{}".format(i))
-    ps_file = os.path.join(pwd, "{}_{}.ps".format(args.filename, i))
-    copy(os.path.join(gmt_temp, args.filename + ".ps"), ps_file)
+    ps_file = os.path.join(pwd, "{}_{}.ps".format(basename, i))
+    copy(os.path.join(gmt_temp, basename + ".ps"), ps_file)
     copy(os.path.join(gmt_temp, "gmt.conf"), os.path.join(pwd, "gmt.conf"))
     copy(os.path.join(gmt_temp, "gmt.history"), os.path.join(pwd, "gmt.history"))
     p = gmt.GMTPlot(ps_file, append=True, reset=False)
@@ -633,7 +633,7 @@ def render_xyz_col(sizing, xyz_info, xyz_i):
         p.sites(gmt.sites_major)
 
     p.finalise()
-    p.png(out_dir=".", dpi=args.dpi, background="white")
+    p.png(out_dir=out_dir, dpi=args.dpi, background="white")
 
 
 args = get_args()
@@ -641,6 +641,12 @@ gmt_temp = mkdtemp()
 srf_files, srf_0 = find_srfs(args, gmt_temp)
 xyts_files = find_xyts(args)
 xyz_ncol = find_xyz_ncol(args.xyz)
+basename = os.path.basename(args.filename)
+out_dir = os.path.dirname(args.filename)
+if out_dir == "":
+    out_dir = "."
+if not os.path.isdir(out_dir):
+    os.makedirs(out_dir)
 
 pool = Pool(args.nproc)
 xyz_info = pool.apply_async(load_xyz, [args])
@@ -671,13 +677,14 @@ if args.labels_file is not None:
 if args.xyz:
     p.leave()
     xyz_pngs = pool.map_async(
-        partial(render_xyz_col, sizing, xyz_info), enumerate(xyz_cols)
+        partial(render_xyz_col, basename, out_dir, sizing, xyz_info),
+        enumerate(xyz_cols),
     )
     xyz_pngs = xyz_pngs.get()
 else:
     p.sites(gmt.sites_major)
     p.finalise()
-    p.png(out_dir=".", dpi=args.dpi, background="white")
+    p.png(out_dir=out_dir, dpi=args.dpi, background="white")
 
 pool.close()
 rmtree(gmt_temp)

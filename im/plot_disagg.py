@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 """
-Plots deagg data.
-
-Requires:
-numpy
-gmt from qcore
+Plots disaggregation data as 3D bar plot.
 """
 
 from argparse import ArgumentParser

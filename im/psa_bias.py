@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Plot pSA residual with vibration period.
+"""
 
 import matplotlib as mpl
 
@@ -34,8 +37,15 @@ def load_args():
 
     # read
     parser = ArgumentParser()
-    parser.add_argument("--imcsv", required=True, help="path to IM file, will be compared to first one", action="append")
-    parser.add_argument("--imlabel", help="label for each imcsv, eg: Observed, Physics-based, Empirical")
+    parser.add_argument(
+        "--imcsv",
+        required=True,
+        help="path to IM file, will be compared to first one",
+        action="append",
+    )
+    parser.add_argument(
+        "--imlabel", help="label for each imcsv, eg: Observed, Physics-based, Empirical"
+    )
     parser.add_argument(
         "-d", "--out-dir", default=".", help="output folder to place plot"
     )
@@ -103,56 +113,59 @@ def calc_ratio(arg_im1, arg_im2):
     return psa_vals, psa_means, psa_std
 
 
-###
-### MAIN
-###
+if __name__ == "__main__":
+    args = load_args()
 
-args = load_args()
+    # plot
+    fig = plt.figure(figsize=(14, 7.5), dpi=100)
+    plt.rcParams.update({"font.size": 18})
 
-# plot
-fig = plt.figure(figsize=(14, 7.5), dpi=100)
-plt.rcParams.update({"font.size": 18})
+    # data values
+    for i in range(1, len(args.imcsv)):
+        psa_vals, psa_means, psa_std = calc_ratio(args.imcsv[0], args.imcsv[i])
 
-# data values
-for i in range(1, len(args.imcsv)):
-    psa_vals, psa_means, psa_std = calc_ratio(args.imcsv[0], args.imcsv[i])
-
-    plt.fill_between(
-        psa_vals,
-        psa_means - psa_std,
-        psa_means + psa_std,
-        facecolor=FACE_EDGE_COLOURS[i - 1][0],
-        edgecolor=FACE_EDGE_COLOURS[i - 1][1],
-        linestyle="dashed",
-        linewidth=0.5,
-        alpha=0.5,
-    )
+        plt.fill_between(
+            psa_vals,
+            psa_means - psa_std,
+            psa_means + psa_std,
+            facecolor=FACE_EDGE_COLOURS[i - 1][0],
+            edgecolor=FACE_EDGE_COLOURS[i - 1][1],
+            linestyle="dashed",
+            linewidth=0.5,
+            alpha=0.5,
+        )
+        plt.plot(
+            psa_vals,
+            psa_means,
+            color=FACE_EDGE_COLOURS[i - 1][2],
+            linestyle="solid",
+            linewidth=5,
+            label=args.imlabel[i],
+        )
     plt.plot(
         psa_vals,
-        psa_means,
-        color=FACE_EDGE_COLOURS[i - 1][2],
-        linestyle="solid",
-        linewidth=5,
-        label=args.imlabel[i],
+        np.zeros_like(psa_vals),
+        color="black",
+        linestyle="dashed",
+        linewidth=3,
     )
-plt.plot(
-    psa_vals, np.zeros_like(psa_vals), color="black", linestyle="dashed", linewidth=3
-)
 
-# plot formatting
-plt.gca().set_xscale("log")
-plt.minorticks_on()
-plt.grid(b=True, axis="y", which="major")
-plt.grid(b=True, axis="x", which="minor")
-fig.set_tight_layout(True)
-plt.legend(loc="best")
-plt.ylabel(f"pSA residual, ln({args.imlabel[0]})-ln(GMM)", fontsize=14)
-plt.xlabel("Vibration period, T (s)", fontsize=14)
-plt.title(args.run_name, fontsize=16)
-plt.xlim([0.01, 10])
-if not (np.max(psa_means) < -2.5 or np.min(psa_means) > 2.5):
-    plt.ylim([-2.5, 2.5])
-plt.savefig(
-    os.path.join(args.out_dir, f"pSAWithPeriod_comp_{args.comp}_{args.run_name}.png")
-)
-plt.close()
+    # plot formatting
+    plt.gca().set_xscale("log")
+    plt.minorticks_on()
+    plt.grid(b=True, axis="y", which="major")
+    plt.grid(b=True, axis="x", which="minor")
+    fig.set_tight_layout(True)
+    plt.legend(loc="best")
+    plt.ylabel(f"pSA residual, ln({args.imlabel[0]})-ln(GMM)", fontsize=14)
+    plt.xlabel("Vibration period, T (s)", fontsize=14)
+    plt.title(args.run_name, fontsize=16)
+    plt.xlim([0.01, 10])
+    if not (np.max(psa_means) < -2.5 or np.min(psa_means) > 2.5):
+        plt.ylim([-2.5, 2.5])
+    plt.savefig(
+        os.path.join(
+            args.out_dir, f"pSAWithPeriod_comp_{args.comp}_{args.run_name}.png"
+        )
+    )
+    plt.close()

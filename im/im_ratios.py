@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Create IM csv file containing the ration of 2 IM csv files.
+"""
 
 from argparse import ArgumentParser
 

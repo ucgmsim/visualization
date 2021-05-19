@@ -1,12 +1,7 @@
 #!/usr/bin/env python
 """
-IM vs RRUP plot
-
-To see help message:
-python im_rrup_mean.py -h
-
-Sample command:
-python im_rrup_mean.py ~/darfield_obs/rrups.csv  ~/darfield_sim/darfield_sim.csv ~/darfield_obs/darfield_obs.csv --config ~/Empirical_Engine/model_config.yaml --srf /nesi/project/nesi00213/dev/impp_datasets/Darfield/source.info --out_dir darfield_emp_new_rrup4 --run_name 20100904_Darfield_m7p1_201705011613
+IM vs RRUP plot.
+Plots error bars or Empirical range and scatter of values.
 """
 
 import matplotlib as mpl
@@ -40,7 +35,9 @@ def load_args():
     # read
     parser = ArgumentParser()
     parser.add_argument("rrup", help="path to RRUP file", type=os.path.abspath)
-    parser.add_argument("--imcsv", required=True, help="path to IM file", action="append")
+    parser.add_argument(
+        "--imcsv", required=True, help="path to IM file", action="append"
+    )
     parser.add_argument("--imlabel", help="label for each imcsv, eg: Obs or Sim")
     parser.add_argument(
         "--config", help="path to .yaml empirical config file", type=os.path.abspath
@@ -80,13 +77,10 @@ def load_args():
 
 
 def get_print_name(im, comp):
-    """Takes in an im and component and creates a printable name from them
-    In the case of pSA ims the period is processed such that the letter p is used in place of a decimal point and any
-    trailing 0s are trimmed.
-    pSA_0.02 -> pSA(0p02)
-    pSA_0.5 -> pSA(0.5)
-    pSA_1.0 -> pSA(1)
-    pSA_10.0 -> pSA(10)"""
+    """
+    Takes in an IM and component and creates a filename friendly version.
+    samples: pSA_0.02 -> pSA(0p02), pSA_10.0 -> pSA(10)
+    """
     if im.startswith("pSA_"):
         whole, decimal = im.split("_")[-1].split(".")
         if int(decimal) == 0:
@@ -99,8 +93,7 @@ def get_print_name(im, comp):
 
 def validate_args(args):
     """
-    validates all input args;
-    config arg exists if and only if srf arg exists
+    Validates command line input args.
     """
     assert os.path.isfile(args.rrup)
     for imcsv in args.imcsv:
@@ -116,9 +109,7 @@ def validate_args(args):
             assert os.path.isfile(args.config)
     else:
         if args.config is not None:
-            sys.exit(
-                "srf info file required if yaml config given"
-            )
+            sys.exit("SRF Info file required if yaml config given.")
 
 
 def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
@@ -144,9 +135,6 @@ def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
     return np.array(e_medians), np.array(e_sigmas)
 
 
-###
-### MAIN
-###
 if __name__ == "__main__":
     args = load_args()
 
@@ -170,9 +158,8 @@ if __name__ == "__main__":
     rrups = name_rrup["f1"]
 
     logged_rrups = np.log(rrups)
-    max_logged_rrup = np.max(logged_rrups)
     min_logged_rrup = np.min(logged_rrups)
-    bucket_range = (max_logged_rrup - min_logged_rrup) / N_BUCKETS
+    bucket_range = (np.max(logged_rrups) - min_logged_rrup) / N_BUCKETS
 
     masks = [
         (min_logged_rrup + (i + 1) * bucket_range >= logged_rrups)
@@ -222,16 +209,16 @@ if __name__ == "__main__":
                 label=args.imlabel[i],
             )
 
-        # emp plot
+        # emp +- range plot
         if args.srf is not None:
             if "pSA" in im:
-                im, p = im.split("_")
+                im_type, p = im.split("_")
                 period = [float(p)]
             else:
                 period = None
 
             e_medians, e_sigmas = get_empirical_values(
-                fault, im, model_dict, r_rup_vals, period
+                fault, im_type, model_dict, r_rup_vals, period
             )
 
             if np.size(e_medians) != 0:  # MMI does not have emp
@@ -260,23 +247,34 @@ if __name__ == "__main__":
                     linewidth=3,
                 )
 
-        # plot error bars
-        means = np.asarray([np.mean(np.log(ims[0][im].loc[stations[mask]].values)) for mask in masks])
-        stddevs = np.asarray([np.std(np.log(ims[0][im].loc[stations[mask]].values)) for mask in masks])
-        plt.errorbar(
-            bucket_rrups,
-            np.exp(means),
-            np.vstack(
-                (
-                    np.exp(means) - np.exp(means - stddevs),
-                    np.exp(means + stddevs) - np.exp(means),
-                )
-            ),
-            fmt="o",
-            zorder=50,
-            color="black",
-            capsize=6,
-        )
+        if args.srf is not None:
+            # plot error bars
+            means = np.asarray(
+                [
+                    np.mean(np.log(ims[0][im].loc[stations[mask]].values))
+                    for mask in masks
+                ]
+            )
+            stddevs = np.asarray(
+                [
+                    np.std(np.log(ims[0][im].loc[stations[mask]].values))
+                    for mask in masks
+                ]
+            )
+            plt.errorbar(
+                bucket_rrups,
+                np.exp(means),
+                np.vstack(
+                    (
+                        np.exp(means) - np.exp(means - stddevs),
+                        np.exp(means + stddevs) - np.exp(means),
+                    )
+                ),
+                fmt="o",
+                zorder=50,
+                color="black",
+                capsize=6,
+            )
 
         # plot formatting
         plt.legend(loc="best", fontsize=9, numpoints=1)
