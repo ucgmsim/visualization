@@ -81,23 +81,23 @@ srf_corners = os.path.join(gwd, "srf_corners.txt")
 srf.srf2corners(srf_file, cnrs=srf_corners)
 # resources for plane processing
 plane_regions = []
-for plane in range(len(srf_bounds)):
+for i, plane in enumerate(srf_bounds):
     # create a mask path for GMT overlay
     path_from_corners(
-        corners=srf_bounds[plane],
+        corners=plane,
         min_edge_points=100,
-        output=os.path.join(gwd, f"plane_{plane}.bounds"),
+        output=os.path.join(gwd, f"plane_{i}.bounds"),
     )
     # create mask from path
-    x_min, y_min = np.min(srf_bounds[plane], axis=0)
-    x_max, y_max = np.max(srf_bounds[plane], axis=0)
+    x_min, y_min = np.min(plane, axis=0)
+    x_max, y_max = np.max(plane, axis=0)
     plane_regions.append((x_min, x_max, y_min, y_max))
     gmt.grd_mask(
-        os.path.join(gwd, f"plane_{plane}.bounds"),
-        os.path.join(gwd, f"plane_{plane}.mask"),
+        os.path.join(gwd, f"plane_{i}.bounds"),
+        os.path.join(gwd, f"plane_{i}.mask"),
         dx=plot_dx,
         dy=plot_dy,
-        region=plane_regions[plane],
+        region=plane_regions[i],
     )
 
 # total length of rupture

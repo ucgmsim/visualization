@@ -56,7 +56,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     im_csv_paths = glob.glob(
-        "{}/**/{}_REL*.csv".format(csv_path, fault_name), recursive=True
+        os.path.join(csv_path, "**", f"{fault_name}_REL*.csv"), recursive=True
     )
     im_csv_paths.sort()
 
@@ -92,14 +92,13 @@ if __name__ == "__main__":
         for im_type in im_types:
             if im_type in rel_im_dfs[0].columns:
                 pass
-            else if im_type == "pSA":
+            elif im_type == "pSA":
                 all_psa = True
             else:
                 print("Error: Unknown IM type {}".format(im_type))
                 wrong_im_count += 1
         if wrong_im_count > 0:
-            print("Error: Fix IM types")
-            sys.exit(0)
+            sys.exit("Error: Fix IM types")
     if all_psa:
         for avail in rel_im_dfs[0].columns:
             if avail.startswith("pSA"):
@@ -120,14 +119,14 @@ if __name__ == "__main__":
 
         log_mean_im = [np.exp(stat_fn(im_val_concat[k])) for k in stations]
         log_stdev_im = [np.std(im_val_concat[k]) for k in stations]
-        modified_im_name = im_type if im_type[0] != 'p' else f"p{im_type[1:].replace('p', '.')}"
+        modified_im_name = (
+            im_type if im_type[0] != "p" else f"p{im_type[1:].replace('p', '.')}"
+        )
         df_dict[modified_im_name] = log_mean_im
         df_dict[f"{modified_im_name}_sigma"] = log_stdev_im
 
     log_mean_ims_df = pd.DataFrame(df_dict)
-    output_file = os.path.join(
-        output_dir, fault_name + "_log_{}.csv".format(stat_fn.__name__)
-    )
+    output_file = os.path.join(output_dir, f"{fault_name}_log_{stat_fn.__name__}.csv")
 
     log_mean_ims_df.set_index("station").to_csv(output_file)
     print("Completed...Written {}".format(output_file))

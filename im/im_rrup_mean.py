@@ -38,7 +38,9 @@ def load_args():
     parser.add_argument(
         "--imcsv", required=True, help="path to IM file", action="append"
     )
-    parser.add_argument("--imlabel", help="label for each imcsv, eg: Obs or Sim")
+    parser.add_argument(
+        "--imlabel", help="label for each imcsv, eg: Obs or Sim", action="append"
+    )
     parser.add_argument(
         "--config", help="path to .yaml empirical config file", type=os.path.abspath
     )
@@ -55,6 +57,7 @@ def load_args():
     parser.add_argument(
         "--n_val", default=51, type=int, help="GMPE param n_val, default 51"
     )
+    parser.add_argument("--bars", help="also plot error bars", action="store_true")
     parser.add_argument(
         "--out_dir",
         help="output folder to place plot",
@@ -108,8 +111,8 @@ def validate_args(args):
         if args.config is not None:
             assert os.path.isfile(args.config)
     else:
-        if args.config is not None:
-            sys.exit("SRF Info file required if yaml config given.")
+        # srf file required if config given
+        assert args.config is not None
 
 
 def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
@@ -247,7 +250,7 @@ if __name__ == "__main__":
                     linewidth=3,
                 )
 
-        if args.srf is not None:
+        if args.bars:
             # plot error bars
             means = np.asarray(
                 [

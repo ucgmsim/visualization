@@ -12,6 +12,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+from qcore.constants import Components
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
 
@@ -47,14 +48,16 @@ def load_args():
         "--imlabel", help="label for each imcsv, eg: Observed, Physics-based, Empirical"
     )
     parser.add_argument(
-        "-d", "--out-dir", default=".", help="output folder to place plot"
+        "-o", "--out-dir", default=".", help="output folder to place plot"
     )
     parser.add_argument(
         "--run-name",
         help="run_name (plot title)",
         default="event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm",
     )
-    parser.add_argument("--comp", help="component", default="geom")
+    parser.add_argument(
+        "--comp", help="component", choices=[d.name for d in Components], default="geom"
+    )
     args = parser.parse_args()
 
     # validate
@@ -101,7 +104,6 @@ def calc_ratio(arg_im1, arg_im2):
     obs_in_sim = argsearch(ims_1.station, ims_2.station)
     obs_idx = np.where(obs_in_sim.mask == False)[0]
     sim_idx = obs_in_sim.compressed()
-    del obs_in_sim
 
     # plotting data
     psa_ratios = np.log(ims_1[psa_names][obs_idx].tolist()) - np.log(

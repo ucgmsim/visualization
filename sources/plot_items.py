@@ -473,7 +473,7 @@ def load_sizing(xyz_info, wd):
 
 
 def basemap(args, sizing, wd):
-    ps_file = "%s/%s.ps" % (wd, os.path.basename(args.filename))
+    ps_file = f"{wd}/{os.path.basename(args.filename)}.ps"
     p = gmt.GMTPlot(ps_file, reset=False)
     p.spacial(
         "M", sizing["region"], sizing="%si" % (sizing["size"][0]), x_shift=2, y_shift=2
@@ -575,9 +575,9 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
 
 def render_xyz_col(basename, out_dir, sizing, xyz_info, xyz_i):
     i, xyz = xyz_i
-    pwd = os.path.join(gmt_temp, "_xyz{}".format(i))
-    ps_file = os.path.join(pwd, "{}_{}.ps".format(basename, i))
-    copy(os.path.join(gmt_temp, basename + ".ps"), ps_file)
+    pwd = os.path.join(gmt_temp, f"_xyz{i}")
+    ps_file = os.path.join(pwd, f"{basename}_{i}.ps")
+    copy(os.path.join(gmt_temp, f"{basename}.ps"), ps_file)
     copy(os.path.join(gmt_temp, "gmt.conf"), os.path.join(pwd, "gmt.conf"))
     copy(os.path.join(gmt_temp, "gmt.history"), os.path.join(pwd, "gmt.history"))
     p = gmt.GMTPlot(ps_file, append=True, reset=False)
@@ -645,8 +645,7 @@ basename = os.path.basename(args.filename)
 out_dir = os.path.dirname(args.filename)
 if out_dir == "":
     out_dir = "."
-if not os.path.isdir(out_dir):
-    os.makedirs(out_dir)
+os.makedirs(out_dir, exist_ok=True)
 
 pool = Pool(args.nproc)
 xyz_info = pool.apply_async(load_xyz, [args])
