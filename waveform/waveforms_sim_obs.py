@@ -1,29 +1,25 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
-Plots 3 components for simulated and observed seismograms.
-USAGE: run with -h parameter
-
-sample command:
-python waveforms_sim_obs.py /nesi/project/nesi00213/dev/impp_datasets/Darfield/sim/Vel /nesi/project/nesi00213/dev/impp_datasets/Darfield/obs/velBB/ ~/test_mpl/waveforms
+Plots 3 components for seismograms.
 """
-
-import matplotlib as mpl
-
-mpl.use("Agg")
 
 from argparse import ArgumentParser
 from glob import glob
 from multiprocessing import Pool
 import os
 
-import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib as mpl
 
-from qcore.timeseries import BBSeis, read_ascii
+mpl.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+
+from qcore.timeseries import BBSeis, LFSeis, HFSeis
 
 # files that contain the 3 components (text based)
 # must be in same order as binary results (x, y, z)
 extensions = [".000", ".090", ".ver"]
+BINARY_FORMATS = {"BB": BBSeis, "LF": LFSeis, "HF": HFSeis}
 
 
 def load_args():

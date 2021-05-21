@@ -45,7 +45,10 @@ def load_args():
         default="event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm",
     )
     parser.add_argument("--comp", help="component", default="geom")
+    parser.add_argument("--stations", help="limit stations to plot", nargs="+")
     args = parser.parse_args()
+    print(args)
+    exit()
 
     # validate
     for imcsv in args.imcsv:
@@ -91,6 +94,8 @@ if __name__ == "__main__":
 
     # each station is a plot containing imcsvs as series
     for station in [index[0] for index in ims[0].index]:
+        if args.stations is not None and station not in args.stations:
+            continue
         fig = plt.figure(figsize=(7.6, 7.5), dpi=100)
         plt.rcParams.update({"font.size": 14})
 
