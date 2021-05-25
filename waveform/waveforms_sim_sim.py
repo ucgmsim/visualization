@@ -1,30 +1,24 @@
 #!/usr/bin/env python3
 """
-Plots 3 components for simulated and observed seismograms.
-USAGE: run with -h parameter
-
-sample command:
-python waveforms_sim_sim.py BB1/Acc/BB.bin BB2/Acc/BB.bin output_directory
+Plots 3 components for seismograms.
 """
 from typing import Union
 
-import matplotlib as mpl
-
-mpl.use("Agg")
-
 from argparse import ArgumentParser
+from glob import glob
 from multiprocessing import Pool
 import os
 
-import numpy as np
+import matplotlib as mpl
+mpl.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 
 from qcore.timeseries import BBSeis, LFSeis, HFSeis
 
 # files that contain the 3 components (text based)
 # must be in same order as binary results (x, y, z)
 extensions = [".000", ".090", ".ver"]
-
 BINARY_FORMATS = {"BB": BBSeis, "LF": LFSeis, "HF": HFSeis}
 
 
@@ -34,22 +28,17 @@ def load_args():
     """
     # read
     parser = ArgumentParser(
-        description="Plots 3 components for simulated seismograms. "
-        "One is taken as a benchmark, with the other a comparison."
+        description="Plots components for seismograms. "
     )
 
     parser.add_argument(
-        "benchmark", help="path to benchmark binary file", type=os.path.abspath
+        "waveforms", help="directory to text data or binary file", nargs="+", type=os.path.abspath
     )
     parser.add_argument(
-        "comparison", help="path binary file to compare with", type=os.path.abspath
+        "--out", help="output folder to place plots", type=os.path.abspath, default="waveforms",
     )
     parser.add_argument(
-        "out", help="output folder to place plots", type=os.path.abspath
-    )
-    parser.add_argument("--type", default="BB", choices=BINARY_FORMATS)
-    parser.add_argument(
-        "--n_stations",
+        "--n-stations",
         default=-1,
         help="Number of stations, selected randomly, to plot. Default is all (-1)",
         type=int,
@@ -64,21 +53,57 @@ def load_args():
     args = parser.parse_args()
 
     # validate
-    if args.type == "LF":
-        # LF uses the directory
-        assert os.path.isdir(args.benchmark)
-        assert os.path.isdir(args.comparison)
-    else:
-        # HF and BB have files
-        assert os.path.isfile(args.benchmark)
-        assert os.path.isfile(args.comparison)
+    for source in args.waveforms:
+        if not os.path.exists(source):
+            parser.error(f"Cannot find waveform source: {source}")
 
     if args.tmax is not None and args.tmax <= 0:
-        parser.error("Duration -t/--tmax must be greater than 0")
+        parser.error("Duration -t / --tmax must be greater than 0")
 
     os.makedirs(args.out, exist_ok=True)
 
     return args
+
+
+def load_location(path, v=False):
+    """
+    Return opened binary file or text directory.
+    """
+    if os.path.isfile(path):
+        try:
+            binary = HFSeis(path)
+            if v:
+                print(f"HF: {path}")
+        except ValueError:
+            # file is not an HF seis file
+            binary = BBSeis(path)
+            if v:
+                print(f"BB: {path}")
+    else:
+        try:
+            binary = LFSeis(path)
+            if v:
+                print(f"LF: {path}")
+        except ValueError:
+            # cannot find e3d.par... if text data
+            if v:
+                print(f"TEXT: {path}")
+            return path
+    return binary
+
+
+def load_stations(location):
+    """
+    Retrieve stations for waveforms.
+    """
+    if type(location).__name__ != "str":
+        # opened binary object
+        return list(location.stations.name)
+
+    # path to directory containing text data
+    files = glob(os.path.join(location, f"*{extensions[0]}"))
+    stations = list(map(lambda f: os.path.basename(f)[:-4], files))
+    return stations
 
 
 def load_station_inter(
@@ -236,31 +261,26 @@ def plot_station(
     plt.close()
 
 
-def main():
+if __name__ == "__main__":
     args = load_args()
 
-    binary_loader = BINARY_FORMATS[args.type]
-    benchmark_binary = binary_loader(args.benchmark)
-    comparison_binary = binary_loader(args.comparison)
-    global extensions
-    extensions = [
-        f".{binary_loader.COMP_NAME[key]}"
-        for key in sorted(binary_loader.COMP_NAME.keys())
-    ]
+    # binary class object or text folder location
+    locations = [load_location(path, args.v) for path in args.waveforms]
+    # station list
+    stations = [load_stations(location) for location in locations]
+    # common stations
+    stations_all = stations[0]
+    for stats in stations[1:]:
+        stations_all = np.intersect1d(stations_all, stats)
 
-    stations = load_station_inter(benchmark_binary, comparison_binary, args.v)
-
+    print(stations_all)
     # Select stations randomly
-    if 0 < args.n_stations < stations.shape[0]:
-        stations = np.random.choice(stations, args.n_stations, replace=False)
+    #if 0 < args.n_stations < stations.shape[0]:
+    #    stations = np.random.choice(stations, args.n_stations, replace=False)
 
-    p = Pool(args.nproc)
-    msgs = [
-        (s, args.out, benchmark_binary, comparison_binary, args.tmax, args.v)
-        for s in stations
-    ]
-    p.starmap(plot_station, msgs)
-
-
-if __name__ == "__main__":
-    main()
+    #p = Pool(args.nproc)
+    #msgs = [
+    #    (s, args.out, benchmark_binary, comparison_binary, args.tmax, args.v)
+    #    for s in stations
+    #]
+    #p.starmap(plot_station, msgs)
