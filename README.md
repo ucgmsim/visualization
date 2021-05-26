@@ -12,6 +12,14 @@ One time requirement: ```export PATH=$PATH:$HOME/.local/bin```
 ## /animation
 Scripts with video / animated outputs.
 
+**plot_srf_animation.py**\
+```plot_srf_animation.py fault.srf```
+
+https://user-images.githubusercontent.com/7464462/119743896-f194a580-bede-11eb-971f-9b32c9522de5.mov
+
+**plot_ts.py**\
+```plot_ts.py fault.srf```
+
 https://user-images.githubusercontent.com/7464462/119743518-2fdd9500-bede-11eb-8883-104b55a2eb71.mov
 
 
