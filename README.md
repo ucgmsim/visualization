@@ -6,10 +6,30 @@ Visualization scripts, grouped into categories.
 
 Install requires: [qcore](https://github.com/ucgmsim/qcore)\
 Install command: ```pip install --user .```\
-One time requirement: ```export PATH=$PATH:$HOME/.local/bin```\
+One time requirement: ```export PATH=$PATH:$HOME/.local/bin```
 
-## Waveforms
 
+## /animation
+Scripts with video / animated outputs.
+
+## /im
+Scripts relating to the visualization of Intensity Measures.
+
+## /prototype
+Prototypes that are being worked on.
+
+## /sources
+Datafile visualization. SRFs, VMs, etc.
+
+**plot_srf_map**\
+```plot_srf_map.py fault.srf```\
+<img src="samples/plot_srf_map.jpg">
+
+**plot_srf_slip_rise_rake.py**\
+```plot_srf_slip_rise_rake.py fault.srf```\
+<img src="samples/plot_srf_slip_rise_rake.jpg">
+
+## /waveform
 Scripts relating to plotting waveforms.
 
 **waveforms.py**\
