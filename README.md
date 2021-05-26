@@ -12,6 +12,10 @@ One time requirement: ```export PATH=$PATH:$HOME/.local/bin```
 ## /animation
 Scripts with video / animated outputs.
 
+https://user-images.githubusercontent.com/7464462/119743518-2fdd9500-bede-11eb-8883-104b55a2eb71.mov
+
+
+
 ## /im
 Scripts relating to the visualization of Intensity Measures.
 
