@@ -4,10 +4,14 @@
 
 Visualization scripts, grouped into categories.
 
+Install requires: [qcore](https://github.com/ucgmsim/qcore).
+Install command: ```pip install --user .```
+One time requirement: ```export PATH=$PATH:$HOME/.local/bin```
+
 ## Waveforms
 
 Scripts relating to plotting waveforms.
 
-### waveforms.py
-```waveforms_sim_sim.py accBB/ Benchmark BinaryAcc/BB.bin Comparison --n-stations 1```
-<img src="samples/REHS.png" width="400">
+**waveforms.py**
+```waveforms.py accBB/ Benchmark BinaryAcc/BB.bin Comparison --n-stations 1```
+<img src="samples/REHS.png">
