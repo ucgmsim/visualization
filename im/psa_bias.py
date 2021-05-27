@@ -41,11 +41,9 @@ def load_args():
     parser.add_argument(
         "--imcsv",
         required=True,
-        help="path to IM file, will be compared to first one",
+        nargs=2,
+        help="path to IM file and label, will be compared to first one",
         action="append",
-    )
-    parser.add_argument(
-        "--imlabel", help="label for each imcsv, eg: Observed, Physics-based, Empirical"
     )
     parser.add_argument(
         "-o", "--out-dir", default=".", help="output folder to place plot"
@@ -63,11 +61,7 @@ def load_args():
     # validate
     assert len(args.imcsv) > 1
     for imcsv in args.imcsv:
-        assert os.path.isfile(imcsv)
-    if args.imlabel is None:
-        args.imlabel = [f"IM_{i + 1}" for i in range(len(args.imcsv))]
-    else:
-        assert len(args.imlabel) == len(args.imcsv)
+        assert os.path.isfile(imcsv[0])
     if not os.path.isdir(args.out_dir):
         os.makedirs(args.out_dir)
 
@@ -124,7 +118,7 @@ if __name__ == "__main__":
 
     # data values
     for i in range(1, len(args.imcsv)):
-        psa_vals, psa_means, psa_std = calc_ratio(args.imcsv[0], args.imcsv[i])
+        psa_vals, psa_means, psa_std = calc_ratio(args.imcsv[0][0], args.imcsv[i][0])
 
         plt.fill_between(
             psa_vals,
@@ -142,7 +136,7 @@ if __name__ == "__main__":
             color=FACE_EDGE_COLOURS[i - 1][2],
             linestyle="solid",
             linewidth=5,
-            label=args.imlabel[i],
+            label=args.imcsv[i][1],
         )
     plt.plot(
         psa_vals,
@@ -159,7 +153,7 @@ if __name__ == "__main__":
     plt.grid(b=True, axis="x", which="minor")
     fig.set_tight_layout(True)
     plt.legend(loc="best")
-    plt.ylabel(f"pSA residual, ln({args.imlabel[0]})-ln(GMM)", fontsize=14)
+    plt.ylabel(f"pSA residual, ln({args.imcsv[0][1]})-ln(GMM)", fontsize=14)
     plt.xlabel("Vibration period, T (s)", fontsize=14)
     plt.title(args.run_name, fontsize=16)
     plt.xlim([0.01, 10])

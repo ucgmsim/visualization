@@ -36,10 +36,11 @@ def load_args():
     parser = ArgumentParser()
     parser.add_argument("rrup", help="path to RRUP file", type=os.path.abspath)
     parser.add_argument(
-        "--imcsv", required=True, help="path to IM file", action="append"
-    )
-    parser.add_argument(
-        "--imlabel", help="label for each imcsv, eg: Obs or Sim", action="append"
+        "--imcsv",
+        nargs=2,
+        required=True,
+        help="path to IM file and label",
+        action="append",
     )
     parser.add_argument(
         "--config", help="path to .yaml empirical config file", type=os.path.abspath
@@ -49,7 +50,7 @@ def load_args():
         "--dist_min", default=0.1, type=float, help="GMPE param DistMin, default 0.1 km"
     )
     parser.add_argument(
-        "--dist_max",
+        "--dist-max",
         default=100.0,
         type=float,
         help="GMPE param DistMax, default 100.0 km",
@@ -59,14 +60,14 @@ def load_args():
     )
     parser.add_argument("--bars", help="also plot error bars", action="store_true")
     parser.add_argument(
-        "--out_dir",
+        "--out-dir",
         help="output folder to place plot",
         default=".",
         type=os.path.abspath,
     )
     parser.add_argument(
-        "--run_name",
-        help="run_name - should automate?",
+        "--run-name",
+        help="run_name for title and filename",
         default="event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm",
     )
     parser.add_argument("--comp", help="component", default="geom")
@@ -100,11 +101,7 @@ def validate_args(args):
     """
     assert os.path.isfile(args.rrup)
     for imcsv in args.imcsv:
-        assert os.path.isfile(imcsv)
-    if args.imlabel is None:
-        args.imlabel = [f"IM_{i + 1}" for i in range(len(args.imcsv))]
-    else:
-        assert len(args.imlabel) == len(args.imcsv)
+        assert os.path.isfile(imcsv[0])
 
     if args.srf is not None:
         assert os.path.isfile(args.srf)
@@ -112,7 +109,7 @@ def validate_args(args):
             assert os.path.isfile(args.config)
     else:
         # srf file required if config given
-        assert args.config is not None
+        assert args.config is None
 
 
 def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
@@ -149,7 +146,7 @@ if __name__ == "__main__":
     # load im files for component, available pSA columns
     ims = []
     for imcsv in args.imcsv:
-        ims.append(load_im_file_pd(imcsv, comp=args.comp))
+        ims.append(load_im_file_pd(imcsv[0], comp=args.comp))
     im_names = ims[0].columns[2:]
     for im in ims[1:]:
         im_names = np.intersect1d(im_names, im.columns[2:])
@@ -209,7 +206,7 @@ if __name__ == "__main__":
                 markeredgewidth=None,
                 markersize=0.5,
                 marker=MARKERS[i % len(MARKERS)],
-                label=args.imlabel[i],
+                label=args.imcsv[i][1],
             )
 
         # emp +- range plot

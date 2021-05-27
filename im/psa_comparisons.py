@@ -32,10 +32,10 @@ def load_args():
     parser.add_argument(
         "--imcsv",
         required=True,
+        nargs=2,
         help="path to IM file, repeat as required",
         action="append",
     )
-    parser.add_argument("--imlabel", help="label for each imcsv, eg: Obs or Sim")
     parser.add_argument(
         "-d", "--out-dir", default=".", help="output folder to place plots"
     )
@@ -47,16 +47,10 @@ def load_args():
     parser.add_argument("--comp", help="component", default="geom")
     parser.add_argument("--stations", help="limit stations to plot", nargs="+")
     args = parser.parse_args()
-    print(args)
-    exit()
 
     # validate
     for imcsv in args.imcsv:
-        assert os.path.isfile(imcsv)
-    if args.imlabel is None:
-        args.imlabel = [f"IM_{i + 1}" for i in range(len(args.imcsv))]
-    else:
-        assert len(args.imlabel) == len(args.imcsv)
+        assert os.path.isfile(imcsv[0])
     if not os.path.isdir(args.out_dir):
         os.makedirs(args.out_dir)
 
@@ -70,7 +64,7 @@ if __name__ == "__main__":
     ims = []
     psas = []
     for imcsv in args.imcsv:
-        ims.append(load_im_file_pd(imcsv, all_ims=True, comp=args.comp))
+        ims.append(load_im_file_pd(imcsv[0], all_ims=True, comp=args.comp))
         im_names = ims[-1].columns.values.astype(str)
         psas.append(
             im_names[
@@ -106,7 +100,7 @@ if __name__ == "__main__":
             plt.loglog(
                 psa_vals,
                 ims[i].loc[(station, args.comp), psa_names].values,
-                label=f"{station} {args.imlabel[i]}",
+                label=f"{station} {args.imcsv[i][1]}",
                 linewidth=3,
             )
 

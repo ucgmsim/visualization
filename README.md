@@ -27,6 +27,21 @@ https://user-images.githubusercontent.com/7464462/119743518-2fdd9500-bede-11eb-8
 ## /im
 Scripts relating to the visualization of Intensity Measures.
 
+**im_rrup_mean.py**\
+```im_rrup_mean.py  --imcsv v21p1.csv 21p1 --imcsv v20p6.csv 20p6 rrups.csv --bars```\
+<img src="samples/im_rrup_mean_bars.png">
+
+```im_rrup_mean.py  --imcsv v21p1.csv 21p1 --imcsv v20p6.csv 20p6 rrups.csv --srf fault.srf```\
+<img src="samples/im_rrup_mean_srf.png">
+
+**psa_bias.py**\
+```psa_bias.py  --imcsv v21p1.csv 21p1 --imcsv v20p6.csv 20p6 rrups.csv```\
+<img src="samples/bias.png">
+
+**psa_comparisons.py**\
+```psa_comparisons.py  --imcsv v21p1.csv 21p1 --imcsv v20p6.csv 20p6```\
+<img src="samples/comparisons.png">
+
 ## /prototype
 Prototypes that are being worked on.
 
