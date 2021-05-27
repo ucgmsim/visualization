@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-pSA ratios for each IM.
+Ratios for each IM.
 """
 
 import matplotlib as mpl

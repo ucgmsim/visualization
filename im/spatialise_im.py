@@ -62,10 +62,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     utils.setup_dir(args.output_path)
-
     validate_filepath(parser, args.imcsv_filepath)
     validate_filepath(parser, args.station_filepath)
-    validate_dir(parser, args.output_path)
 
     run_name = os.path.splitext(os.path.basename(args.imcsv_filepath))[0]
 
