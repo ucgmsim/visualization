@@ -23,6 +23,8 @@ from qcore.utils import setup_dir
 from empirical.scripts import calculate_empirical
 from empirical.util import empirical_factory, classdef
 
+from visualization.util import intersection
+
 N_BUCKETS = 10
 # matplotlib point style for each imcsv
 MARKERS = ["o", "P", "s", "X", "v", "^", "D"]
@@ -149,9 +151,7 @@ if __name__ == "__main__":
     ims = []
     for imcsv in args.imcsv:
         ims.append(load_im_file_pd(imcsv[0], comp=args.comp))
-    im_names = ims[0].columns[2:]
-    for im in ims[1:]:
-        im_names = np.intersect1d(im_names, im.columns[2:])
+    im_names = intersection([im.columns[2:] for im in ims])
 
     stations = [index[0] for index in ims[0].index]
     name_rrup = name_rrup[argsearch(stations, name_rrup["f0"]).compressed()]

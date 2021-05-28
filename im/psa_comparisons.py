@@ -15,6 +15,7 @@ import numpy as np
 
 from qcore.formats import load_im_file_pd
 from qcore.nputil import argsearch
+from visualization.util import intersection
 
 NOT_FOUND = np.ma.masked
 np_endswith = np.core.defchararray.endswith
@@ -74,9 +75,7 @@ if __name__ == "__main__":
         )
 
     # only common pSAs
-    psa_names = psas[0]
-    for psa in psas[1:]:
-        psa_names = np.intersect1d(psa_names, psa)
+    psa_names = intersection(psas)
     psa_vals = np_lstrip(psa_names, chars="pSA_").astype(np.float32)
     # sorted
     sort_idx = np.argsort(psa_vals)

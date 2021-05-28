@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from qcore.timeseries import BBSeis, LFSeis, HFSeis, read_ascii
+from visualization.util import intersection
 
 # files that contain the 3 components (text based)
 extensions = [".090", ".000", ".ver"]
@@ -240,14 +241,10 @@ if __name__ == "__main__":
     # binary class object or text folder location
     sources = [load_location(source[0], args.v) for source in args.waveforms]
     # station list
-    stations = [load_stations(source) for source in sources]
-    # common stations
-    stations_all = stations[0]
-    for stats in stations[1:]:
-        stations_all = np.intersect1d(stations_all, stats)
+    stations = intersection([load_stations(source) for source in sources])
     # random station selection
-    if args.n_stations is not None and args.n_stations < len(stations_all):
-        stations_all = np.random.choice(stations_all, args.n_stations, replace=False)
+    if args.n_stations is not None and args.n_stations < len(stations):
+        stations = np.random.choice(stations, args.n_stations, replace=False)
 
     p = Pool(args.nproc)
     single_station = partial(
@@ -258,4 +255,4 @@ if __name__ == "__main__":
         args.tmax,
         args.v,
     )
-    p.map(single_station, stations_all)
+    p.map(single_station, stations)
