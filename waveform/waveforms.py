@@ -45,9 +45,10 @@ def load_args():
     )
     parser.add_argument(
         "--n-stations",
-        help="Number of stations, selected randomly, to plot. Default is all.",
+        help="Limit number of stations to plot (selected randomly).",
         type=int,
     )
+    parser.add_argument("--stations", help="Specific stations to plot.", nargs="+")
     parser.add_argument("-v", help="verbose messages", action="store_true")
     parser.add_argument(
         "-n", "--nproc", help="number of processes to use", type=int, default=1
@@ -242,9 +243,13 @@ if __name__ == "__main__":
     sources = [load_location(source[0], args.v) for source in args.waveforms]
     # station list
     stations = intersection([load_stations(source) for source in sources])
-    # random station selection
     if args.n_stations is not None and args.n_stations < len(stations):
+        # random station selection
         stations = np.random.choice(stations, args.n_stations, replace=False)
+    elif args.stations is not None:
+        # specific station selection
+        stations = np.intersect1d(stations, args.stations)
+    assert len(stations) > 0
 
     p = Pool(args.nproc)
     single_station = partial(
