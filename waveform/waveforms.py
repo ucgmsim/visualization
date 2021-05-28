@@ -3,6 +3,7 @@
 Plots 3 components for seismograms.
 """
 from argparse import ArgumentParser
+from functools import partial
 from glob import glob
 from multiprocessing import Pool
 import os
@@ -110,12 +111,12 @@ def load_stations(source):
 
 
 def plot_station(
-    station,
     output,
     sources,
     labels,
-    tmax=None,
-    verbose=False,
+    tmax,
+    verbose,
+    station,
 ):
     """Creates a waveform plot for a specific station."""
 
@@ -249,15 +250,12 @@ if __name__ == "__main__":
         stations_all = np.random.choice(stations_all, args.n_stations, replace=False)
 
     p = Pool(args.nproc)
-    msgs = [
-        (
-            s,
-            args.out,
-            sources,
-            [source[1] for source in args.waveforms],
-            args.tmax,
-            args.v,
-        )
-        for s in stations_all
-    ]
-    p.starmap(plot_station, msgs)
+    single_station = partial(
+        plot_station,
+        args.out,
+        sources,
+        [source[1] for source in args.waveforms],
+        args.tmax,
+        args.v,
+    )
+    p.map(single_station, stations_all)
