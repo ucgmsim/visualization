@@ -62,8 +62,7 @@ def load_args():
     assert len(args.imcsv) > 1
     for imcsv in args.imcsv:
         assert os.path.isfile(imcsv[0])
-    if not os.path.isdir(args.out_dir):
-        os.makedirs(args.out_dir)
+    os.makedirs(args.out_dir, exist_ok=True)
 
     return args
 

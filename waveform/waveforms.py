@@ -29,10 +29,11 @@ def load_args():
     parser = ArgumentParser(description="Plots components for seismograms. ")
 
     parser.add_argument(
-        "waveforms",
+        "--waveforms",
         help="directory to text data or binary file followed by label",
-        nargs="+",
-        type=os.path.abspath,
+        nargs=2,
+        action="append",
+        required=True,
     )
     parser.add_argument(
         "--out",
@@ -42,8 +43,7 @@ def load_args():
     )
     parser.add_argument(
         "--n-stations",
-        default=-1,
-        help="Number of stations, selected randomly, to plot. Default is all (-1)",
+        help="Number of stations, selected randomly, to plot. Default is all.",
         type=int,
     )
     parser.add_argument("-v", help="verbose messages", action="store_true")
@@ -57,8 +57,8 @@ def load_args():
 
     # validate
     for source in args.waveforms:
-        if not os.path.exists(source):
-            parser.error(f"Cannot find waveform source: {source}")
+        if not os.path.exists(source[0]):
+            parser.error(f"Cannot find waveform source: {source[0]}")
 
     if args.tmax is not None and args.tmax <= 0:
         parser.error("Duration -t / --tmax must be greater than 0")
@@ -70,7 +70,7 @@ def load_args():
 
 def load_location(path, verbose=False):
     """
-    Return opened binary file or text directory.
+    Return opened binary file or text directory (automatically detected).
     """
     if os.path.isfile(path):
         try:
@@ -237,7 +237,7 @@ if __name__ == "__main__":
     args = load_args()
 
     # binary class object or text folder location
-    sources = [load_location(path, args.v) for path in args.waveforms[::2]]
+    sources = [load_location(source[0], args.v) for source in args.waveforms]
     # station list
     stations = [load_stations(source) for source in sources]
     # common stations
@@ -245,12 +245,19 @@ if __name__ == "__main__":
     for stats in stations[1:]:
         stations_all = np.intersect1d(stations_all, stats)
     # random station selection
-    if 0 < args.n_stations < len(stations_all):
+    if args.n_stations is not None and args.n_stations < len(stations_all):
         stations_all = np.random.choice(stations_all, args.n_stations, replace=False)
 
     p = Pool(args.nproc)
     msgs = [
-        (s, args.out, sources, args.waveforms[1::2], args.tmax, args.v)
+        (
+            s,
+            args.out,
+            sources,
+            [source[1] for source in args.waveforms],
+            args.tmax,
+            args.v,
+        )
         for s in stations_all
     ]
     p.starmap(plot_station, msgs)

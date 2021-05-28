@@ -179,7 +179,7 @@ def load_srf(i_srf):
     """
     # point source - save beachball data
     if not srf.is_ff(i_srf[1]):
-        info = "%s.info" % os.path.splitext(i_srf[1])[0]
+        info = f"{os.path.splitext(i_srf[1])[0]}.info"
         if not os.path.exists(info):
             print("ps SRF missing .info, using 5.0 for magnitude: %s" % (i_srf[1]))
             mag = 5.0
@@ -192,7 +192,7 @@ def load_srf(i_srf):
                 strike = h.attrs["strike"][0]
                 dip = h.attrs["dip"][0]
                 rake = h.attrs["rake"]
-        with open("%s/beachball%d.bb" % (gmt_temp, i_srf[0]), "w") as bb:
+        with open(os.path.join(gmt_temp, f"beachball{i_srf[0]}.bb"), "w") as bb:
             bb.write(
                 "%s %s %s %s %s %s %s %s %s\n"
                 % (
@@ -210,11 +210,11 @@ def load_srf(i_srf):
         return
     # finite fault - only save outline
     if i_srf[0] < 0:
-        srf.srf2corners(i_srf[1], cnrs="%s/srf%d.cnrs-X" % (gmt_temp, i_srf[0]))
+        srf.srf2corners(i_srf[1], cnrs=os.path.join(gmt_temp, f"srf{i_srf[0]}.cnrs-X"))
         return
     # finite fault - save outline and slip distributions
-    srf.srf2corners(i_srf[1], cnrs="%s/srf%d.cnrs" % (gmt_temp, i_srf[0]))
-    proc_tmp = "%s/srf2map_%d" % (gmt_temp, i_srf[0])
+    srf.srf2corners(i_srf[1], cnrs=os.path.join(gmt_temp, f"srf{i_srf[0]}.cnrs"))
+    proc_tmp = os.path.join(gmt_temp, f"srf2map_{i_srf[0]}")
     os.makedirs(proc_tmp)
     try:
         srf_data = gmt.srf2map(
@@ -255,7 +255,7 @@ def load_xyz(args):
 
 
 def load_xyz_col(args, xyz_info, i):
-    swd = os.path.join(gmt_temp, "_xyz%d" % (i))
+    swd = os.path.join(gmt_temp, f"_xyz{i}")
     os.makedirs(swd)
 
     xyz_val = np.loadtxt(args.xyz, usecols=(0, 1, i + 2), dtype="f")
@@ -337,10 +337,10 @@ def load_xyz_col(args, xyz_info, i):
 
     # grid
     if args.xyz_grid:
-        grd_file = "%s/overlay.nc" % (swd)
+        grd_file = os.path.join(swd, "overlay.nc")
         # TODO: don't repeat mask generation
-        grd_mask = "%s/overlay_mask.nc" % (swd)
-        cols = "0,1,%d" % (i + 2)
+        grd_mask = os.path.join(swd, "overlay_mask.nc")
+        cols = f"0,1,{i + 2}"
         gmt.table2grd(
             args.xyz,
             grd_file,
@@ -359,7 +359,7 @@ def load_xyz_col(args, xyz_info, i):
             mask_dist=args.xyz_grid_automask,
         )
         if args.xyz_grid_automask is not None:
-            temp = "%s/overlay_mask_result.nc" % (swd)
+            temp = os.path.join(swd, "overlay_mask_result.nc")
             gmt.grdmath([grd_file, grd_mask, "MUL", "=", temp], wd=swd)
             copy(temp, grd_file)
         if not os.path.isfile(grd_file):
@@ -389,7 +389,7 @@ def find_srfs(args, gmt_temp):
     # slip cpt
     if n_srf_outline < len(srf_files):
         # will be plotting slip
-        slip_cpt = "%s/slip.cpt" % (gmt_temp)
+        slip_cpt = os.path.join(gmt_temp, "slip.cpt")
         gmt.makecpt(gmt.CPTS["slip"], slip_cpt, 0, args.slip_max)
 
     return srf_files, -n_srf_outline
@@ -434,7 +434,7 @@ def load_vm_corners(args):
 
 def load_sizing(xyz_info, wd):
     pwd = os.path.join(wd, "_size")
-    ps_file = "%s/size.ps" % (pwd)
+    ps_file = os.path.join(pwd, "size.ps")
     os.makedirs(pwd)
 
     p = gmt.GMTPlot(ps_file)
@@ -455,13 +455,13 @@ def load_sizing(xyz_info, wd):
         region = list(map(float, args.region.split("/")))
     if region[1] < -90 and region[0] > 90:
         region[1] += 360
-    p.spacial("M", region, sizing="%si" % (MAP_WIDTH))
+    p.spacial("M", region, sizing=f"{MAP_WIDTH}i")
     size = gmt.mapproject(region[1], region[3], wd=pwd, unit="inch")
     p.leave()
 
     page_width = size[0] + 2 + 0.5
     page_height = size[1] + 2 + 1
-    gmt.gmt_defaults(ps_media="Custom_{}ix{}i".format(page_width, page_height), wd=wd)
+    gmt.gmt_defaults(ps_media=f"Custom_{page_width}ix{page_height}i", wd=wd)
 
     return {
         "size": size,
@@ -473,7 +473,7 @@ def load_sizing(xyz_info, wd):
 
 
 def basemap(args, sizing, wd):
-    ps_file = f"{wd}/{os.path.basename(args.filename)}.ps"
+    ps_file = os.path.join(wd, f"{os.path.basename(args.filename)}.ps")
     p = gmt.GMTPlot(ps_file, reset=False)
     p.spacial(
         "M", sizing["region"], sizing="%si" % (sizing["size"][0]), x_shift=2, y_shift=2
@@ -513,25 +513,25 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
     p.path(vm_corners, is_file=False, close=True, width="0.5p", split="-")
     # add SRF slip
     finite_faults = False
-    slip_cpt = "%s/slip.cpt" % (gmt_temp)
+    slip_cpt = os.path.join(gmt_temp, "slip.cpt")
     for i_s in i_srf_data:
         if i_s is None:
             continue
         finite_faults = True
         for plane in range(len(i_s[1][1])):
             p.overlay(
-                "%s/srf%d_%d_slip.bin" % (gmt_temp, i_s[0], plane),
+                os.path.join(gmt_temp, f"srf{i_s[0]}_{plane}_slip.bin"),
                 slip_cpt,
                 dx=i_s[1][0][0],
                 dy=i_s[1][0][1],
                 climit=2,
-                crop_grd="%s/srf%d_%d_mask.grd" % (gmt_temp, i_s[0], plane),
+                crop_grd=os.path.join(gmt_temp, f"srf{i_s[0]}_{plane}_mask.grd"),
                 land_crop=False,
                 transparency=35,
                 custom_region=i_s[1][1][plane],
             )
     # add outlines for SRFs with slip
-    for c in glob("%s/srf*.cnrs" % (gmt_temp)):
+    for c in glob(os.path.join(gmt_temp, "srf*.cnrs")):
         p.fault(
             c,
             is_srf=False,
@@ -544,7 +544,7 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
             hyp_colour=args.fault_colour,
         )
     # add outlines for SRFs without slip
-    for c in glob("%s/srf*.cnrs-X" % (gmt_temp)):
+    for c in glob(os.path.join(gmt_temp, "srf*.cnrs-X")):
         p.fault(
             c,
             is_srf=False,
@@ -557,7 +557,7 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
             hyp_colour=args.outline_fault_colour,
         )
     # add beach balls
-    for bb in glob("%s/beachball*.bb" % (gmt_temp)):
+    for bb in glob(os.path.join(gmt_temp, "beachball*.bb")):
         p.beachballs(bb, is_file=True, fmt="a", scale=args.bb_scale)
     # slip scale
     if finite_faults:
@@ -596,10 +596,10 @@ def render_xyz_col(basename, out_dir, sizing, xyz_info, xyz_i):
             fill=None,
             line=None,
             cpt="cpt.cpt",
-            cols="0,1,%d" % (i + 2),
+            cols=f"0,1,{i + 2}",
         )
     else:
-        grd_file = "%s/overlay.nc" % (pwd)
+        grd_file = os.path.join(pwd, "overlay.nc")
         p.overlay(grd_file, "cpt.cpt", transparency=args.xyz_transparency)
         if args.xyz_grid_contours_inc is not None:
             p.contours(grd_file, interval=args.xyz_grid_contours_inc)

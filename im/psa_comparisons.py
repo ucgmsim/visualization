@@ -94,13 +94,13 @@ if __name__ == "__main__":
         plt.rcParams.update({"font.size": 14})
 
         # add a series for each csv
-        for i in range(len(args.imcsv)):
+        for i, imcsv in enumerate(args.imcsv):
             if station not in ims[i].index:
                 continue
             plt.loglog(
                 psa_vals,
                 ims[i].loc[(station, args.comp), psa_names].values,
-                label=f"{station} {args.imcsv[i][1]}",
+                label=f"{station} {imcsv[1]}",
                 linewidth=3,
             )
 

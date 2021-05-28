@@ -43,7 +43,9 @@ def load_args():
         action="append",
     )
     parser.add_argument(
-        "--config", help="path to .yaml empirical config file", type=os.path.abspath
+        "--config",
+        help="path to .yaml empirical config file (requires SRF info)",
+        type=os.path.abspath,
     )
     parser.add_argument("--srf", help="path to srf info file", type=os.path.abspath)
     parser.add_argument(
@@ -107,9 +109,9 @@ def validate_args(args):
         assert os.path.isfile(args.srf)
         if args.config is not None:
             assert os.path.isfile(args.config)
-    else:
+    elif args.config is not None:
         # srf file required if config given
-        assert args.config is None
+        raise AssertionError("SRF required if config given")
 
 
 def get_empirical_values(fault, im, model_dict, r_rup_vals, period):

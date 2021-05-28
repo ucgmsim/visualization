@@ -60,5 +60,5 @@ Datafile visualization. SRFs, VMs, etc.
 Scripts relating to plotting waveforms.
 
 **waveforms.py**\
-```waveforms.py accBB/ Benchmark BinaryAcc/BB.bin Comparison --n-stations 1```\
+```waveforms.py --waveforms accBB/ Benchmark --waveforms BinaryAcc/BB.bin Comparison --n-stations 1```\
 <img src="samples/REHS.png">
