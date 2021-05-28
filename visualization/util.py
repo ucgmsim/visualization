@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def intersection(lists):
     """
     Like np.intersect1d but between more than 2 lists.
