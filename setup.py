@@ -19,6 +19,7 @@ setup(
     url="https://github.com/ucgmsim/visualization",
     description="visualization code",
     install_requires=["numpy>=1.14.3"],
-    package_data={"visualization": glob("visual...data/*")},
+    package_data={"visualization": glob("visualization/data/*")},
+    include_package_data=True,
     scripts=scripts,
 )

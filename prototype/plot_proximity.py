@@ -3,14 +3,14 @@
 from argparse import ArgumentParser
 import math
 import os
+import pkg_resources
 
 import numpy as np
 
-from visualization.config import data_path
 from qcore import gmt
 
-corners = os.path.join(data_path, "SimAtlasFaults.csv")
-balls = os.path.join(data_path, "gmt.bb")
+corners = pkg_resources.resource_filename("visualization", "data/SimAtlasFaults.csv")
+balls = pkg_resources.resource_filename("visualization", "data/gmt.bb")
 
 mom2mag = lambda mom: (2 / 3.0 * math.log(mom) / math.log(10.0)) - 10.7
 

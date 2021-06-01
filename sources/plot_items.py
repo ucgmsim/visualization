@@ -15,13 +15,13 @@ from functools import partial
 from glob import glob
 from multiprocessing import Pool
 import os
+import pkg_resources
 from shutil import copy, rmtree
 from tempfile import mkdtemp
 
 from h5py import File as h5open
 import numpy as np
 
-from visualization.config import data_path
 from qcore import geo
 from qcore import gmt
 from qcore.shared import get_corners
@@ -489,7 +489,7 @@ def basemap(args, sizing, wd):
         p.image(
             args.logo_pos[0],
             args.logo_pos[1],
-            os.path.join(data_path, "quakecore-logo.png"),
+            pkg_resources.resource_filename("visualization", "data/quakecore-logo.png"),
             width="3i",
             pos="rel",
         )

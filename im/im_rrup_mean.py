@@ -9,14 +9,14 @@ from empirical.util.classdef import TectType
 
 mpl.use("Agg")
 
-from argparse import ArgumentParser
+from argparse import ArgumentError, ArgumentParser
 import os
 import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from qcore.formats import load_im_file_pd
+from qcore.formats import load_im_file_pd, load_rrup_file
 from qcore.nputil import argsearch
 from qcore.utils import setup_dir
 
@@ -113,7 +113,7 @@ def validate_args(args):
             assert os.path.isfile(args.config)
     elif args.config is not None:
         # srf file required if config given
-        raise AssertionError("SRF required if config given")
+        raise ArgumentError("SRF required if config given")
 
 
 def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
@@ -142,10 +142,8 @@ def get_empirical_values(fault, im, model_dict, r_rup_vals, period):
 if __name__ == "__main__":
     args = load_args()
 
-    # station name, rrup
-    name_rrup = np.loadtxt(
-        args.rrup, dtype="|U7,f", usecols=(0, 3), skiprows=1, delimiter=","
-    )
+    # station name as index, r_rup
+    name_rrup = load_rrup_file(args.rrup)
 
     # load im files for component, available pSA columns
     ims = []
@@ -154,10 +152,10 @@ if __name__ == "__main__":
     im_names = intersection([im.columns[2:] for im in ims])
 
     stations = [index[0] for index in ims[0].index]
-    name_rrup = name_rrup[argsearch(stations, name_rrup["f0"]).compressed()]
+    name_rrup = name_rrup.iloc[argsearch(stations, name_rrup.index.values).compressed()]
     # limit stations to those with rrups
-    stations = name_rrup["f0"]
-    rrups = name_rrup["f1"]
+    stations = name_rrup.index.values
+    rrups = name_rrup.r_rup.values
 
     logged_rrups = np.log(rrups)
     min_logged_rrup = np.min(logged_rrups)
