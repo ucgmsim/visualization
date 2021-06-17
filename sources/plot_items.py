@@ -94,7 +94,10 @@ def get_args():
     )
     arg("--xyz-size", help="size of points or grid spacing eg: 1c or 1k")
     arg("--xyz-shape", help="shape of points eg: t,c,s...", default="t")
-    arg("--xyz-model-params", help="crop xyz overlay with vm corners")
+    arg(
+        "--xyz-model-params",
+        help="crop xyz overlay with VeloModCorners or model_params",
+    )
     arg(
         "--xyz-transparency",
         help="overlay transparency 0-100 (invisible)",
@@ -250,7 +253,14 @@ def load_xyz(args):
 
     # used for cropping interpolated values outside domain
     if args.xyz_model_params is not None:
-        xyz_info["perimiter"] = get_corners(args.xyz_model_params, gmt_format=True)[1]
+        if os.path.splitext(args.xyz_model_params)[1] == ".txt":
+            # VeloModCorners.txt
+            xyz_info["perimiter"] = open(args.xyz_model_params).read()
+        else:
+            # model_params file
+            xyz_info["perimiter"] = get_corners(args.xyz_model_params, gmt_format=True)[
+                1
+            ]
     return xyz_info
 
 
