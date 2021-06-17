@@ -84,6 +84,14 @@ def get_args():
         help="xyts.e3d to plot outlines for, use wildcards, repeat as needed",
     )
     arg(
+        "--ll-file", help="add longitude latitude station file to plot", action="append"
+    )
+    arg("--ll-colour", help="colour of ll-file points", action="append")
+    arg("--ll-outline", help="outline colour of ll-file points", action="append")
+    arg("--ll-thickness", help="outline thickness of ll-file points", action="append")
+    arg("--ll-size", help="size of ll-file points", action="append")
+    arg("--ll-shape", help="shape of ll-file points", action="append")
+    arg(
         "--xyz", help="path to file containing lon, lat, value_1 .. value_N (no header)"
     )
     arg("--xyz-landmask", help="only show overlay over land", action="store_true")
@@ -170,6 +178,12 @@ def get_args():
     )
     arg("-n", "--nproc", help="max number of processes", type=int, default=1)
     arg("-d", "--dpi", help="render DPI", type=int, default=300)
+    arg(
+        "--downscale",
+        help="DPI render multiplier for better pixel accuracy",
+        type=int,
+        default=8,
+    )
 
     return parser.parse_args()
 
@@ -489,9 +503,16 @@ def basemap(args, sizing, wd):
         "M", sizing["region"], sizing="%si" % (sizing["size"][0]), x_shift=2, y_shift=2
     )
     if args.fast:
-        p.basemap(res="f", land="lightgray", topo=None, road=None, highway=None)
+        p.basemap(
+            res="f",
+            land="lightgray",
+            topo=None,
+            road=None,
+            highway=None,
+            scale=args.downscale,
+        )
     else:
-        p.basemap(topo_cpt="grey1", land="lightgray")
+        p.basemap(topo_cpt="grey1", land="lightgray", scale=args.downscale)
     # border tick labels
     p.ticks(major=2, minor=0.2)
     # QuakeCoRE logo
@@ -569,6 +590,25 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
     # add beach balls
     for bb in glob(os.path.join(gmt_temp, "beachball*.bb")):
         p.beachballs(bb, is_file=True, fmt="a", scale=args.bb_scale)
+    # add sites / ll file
+    if args.ll_file is not None:
+        arg_i = lambda arg, i: arg[min(i, len(arg) - 1)]
+        for i, ll in enumerate(args.ll_file):
+            thickness = (
+                "0.4p" if args.ll_thickness is None else arg_i(args.ll_thickness, i)
+            )
+            colour = None if args.ll_colour is None else arg_i(args.ll_colour, i)
+            outline = "black" if args.ll_outline is None else arg_i(args.ll_outline, i)
+            shape = "t" if args.ll_shape is None else arg_i(args.ll_shape, i)
+            size = 0.08 if args.ll_size is None else arg_i(args.ll_size, i)
+            p.points(
+                ll,
+                fill=colour,
+                line=outline,
+                shape=shape,
+                size=size,
+                line_thickness=thickness,
+            )
     # slip scale
     if finite_faults:
         # TODO: do not interfere if there are more scales
@@ -579,7 +619,7 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
             pos="rel_out",
             dy="0.5i",
             label="Slip (cm)",
-            length=map_width * 0.618,
+            length=map_width * 0.9,
         )
 
 
@@ -693,7 +733,12 @@ if args.xyz:
 else:
     p.sites(gmt.sites_major)
     p.finalise()
-    p.png(out_dir=out_dir, dpi=args.dpi, background="white")
+    p.png(
+        out_dir=out_dir,
+        dpi=args.dpi * args.downscale,
+        downscale=args.downscale,
+        background="white",
+    )
 
 pool.close()
 rmtree(gmt_temp)
