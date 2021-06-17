@@ -542,6 +542,25 @@ def basemap(args, sizing, wd):
 def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
     # plot velocity model corners
     p.path(vm_corners, is_file=False, close=True, width="0.5p", split="-")
+    # add sites / ll file
+    if args.ll_file is not None:
+        arg_i = lambda arg, i: arg[min(i, len(arg) - 1)]
+        for i, ll in enumerate(args.ll_file):
+            thickness = (
+                "0.4p" if args.ll_thickness is None else arg_i(args.ll_thickness, i)
+            )
+            colour = None if args.ll_colour is None else arg_i(args.ll_colour, i)
+            outline = "black" if args.ll_outline is None else arg_i(args.ll_outline, i)
+            shape = "t" if args.ll_shape is None else arg_i(args.ll_shape, i)
+            size = 0.08 if args.ll_size is None else arg_i(args.ll_size, i)
+            p.points(
+                ll,
+                fill=colour,
+                line=outline,
+                shape=shape,
+                size=size,
+                line_thickness=thickness,
+            )
     # add SRF slip
     finite_faults = False
     slip_cpt = os.path.join(gmt_temp, "slip.cpt")
@@ -590,25 +609,6 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
     # add beach balls
     for bb in glob(os.path.join(gmt_temp, "beachball*.bb")):
         p.beachballs(bb, is_file=True, fmt="a", scale=args.bb_scale)
-    # add sites / ll file
-    if args.ll_file is not None:
-        arg_i = lambda arg, i: arg[min(i, len(arg) - 1)]
-        for i, ll in enumerate(args.ll_file):
-            thickness = (
-                "0.4p" if args.ll_thickness is None else arg_i(args.ll_thickness, i)
-            )
-            colour = None if args.ll_colour is None else arg_i(args.ll_colour, i)
-            outline = "black" if args.ll_outline is None else arg_i(args.ll_outline, i)
-            shape = "t" if args.ll_shape is None else arg_i(args.ll_shape, i)
-            size = 0.08 if args.ll_size is None else arg_i(args.ll_size, i)
-            p.points(
-                ll,
-                fill=colour,
-                line=outline,
-                shape=shape,
-                size=size,
-                line_thickness=thickness,
-            )
     # slip scale
     if finite_faults:
         # TODO: do not interfere if there are more scales
