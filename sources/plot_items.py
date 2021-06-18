@@ -49,20 +49,20 @@ def get_args():
         action="append",
         help="SRF files to plot, use wildcards, repeat as needed",
     )
-    arg("--logo", help="include logo", action="store_true")
-    arg("--logo-pos", help="logo position LCR, TMB eg: 'LT'", default="LT")
+    arg("--fault-colour", help="outline colour of faults", action="append")
     arg(
         "-c",
         "--srf-only-outline",
         action="append",
         help="SRF files to plot only outline, use wildcards, repeat as needed",
     )
-    arg("--fault-colour", help="outline colour of faults", default="black")
     arg(
         "--outline-fault-colour",
         help="outline colour of only-outline faults",
-        default="blue",
+        action="append",
     )
+    arg("--logo", help="include logo", action="store_true")
+    arg("--logo-pos", help="logo position LCR, TMB eg: 'LT'", default="LT")
     arg("-b", "--bb-scale", help="beachball scale", type=float, default=0.05)
     arg(
         "--slip-max",
@@ -192,16 +192,25 @@ def get_args():
 def load_srf(i_srf):
     """
     Prepare data in a format required for plotting.
-    i_srf: index, srf path
+    i_srf: index, (srf path, srf group id)
     """
+    # finite fault - only save outline
+    if i_srf[0] < 0:
+        result = os.path.join(gmt_temp, f"srf{i_srf[0]}.{i_srf[1][1]}.cnrs-X")
+        if os.path.splitext(i_srf[1][0])[1] in [".txt", ".cnrs"]:
+            # already only outline
+            copy(i_srf[1][0], result)
+            return
+        srf.srf2corners(i_srf[1][0], cnrs=result)
+        return
     # point source - save beachball data
-    if not srf.is_ff(i_srf[1]):
-        info = f"{os.path.splitext(i_srf[1])[0]}.info"
+    if not srf.is_ff(i_srf[1][0]):
+        info = f"{os.path.splitext(i_srf[1][0])[0]}.info"
         if not os.path.exists(info):
-            print("ps SRF missing .info, using 5.0 for magnitude: %s" % (i_srf[1]))
+            print("ps SRF missing .info, using 5.0 for magnitude: %s" % (i_srf[1][0]))
             mag = 5.0
-            hypocentre = srf.get_hypo(i_srf[1], depth=True)
-            strike, dip, rake = srf.ps_params(i_srf[1])
+            hypocentre = srf.get_hypo(i_srf[1][0], depth=True)
+            strike, dip, rake = srf.ps_params(i_srf[1][0])
         else:
             with h5open(info) as h:
                 mag = h.attrs["mag"]
@@ -209,7 +218,9 @@ def load_srf(i_srf):
                 strike = h.attrs["strike"][0]
                 dip = h.attrs["dip"][0]
                 rake = h.attrs["rake"]
-        with open(os.path.join(gmt_temp, f"beachball{i_srf[0]}.bb"), "w") as bb:
+        with open(
+            os.path.join(gmt_temp, f"beachball{i_srf[0]}.{i_srf[1][1]}.bb"), "w"
+        ) as bb:
             bb.write(
                 "%s %s %s %s %s %s %s %s %s\n"
                 % (
@@ -225,17 +236,15 @@ def load_srf(i_srf):
                 )
             )
         return
-    # finite fault - only save outline
-    if i_srf[0] < 0:
-        srf.srf2corners(i_srf[1], cnrs=os.path.join(gmt_temp, f"srf{i_srf[0]}.cnrs-X"))
-        return
     # finite fault - save outline and slip distributions
-    srf.srf2corners(i_srf[1], cnrs=os.path.join(gmt_temp, f"srf{i_srf[0]}.cnrs"))
+    srf.srf2corners(
+        i_srf[1][0], cnrs=os.path.join(gmt_temp, f"srf{i_srf[0]}.{i_srf[1][1]}.cnrs")
+    )
     proc_tmp = os.path.join(gmt_temp, f"srf2map_{i_srf[0]}")
     os.makedirs(proc_tmp)
     try:
         srf_data = gmt.srf2map(
-            i_srf[1], gmt_temp, prefix="srf%d" % (i_srf[0]), wd=proc_tmp
+            i_srf[1][0], gmt_temp, prefix="srf%d" % (i_srf[0]), wd=proc_tmp
         )
         return i_srf[0], srf_data
     except ValueError:
@@ -402,13 +411,13 @@ def find_srfs(args, gmt_temp):
     # find srf
     srf_files = []
     if args.srf_only_outline is not None:
-        for ex in args.srf_only_outline:
-            srf_files.extend(glob(ex))
+        for i, ex in enumerate(args.srf_only_outline):
+            srf_files.extend([(path, i) for path in glob(ex)])
     # to determine if srf_file is only outline or full
     n_srf_outline = len(srf_files)
     if args.srf_files is not None:
-        for ex in args.srf_files:
-            srf_files.extend(glob(ex))
+        for i, ex in enumerate(args.srf_files):
+            srf_files.extend([(path, i) for path in glob(ex)])
 
     # slip cpt
     if n_srf_outline < len(srf_files):
@@ -539,20 +548,27 @@ def basemap(args, sizing, wd):
     return p
 
 
+def arg_i(arg, i, default=None):
+    """
+    Where an argument list doesn't need to have different values for different items.
+    Take the latest value if each doesn't have it's own.
+    """
+    if arg is None:
+        return default
+    return arg[min(i, len(arg) - 1)]
+
+
 def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
     # plot velocity model corners
     p.path(vm_corners, is_file=False, close=True, width="0.5p", split="-")
     # add sites / ll file
     if args.ll_file is not None:
-        arg_i = lambda arg, i: arg[min(i, len(arg) - 1)]
         for i, ll in enumerate(args.ll_file):
-            thickness = (
-                "0.4p" if args.ll_thickness is None else arg_i(args.ll_thickness, i)
-            )
-            colour = None if args.ll_colour is None else arg_i(args.ll_colour, i)
-            outline = "black" if args.ll_outline is None else arg_i(args.ll_outline, i)
-            shape = "t" if args.ll_shape is None else arg_i(args.ll_shape, i)
-            size = 0.08 if args.ll_size is None else arg_i(args.ll_size, i)
+            thickness = arg_i(args.ll_thickness, i, default="0.4p")
+            colour = arg_i(args.ll_colour, i)
+            outline = arg_i(args.ll_outline, i, default="black")
+            shape = arg_i(args.ll_shape, i, default="t")
+            size = arg_i(args.ll_size, i, default=0.08)
             p.points(
                 ll,
                 fill=colour,
@@ -582,6 +598,8 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
             )
     # add outlines for SRFs with slip
     for c in glob(os.path.join(gmt_temp, "srf*.cnrs")):
+        i = int(c.split(".")[-2])
+        colour = arg_i(args.fault_colour, i, default="black")
         p.fault(
             c,
             is_srf=False,
@@ -589,12 +607,14 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
             plane_width=0.2,
             top_width=0.4,
             hyp_width=0.2,
-            plane_colour=args.fault_colour,
-            top_colour=args.fault_colour,
-            hyp_colour=args.fault_colour,
+            plane_colour=colour,
+            top_colour=colour,
+            hyp_colour=colour,
         )
     # add outlines for SRFs without slip
     for c in glob(os.path.join(gmt_temp, "srf*.cnrs-X")):
+        i = int(c.split(".")[-2])
+        colour = arg_i(args.outline_fault_colour, i, default="blue")
         p.fault(
             c,
             is_srf=False,
@@ -602,9 +622,9 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
             plane_width=0.2,
             top_width=0.4,
             hyp_width=0.2,
-            plane_colour=args.outline_fault_colour,
-            top_colour=args.outline_fault_colour,
-            hyp_colour=args.outline_fault_colour,
+            plane_colour=colour,
+            top_colour=colour,
+            hyp_colour=colour,
         )
     # add beach balls
     for bb in glob(os.path.join(gmt_temp, "beachball*.bb")):
