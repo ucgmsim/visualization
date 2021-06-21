@@ -47,18 +47,22 @@ def get_args():
         "-s",
         "--srf-files",
         action="append",
-        help="SRF files to plot, use wildcards, repeat as needed",
+        help="SRF files to plot, use quoted wildcards, repeat as needed",
     )
-    arg("--fault-colour", help="outline colour of faults", action="append")
+    arg(
+        "--fault-colour",
+        help="outline colour of faults, repeat for different colour per location given",
+        action="append",
+    )
     arg(
         "-c",
         "--srf-only-outline",
         action="append",
-        help="SRF files to plot only outline, use wildcards, repeat as needed",
+        help="SRF and SRF corners files to plot only outline for, use quoted wildcards, repeat as needed",
     )
     arg(
         "--outline-fault-colour",
-        help="outline colour of only-outline faults",
+        help="outline colour of only-outline faults, repeat for different colour per location given",
         action="append",
     )
     arg("--logo", help="include logo", action="store_true")
@@ -75,13 +79,13 @@ def get_args():
         "-v",
         "--vm-corners",
         action="append",
-        help="VeloModCorners.txt to plot, use wildcards, repeat as needed",
+        help="VeloModCorners.txt to plot, use quoted wildcards, repeat as needed",
     )
     arg(
         "-x",
         "--xyts-corners",
         action="append",
-        help="xyts.e3d to plot outlines for, use wildcards, repeat as needed",
+        help="xyts.e3d to plot outlines for, use quoted wildcards, repeat as needed",
     )
     arg(
         "--ll-file", help="add longitude latitude station file to plot", action="append"
@@ -412,6 +416,8 @@ def find_srfs(args, gmt_temp):
     srf_files = []
     if args.srf_only_outline is not None:
         for i, ex in enumerate(args.srf_only_outline):
+            # keep track of which path spec the file was found under
+            # enables setting colour / other properties per path spec given
             srf_files.extend([(path, i) for path in glob(ex)])
     # to determine if srf_file is only outline or full
     n_srf_outline = len(srf_files)
