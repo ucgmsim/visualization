@@ -416,7 +416,7 @@ for s, seg in enumerate(planes):
                     shape="a",
                     size=(scale_factor * 0.6),
                     line="red",
-                    line_thickness=f"{scale_factor}p" % (scale_factor),
+                    line_thickness=f"{scale_factor}p",
                 )
 
         # no more tick labels than neccessary
