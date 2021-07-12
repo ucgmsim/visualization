@@ -512,6 +512,7 @@ def load_sizing(xyz_info, wd):
 
 
 def basemap(args, sizing, wd):
+    region = gmt.get_region(sizing["region"][0], sizing["region"][2])
     ps_file = os.path.join(wd, f"{os.path.basename(args.filename)}.ps")
     p = gmt.GMTPlot(ps_file, reset=False)
     p.spacial(
@@ -527,7 +528,13 @@ def basemap(args, sizing, wd):
             scale=args.downscale,
         )
     else:
-        p.basemap(topo_cpt="grey1", land="lightgray", scale=args.downscale)
+        p.basemap(
+            gmt.region_topo(region),
+            topo_cpt="grey1",
+            land="lightgray",
+            scale=args.downscale,
+            res="150k" if region == "NZ" else "f",
+        )
     # border tick labels
     p.ticks(major=2, minor=0.2)
     # QuakeCoRE logo
