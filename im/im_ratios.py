@@ -7,11 +7,13 @@ from argparse import ArgumentParser
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 parser = ArgumentParser()
 parser.add_argument("imcsv1", help="path to first IM csv")
 parser.add_argument("imcsv2", help="path to second IM csv")
-parser.add_argument("output", help="path to output IM csv")
+parser.add_argument("output", type=Path, help="path to output IM csv")
+parser.add_argument("--summary", action="store_true")
 args = parser.parse_args()
 
 # load IMs and common properties
@@ -33,3 +35,6 @@ ratio_df = ratio_df[ims]
 
 # save
 ratio_df.to_csv(args.output, index=True)
+if args.summary:
+    summary_file=args.output.parent/f"{args.output.name}_summary.csv"
+    ratio_df.describe().to_csv(summary_file)

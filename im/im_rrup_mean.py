@@ -54,7 +54,7 @@ def load_args():
         "--dist_min", default=0.1, type=float, help="GMPE param DistMin, default 0.1 km"
     )
     parser.add_argument(
-        "--dist-max",
+        "--dist_max",
         default=100.0,
         type=float,
         help="GMPE param DistMax, default 100.0 km",
@@ -64,13 +64,13 @@ def load_args():
     )
     parser.add_argument("--bars", help="also plot error bars", action="store_true")
     parser.add_argument(
-        "--out-dir",
+        "--out_dir",
         help="output folder to place plot",
         default=".",
         type=os.path.abspath,
     )
     parser.add_argument(
-        "--run-name",
+        "--run_name",
         help="run_name for title and filename",
         default="event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm",
     )

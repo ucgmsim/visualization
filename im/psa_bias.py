@@ -46,10 +46,10 @@ def load_args():
         action="append",
     )
     parser.add_argument(
-        "-o", "--out-dir", default=".", help="output folder to place plot"
+        "-o", "--out_dir", default=".", help="output folder to place plot"
     )
     parser.add_argument(
-        "--run-name",
+        "--run_name",
         help="run_name (plot title)",
         default="event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm",
     )

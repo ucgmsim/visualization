@@ -48,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument("station_filepath", help="path to input station_ll file path")
     parser.add_argument(
         "-o",
-        "--output_path",
+        "--out_dir",
         default=".",
         help="path to store output xyz files. Defaults to CWD",
     )
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    utils.setup_dir(args.output_path)
+    utils.setup_dir(args.out_dir)
     validate_filepath(parser, args.imcsv_filepath)
     validate_filepath(parser, args.station_filepath)
 
@@ -83,16 +83,16 @@ if __name__ == "__main__":
     ims = im_df.columns
     columns = ["lon", "lat", *ims]
 
-    non_uniform_filepath = os.path.join(args.output_path, "non_uniform_im.xyz")
-    real_station_filepath = os.path.join(args.output_path, "real_station_im.xyz")
+    non_uniform_filepath = os.path.join(args.out_dir, "non_uniform_im.xyz")
+    real_station_filepath = os.path.join(args.out_dir, "real_station_im.xyz")
 
     xyz_df[columns].to_csv(non_uniform_filepath, sep=" ", header=None, index=None)
     xyz_real_station_df[columns].to_csv(
         real_station_filepath, sep=" ", header=None, index=None
     )
 
-    im_col_file = os.path.join(args.output_path, "im_order.txt")
+    im_col_file = os.path.join(args.out_dir, "im_order.txt")
     with open(im_col_file, "w") as fp:
         fp.write(" ".join(ims))
 
-    print("xyz files are output to {}".format(args.output_path))
+    print("xyz files are output to {}".format(args.out_dir))
