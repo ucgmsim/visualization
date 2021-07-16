@@ -68,7 +68,7 @@ if __name__ == "__main__":
     run_name = os.path.splitext(os.path.basename(args.imcsv_filepath))[0]
 
     stat_df = formats.load_station_file(args.station_filepath)
-    im_df = formats.load_im_file_pd(args.imcsv_filepath)
+    im_df = formats.load_im_file_pd(args.imcsv_filepath, comp=args.component)
     # must have compatible index names to merge
     stat_df.index.rename("station", inplace=True)
 
