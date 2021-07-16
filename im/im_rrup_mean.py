@@ -11,7 +11,6 @@ mpl.use("Agg")
 
 from argparse import ArgumentError, ArgumentParser
 import os
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,6 +18,7 @@ import numpy as np
 from qcore.formats import load_im_file_pd, load_rrup_file
 from qcore.nputil import argsearch
 from qcore.utils import setup_dir
+from qcore.im import IM
 
 from empirical.scripts import calculate_empirical
 from empirical.util import empirical_factory, classdef
@@ -89,14 +89,8 @@ def get_print_name(im, comp):
     Takes in an IM and component and creates a filename friendly version.
     samples: pSA_0.02 -> pSA(0p02), pSA_10.0 -> pSA(10)
     """
-    if im.startswith("pSA_"):
-        whole, decimal = im.split("_")[-1].split(".")
-        if int(decimal) == 0:
-            decimal = ""
-        else:
-            decimal = f"p{decimal}"
-        im = f"pSA({whole}{decimal})"
-    return f"{im}_comp_{comp}"
+    im_name = IM.from_im_name(im).get_im_name().replace(".", "p")
+    return f"{im_name}_comp_{comp}"
 
 
 def validate_args(args):
@@ -188,7 +182,9 @@ if __name__ == "__main__":
     for im in im_names:
         # skip sigma
         if im.endswith("_sigma"):
+            print(f"{im} skipping")
             continue
+        print(im)
 
         print_name = get_print_name(im, args.comp)
         fig = plt.figure(figsize=(14, 7.5), dpi=100)

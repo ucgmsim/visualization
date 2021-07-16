@@ -152,7 +152,16 @@ def plot_single(
     return plot(plot_items_ffp, in_ffp, options_dict, tmp_dir)
 
 
-def plot(plot_items_ffp: str, in_ffp: str, options_dict: Dict, tmp_dir: str):
+def plot(
+    plot_items_ffp: str,
+    in_ffp: str,
+    options_dict: Dict,
+    tmp_dir: str,
+    column_idx: list = [],
+    sep: str = ",",
+    header_exists: bool = True,
+    out_f: str = None,
+):
     """Runs the plotting for the given csv file and
     options.
 
@@ -164,8 +173,8 @@ def plot(plot_items_ffp: str, in_ffp: str, options_dict: Dict, tmp_dir: str):
     plot_items_ffp: str
         File path to the plot_items.py script
     in_ffp: str
-        File path to the input csv
-        Required columns are lon, lat & value
+        File path to the input csv or xyz
+        Required columns are lon, lat & value0, value1, ...
     options_dict: dictionary
         Options dictionary of the format:
         {"flags": ["flag_1", "flag_2"],
@@ -174,6 +183,12 @@ def plot(plot_items_ffp: str, in_ffp: str, options_dict: Dict, tmp_dir: str):
     tmp_dir: str
         Temporary directory used by the
         plot_items.py script
+    column_idx: list
+        indices of IM to include in plotting. First IM is 0. Default: [] for all IMs
+    sep: str
+        Column separator used in in_ffp. Default: "," (csv)
+    header_exists: bool
+        True if the column header exists in in_ffp. Default: True
 
     Returns
     -------
@@ -194,14 +209,32 @@ def plot(plot_items_ffp: str, in_ffp: str, options_dict: Dict, tmp_dir: str):
     # Create temporary .xyz file for plotting
     # Cleaning up of the tmp dir has to be done by the calling function
     df = pd.read_csv(in_ffp)
-    tmp_xyz_ffp = os.path.join(
-        tmp_dir, change_file_ext(os.path.basename(in_ffp), "xyz")
-    )
-    df.to_csv(
-        tmp_xyz_ffp, sep=" ", columns=["lon", "lat", "value"], header=False, index=False
-    )
 
-    out_f = os.path.basename(in_ffp).split(".")[0]
+    # if csv, first row is likely to be header. .xyz has no header
+    skiprows = 1 if header_exists is True else 0
+
+    if len(column_idx) == 0:  # use all columns
+        df = pd.read_csv(in_ffp, sep=sep, header=None, skiprows=skiprows)
+
+    else:
+        # use only selected columns
+        column_idx_with_lon_lat = list(map(lambda idx: idx + 2, column_idx))
+        df = pd.read_csv(
+            in_ffp,
+            sep=sep,
+            usecols=[0, 1] + column_idx_with_lon_lat,
+            header=None,
+            skiprows=skiprows,
+        )
+
+    tmp_xyz_ffp = os.path.join(
+        tmp_dir, change_file_ext(f"tmp_{os.path.basename(in_ffp)}", "xyz")
+    )
+    df.to_csv(tmp_xyz_ffp, sep=" ", header=False, index=False)
+
+    if out_f is None:
+        out_f = os.path.basename(in_ffp).split(".")[0]
+
     cmd = PLOT_CMD_TEMPLATE.format(
         plot_items_ffp, plot_options, tmp_xyz_ffp, out_f
     ).split(" ")

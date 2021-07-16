@@ -4,6 +4,7 @@ Plot pSA residual with vibration period.
 """
 
 import matplotlib as mpl
+from pathlib import Path
 
 mpl.use("Agg")
 
@@ -54,14 +55,18 @@ def load_args():
         default="event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm",
     )
     parser.add_argument(
-        "--comp", help="component", choices=[d.name for d in Components], default="geom"
+        "--comp",
+        help="component",
+        choices=[d.str_value for d in Components],
+        default="geom",
     )
     args = parser.parse_args()
 
     # validate
-    assert len(args.imcsv) > 1
+    assert len(args.imcsv[0]) > 1
     for imcsv in args.imcsv:
         assert os.path.isfile(imcsv[0])
+
     os.makedirs(args.out_dir, exist_ok=True)
 
     return args
@@ -118,7 +123,7 @@ if __name__ == "__main__":
     # data values
     for i in range(1, len(args.imcsv)):
         psa_vals, psa_means, psa_std = calc_ratio(args.imcsv[0][0], args.imcsv[i][0])
-
+        name = f"{args.imcsv[0][1]}/{args.imcsv[i][1]}"
         plt.fill_between(
             psa_vals,
             psa_means - psa_std,
@@ -135,7 +140,7 @@ if __name__ == "__main__":
             color=FACE_EDGE_COLOURS[i - 1][2],
             linestyle="solid",
             linewidth=5,
-            label=args.imcsv[i][1],
+            label=name,
         )
     plt.plot(
         psa_vals,
@@ -152,7 +157,7 @@ if __name__ == "__main__":
     plt.grid(b=True, axis="x", which="minor")
     fig.set_tight_layout(True)
     plt.legend(loc="best")
-    plt.ylabel(f"pSA residual, ln({args.imcsv[0][1]})-ln(GMM)", fontsize=14)
+    plt.ylabel(f"pSA residual\nln({name})\n-ln(GMM)", fontsize=14)
     plt.xlabel("Vibration period, T (s)", fontsize=14)
     plt.title(args.run_name, fontsize=16)
     plt.xlim([0.01, 10])
