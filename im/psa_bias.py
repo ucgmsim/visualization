@@ -8,9 +8,10 @@ import matplotlib as mpl
 mpl.use("Agg")
 
 from argparse import ArgumentParser
-import os
+
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 
 from qcore.constants import Components
 from qcore.formats import load_im_file
@@ -46,7 +47,11 @@ def load_args():
         action="append",
     )
     parser.add_argument(
-        "-o", "--out_dir", default=".", help="output folder to place plot"
+        "-o",
+        "--out_dir",
+        default=Path.cwd(),
+        help="output folder to place plot",
+        type=Path,
     )
     parser.add_argument(
         "--run_name",
@@ -63,10 +68,11 @@ def load_args():
 
     # validate
     assert len(args.imcsv[0]) > 1
-    for imcsv in args.imcsv:
-        assert os.path.isfile(imcsv[0])
 
-    os.makedirs(args.out_dir, exist_ok=True)
+    for imcsv in args.imcsv:
+        assert Path(imcsv[0]).is_file()
+
+    args.out_dir.mkdir(exist_ok=True)
 
     return args
 
@@ -162,9 +168,5 @@ if __name__ == "__main__":
     plt.xlim([0.01, 10])
     if not (np.max(psa_means) < -2.5 or np.min(psa_means) > 2.5):
         plt.ylim([-2.5, 2.5])
-    plt.savefig(
-        os.path.join(
-            args.out_dir, f"pSAWithPeriod_comp_{args.comp}_{args.run_name}.png"
-        )
-    )
+    plt.savefig(args.out_dir / f"pSAWithPeriod_comp_{args.comp}_{args.run_name}.png")
     plt.close()

@@ -11,6 +11,7 @@ mpl.use("Agg")
 
 from argparse import ArgumentError, ArgumentParser
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -36,7 +37,7 @@ def load_args():
     """
     # read
     parser = ArgumentParser()
-    parser.add_argument("rrup", help="path to RRUP file", type=os.path.abspath)
+    parser.add_argument("rrup", help="path to RRUP file", type=Path)
     parser.add_argument(
         "--imcsv",
         nargs=2,
@@ -47,9 +48,9 @@ def load_args():
     parser.add_argument(
         "--config",
         help="path to .yaml empirical config file (requires SRF info)",
-        type=os.path.abspath,
+        type=Path,
     )
-    parser.add_argument("--srf", help="path to srf info file", type=os.path.abspath)
+    parser.add_argument("--srf", help="path to srf info file", type=Path)
     parser.add_argument(
         "--dist_min", default=0.1, type=float, help="GMPE param DistMin, default 0.1 km"
     )
@@ -64,10 +65,7 @@ def load_args():
     )
     parser.add_argument("--bars", help="also plot error bars", action="store_true")
     parser.add_argument(
-        "--out_dir",
-        help="output folder to place plot",
-        default=".",
-        type=os.path.abspath,
+        "--out_dir", help="output folder to place plot", default=Path.cwd(), type=Path
     )
     parser.add_argument(
         "--run_name",
@@ -97,14 +95,14 @@ def validate_args(args):
     """
     Validates command line input args.
     """
-    assert os.path.isfile(args.rrup)
+    assert args.rrup.is_file()
     for imcsv in args.imcsv:
-        assert os.path.isfile(imcsv[0])
+        assert Path(imcsv[0]).is_file()
 
     if args.srf is not None:
-        assert os.path.isfile(args.srf)
+        assert args.srf.is_file()
         if args.config is not None:
-            assert os.path.isfile(args.config)
+            assert args.config.is_file()
     elif args.config is not None:
         # srf file required if config given
         raise ArgumentError("SRF required if config given")
@@ -284,7 +282,6 @@ if __name__ == "__main__":
         plt.xlim(1e-1, max(1e2, np.max(rrups) * 1.1))
         fig.set_tight_layout(True)
         plt.savefig(
-            os.path.join(args.out_dir, f"{print_name}_with_Rrup_{args.run_name}.png"),
-            dpi=400,
+            args.out_dir / f"{print_name}_with_Rrup_{args.run_name}.png", dpi=400
         )
         plt.close()

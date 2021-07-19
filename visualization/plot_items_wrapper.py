@@ -211,7 +211,7 @@ def plot(
     df = pd.read_csv(in_ffp)
 
     # if csv, first row is likely to be header. .xyz has no header
-    skiprows = 1 if header_exists is True else 0
+    skiprows = 1 if header_exists else 0
 
     if len(column_idx) == 0:  # use all columns
         df = pd.read_csv(in_ffp, sep=sep, header=None, skiprows=skiprows)

@@ -9,10 +9,10 @@ from qcore.im import IM
 mpl.use("Agg")
 
 from argparse import ArgumentParser
-import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
@@ -28,9 +28,7 @@ def load_args():
     # read
 
     parser = ArgumentParser()
-    parser.add_argument(
-        "stats", help="ll or rrup file for locations", type=os.path.abspath
-    )
+    parser.add_argument("stats", help="ll or rrup file for locations", type=Path)
     parser.add_argument(
         "--imcsv",
         nargs=2,
@@ -40,7 +38,11 @@ def load_args():
     )
 
     parser.add_argument(
-        "-d", "--out_dir", default=".", help="output folder to place xyz file"
+        "-d",
+        "--out_dir",
+        default=".",
+        help="output folder to place xyz file",
+        type=Path,
     )
     parser.add_argument(
         "--run_name",
@@ -53,11 +55,11 @@ def load_args():
     # validate
     assert len(args.imcsv[0]) > 1
     for imcsv in args.imcsv:
-        assert os.path.isfile(imcsv[0])
+        assert Path(imcsv[0]).is_file()
 
-    assert os.path.isfile(args.stats)
-    if not os.path.isdir(args.out_dir):
-        os.makedirs(args.out_dir)
+    assert args.stats.is_file()
+
+    args.out_dir.mkdir(exist_ok=True)
 
     return args
 
@@ -134,9 +136,7 @@ if __name__ == "__main__":
             )  # manually adjusted x-axis to strip blank space on plot, TODO Should be autoed
 
             plt.savefig(
-                os.path.join(
-                    args.out_dir,
-                    f"{print_name}_{args.imcsv[0][1]}_{args.imcsv[i][1]}_Ratio_withRrup_{args.run_name}.png",
-                )
+                args.out_dir
+                / f"{print_name}_{args.imcsv[0][1]}_{args.imcsv[i][1]}_Ratio_withRrup_{args.run_name}.png"
             )
             plt.close()
