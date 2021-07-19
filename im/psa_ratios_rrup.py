@@ -5,7 +5,6 @@ Ratios for each IM.
 
 import matplotlib as mpl
 from qcore.im import IM
-from pathlib import Path
 
 mpl.use("Agg")
 

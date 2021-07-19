@@ -6,9 +6,8 @@ Create IM csv file containing the ratio of 2 IM csv files.
 from argparse import ArgumentParser
 
 import numpy as np
-import pandas as pd
 from pathlib import Path
-from qcore.formats import load_rrup_file, load_im_file_pd
+from qcore.formats import load_im_file_pd
 
 
 def ratios_to_csv(imcsv1, imcsv2, output_path: Path, comp=None, summary=False):

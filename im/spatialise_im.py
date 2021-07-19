@@ -4,9 +4,7 @@ Generate non_uniform.xyz and sim/obs.xyz file
 """
 
 import os
-import sys
 import argparse
-import glob
 
 from qcore import shared, utils, constants, formats
 

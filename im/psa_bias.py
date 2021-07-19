@@ -4,7 +4,6 @@ Plot pSA residual with vibration period.
 """
 
 import matplotlib as mpl
-from pathlib import Path
 
 mpl.use("Agg")
 
