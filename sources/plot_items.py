@@ -17,7 +17,7 @@ from multiprocessing import Pool
 import os
 import pkg_resources
 from shutil import copy, rmtree
-from tempfile import mkdtemp
+from tempfile import TemporaryDirectory
 
 from h5py import File as h5open
 import numpy as np
@@ -715,8 +715,6 @@ def render_xyz_col(basename, out_dir, sizing, xyz_info, args, gmt_temp, xyz_i):
 
 if __name__ == "__main__":
     args = get_args()
-    gmt_temp = mkdtemp()
-    srf_files, srf_0 = find_srfs(args, gmt_temp)
     xyts_files = find_xyts(args)
     xyz_ncol = find_xyz_ncol(args.xyz)
     basename = os.path.basename(args.filename)
@@ -725,55 +723,63 @@ if __name__ == "__main__":
         out_dir = "."
     os.makedirs(out_dir, exist_ok=True)
 
-    pool = Pool(args.nproc)
-    xyz_info = pool.apply_async(load_xyz, [args])
-    i_srf_data = pool.map_async(
-        load_srf,
-        zip(
-            range(srf_0, srf_0 + len(srf_files)), srf_files, [gmt_temp] * len(srf_files)
-        ),
-    )
-    xyts_corners = pool.map_async(load_xyts_corners, xyts_files)
-    vm_corners = load_vm_corners(args)
+    with TemporaryDirectory() as gmt_temp:
+        srf_files, srf_0 = find_srfs(args, gmt_temp)
 
-    xyz_info = xyz_info.get()
-    xyz_cols = pool.map_async(
-        partial(load_xyz_col, args, xyz_info, gmt_temp), range(0, xyz_ncol)
-    )
+        with Pool(args.nproc) as pool:
+            xyz_info = pool.apply_async(load_xyz, [args])
+            i_srf_data = pool.map_async(
+                load_srf,
+                zip(
+                    range(srf_0, srf_0 + len(srf_files)),
+                    srf_files,
+                    [gmt_temp] * len(srf_files),
+                ),
+            )
+            xyts_corners = pool.map_async(load_xyts_corners, xyts_files)
+            vm_corners = load_vm_corners(args)
 
-    sizing = load_sizing(xyz_info, gmt_temp)
-    p = basemap(args, sizing, gmt_temp)
+            xyz_info = xyz_info.get()
+            xyz_cols = pool.map_async(
+                partial(load_xyz_col, args, xyz_info, gmt_temp), range(0, xyz_ncol)
+            )
 
-    xyz_cols = xyz_cols.get()
-    i_srf_data = i_srf_data.get()
-    xyts_corners = xyts_corners.get()
+            sizing = load_sizing(xyz_info, gmt_temp)
+            p = basemap(args, sizing, gmt_temp)
 
-    add_items(args, p, gmt_temp, map_width=sizing["map_width"])
+            xyz_cols = xyz_cols.get()
+            i_srf_data = i_srf_data.get()
+            xyts_corners = xyts_corners.get()
 
-    if args.labels_file is not None:
-        with open(args.labels_file) as ll_file:
-            for line in ll_file:
-                lat, lon, label = line.split()
-                p.text(lat, lon, label, dy=0.05)
+            add_items(args, p, gmt_temp, map_width=sizing["map_width"])
 
-    if args.xyz:
-        p.leave()
-        xyz_pngs = pool.map_async(
-            partial(
-                render_xyz_col, basename, out_dir, sizing, xyz_info, args, gmt_temp
-            ),
-            enumerate(xyz_cols),
-        )
-        xyz_pngs = xyz_pngs.get()
-    else:
-        p.sites(gmt.sites_major)
-        p.finalise()
-        p.png(
-            out_dir=out_dir,
-            dpi=args.dpi * args.downscale,
-            downscale=args.downscale,
-            background="white",
-        )
+            if args.labels_file is not None:
+                with open(args.labels_file) as ll_file:
+                    for line in ll_file:
+                        lat, lon, label = line.split()
+                        p.text(lat, lon, label, dy=0.05)
 
-    pool.close()
-    rmtree(gmt_temp)
+            if args.xyz:
+                p.leave()
+                xyz_pngs = pool.map_async(
+                    partial(
+                        render_xyz_col,
+                        basename,
+                        out_dir,
+                        sizing,
+                        xyz_info,
+                        args,
+                        gmt_temp,
+                    ),
+                    enumerate(xyz_cols),
+                )
+                xyz_pngs = xyz_pngs.get()
+            else:
+                p.sites(gmt.sites_major)
+                p.finalise()
+                p.png(
+                    out_dir=out_dir,
+                    dpi=args.dpi * args.downscale,
+                    downscale=args.downscale,
+                    background="white",
+                )

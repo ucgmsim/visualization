@@ -42,7 +42,7 @@ def load_args():
         "--imcsv",
         nargs=2,
         required=True,
-        help="path to IM file and label",
+        help="path to IM file and label. if more than one is supplied, will be compared to first one",
         action="append",
     )
     parser.add_argument(

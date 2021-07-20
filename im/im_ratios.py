@@ -10,10 +10,12 @@ from pathlib import Path
 from qcore.formats import load_im_file_pd
 
 
-def ratios_to_csv(imcsv1, imcsv2, output_path: Path, comp=None, summary=False):
+def ratios_to_csv(
+    imcsv1_path: Path, imcsv2_path: Path, output_path: Path, comp=None, summary=False
+):
     # load IMs and common properties
-    im_df_a = load_im_file_pd(imcsv1, comp=comp)
-    im_df_b = load_im_file_pd(imcsv2, comp=comp)
+    im_df_a = load_im_file_pd(imcsv1_path, comp=comp)
+    im_df_b = load_im_file_pd(imcsv2_path, comp=comp)
     ims = np.intersect1d(im_df_a.columns, im_df_b.columns)
 
     # add both IMs into colums IM_x and IM_y

@@ -24,10 +24,7 @@ def load_args():
         allow_abbrev=False,
     )
     parser.add_argument(
-        "base_im_csv",
-        type=Path,
-        nargs=2,
-        help="path to IM file and label",
+        "base_im_csv", type=Path, nargs=2, help="path to IM file and label"
     )
     parser.add_argument(
         "comp_im_csv",
@@ -43,7 +40,7 @@ def load_args():
     parser.add_argument(
         "-n",
         "--n_processes",
-        help="Only used for difference animation",
+        help="Only used for --diff_ani and --plot_items",
         type=int,
         default=1,
     )
@@ -54,6 +51,7 @@ def load_args():
     parser.add_argument("--psa_ratios_rrup", action="store_true", default=False)
     parser.add_argument("--plot_items", action="store_true", default=False)
     parser.add_argument("--diff_ani", action="store_true", default=False)
+    parser.add_argument("--all", action="store_true", default=False)
 
     parser.add_argument(
         "--im_rrup_bars",
@@ -282,7 +280,7 @@ def diff_ani(
     git_base: Path, base_xyts: Path, comp_xyts: Path, out_dir: Path, n_procs: int = 1
 ):
     cmd_args = [
-        git_base / "visualization" / "visualization" / "gmt" / "plot_ts.py",
+        git_base / "visualization" / "animation" / "plot_ts.py",
         base_xyts,
         "--xyts2",
         comp_xyts,
@@ -309,9 +307,9 @@ def run_all(parallel_jobs, serial_jobs, func_jobs, n_procs=1):
             running_tasks.append((n, Popen(t1)))
         sleep(10)  # check
 
-    for task in serial_jobs:
+    for n, task in serial_jobs:
         task1 = [str(x) for x in task]
-        print(task1)
+        print(n, task1)
         run(task)
 
     for task in func_jobs:
@@ -338,8 +336,8 @@ def main():
         base_im_csv, comp_im_csv, ratios_csv, args.comp, summary=True
     )
 
-    if args.im_rrup:
-        parallel_tasks_to_run.append(
+    if args.im_rrup or args.all:
+        serial_tasks_to_run.append(
             (
                 "im rrup plots",
                 im_rrup(
@@ -356,7 +354,7 @@ def main():
                 ),
             )
         )
-        parallel_tasks_to_run.append(
+        serial_tasks_to_run.append(
             (
                 "im ratio rrup plots",
                 im_rrup(
@@ -372,8 +370,8 @@ def main():
             )
         )
 
-    if args.psa_bias:
-        parallel_tasks_to_run.append(
+    if args.psa_bias or args.all:
+        serial_tasks_to_run.append(
             (
                 "psa bias plots",
                 psa_bias(
@@ -388,8 +386,8 @@ def main():
             )
         )
 
-    if args.psa_ratios_rrup:
-        parallel_tasks_to_run.append(
+    if args.psa_ratios_rrup or args.all:
+        serial_tasks_to_run.append(
             (
                 "psa ratios rrup plots",
                 psa_ratios_rrup(
@@ -405,7 +403,7 @@ def main():
             )
         )
 
-    if args.plot_items:
+    if args.plot_items or args.all:
 
         out_dir_plot_items = out_dir / "plot_items"
         stat_file = args.plot_items_stat_file.resolve()
@@ -426,14 +424,17 @@ def main():
     # create difference animation
     # Should run by itself as it can multi process
     # Run command to plot difference animation if possible
-    if args.diff_ani:
-        serial_tasks_to_run.append(
-            diff_ani(
-                git_base,
-                args.diff_ani_base_xyts,
-                args.diff_ani_comp_xyts,
-                out_dir,
-                args.n_processees,
+    if args.diff_ani or args.all:
+        parallel_tasks_to_run.append(
+            (
+                "diff_ani plots",
+                diff_ani(
+                    git_base,
+                    args.diff_ani_base_xyts,
+                    args.diff_ani_comp_xyts,
+                    out_dir,
+                    args.n_processes,
+                ),
             )
         )
 
