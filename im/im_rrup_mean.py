@@ -11,7 +11,7 @@ mpl.use("Agg")
 
 from argparse import ArgumentError, ArgumentParser
 import os
-import sys
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,6 +19,7 @@ import numpy as np
 from qcore.formats import load_im_file_pd, load_rrup_file
 from qcore.nputil import argsearch
 from qcore.utils import setup_dir
+from qcore.im import IM
 
 from empirical.scripts import calculate_empirical
 from empirical.util import empirical_factory, classdef
@@ -36,25 +37,25 @@ def load_args():
     """
     # read
     parser = ArgumentParser()
-    parser.add_argument("rrup", help="path to RRUP file", type=os.path.abspath)
+    parser.add_argument("rrup", help="path to RRUP file", type=Path)
     parser.add_argument(
         "--imcsv",
         nargs=2,
         required=True,
-        help="path to IM file and label",
+        help="path to IM file and label. can be used more than once to plot multiple sets of data",
         action="append",
     )
     parser.add_argument(
         "--config",
         help="path to .yaml empirical config file (requires SRF info)",
-        type=os.path.abspath,
+        type=Path,
     )
-    parser.add_argument("--srf", help="path to srf info file", type=os.path.abspath)
+    parser.add_argument("--srf", help="path to srf info file", type=Path)
     parser.add_argument(
         "--dist_min", default=0.1, type=float, help="GMPE param DistMin, default 0.1 km"
     )
     parser.add_argument(
-        "--dist-max",
+        "--dist_max",
         default=100.0,
         type=float,
         help="GMPE param DistMax, default 100.0 km",
@@ -64,13 +65,10 @@ def load_args():
     )
     parser.add_argument("--bars", help="also plot error bars", action="store_true")
     parser.add_argument(
-        "--out-dir",
-        help="output folder to place plot",
-        default=".",
-        type=os.path.abspath,
+        "--out_dir", help="output folder to place plot", default=Path.cwd(), type=Path
     )
     parser.add_argument(
-        "--run-name",
+        "--run_name",
         help="run_name for title and filename",
         default="event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm",
     )
@@ -89,28 +87,22 @@ def get_print_name(im, comp):
     Takes in an IM and component and creates a filename friendly version.
     samples: pSA_0.02 -> pSA(0p02), pSA_10.0 -> pSA(10)
     """
-    if im.startswith("pSA_"):
-        whole, decimal = im.split("_")[-1].split(".")
-        if int(decimal) == 0:
-            decimal = ""
-        else:
-            decimal = f"p{decimal}"
-        im = f"pSA({whole}{decimal})"
-    return f"{im}_comp_{comp}"
+    im_name = IM.from_im_name(im).get_im_name().replace(".", "p")
+    return f"{im_name}_comp_{comp}"
 
 
 def validate_args(args):
     """
     Validates command line input args.
     """
-    assert os.path.isfile(args.rrup)
+    assert args.rrup.is_file()
     for imcsv in args.imcsv:
-        assert os.path.isfile(imcsv[0])
+        assert Path(imcsv[0]).is_file()
 
     if args.srf is not None:
-        assert os.path.isfile(args.srf)
+        assert args.srf.is_file()
         if args.config is not None:
-            assert os.path.isfile(args.config)
+            assert args.config.is_file()
     elif args.config is not None:
         # srf file required if config given
         raise ArgumentError("SRF required if config given")
@@ -188,7 +180,9 @@ if __name__ == "__main__":
     for im in im_names:
         # skip sigma
         if im.endswith("_sigma"):
+            print(f"{im} skipping")
             continue
+        print(im)
 
         print_name = get_print_name(im, args.comp)
         fig = plt.figure(figsize=(14, 7.5), dpi=100)
@@ -288,7 +282,6 @@ if __name__ == "__main__":
         plt.xlim(1e-1, max(1e2, np.max(rrups) * 1.1))
         fig.set_tight_layout(True)
         plt.savefig(
-            os.path.join(args.out_dir, f"{print_name}_with_Rrup_{args.run_name}.png"),
-            dpi=400,
+            args.out_dir / f"{print_name}_with_Rrup_{args.run_name}.png", dpi=400
         )
         plt.close()

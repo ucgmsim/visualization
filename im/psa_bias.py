@@ -8,9 +8,10 @@ import matplotlib as mpl
 mpl.use("Agg")
 
 from argparse import ArgumentParser
-import os
+
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 
 from qcore.constants import Components
 from qcore.formats import load_im_file
@@ -42,27 +43,36 @@ def load_args():
         "--imcsv",
         required=True,
         nargs=2,
-        help="path to IM file and label, will be compared to first one",
+        help="path to IM file and label. if more than one is supplied, will be compared to first one",
         action="append",
     )
     parser.add_argument(
-        "-o", "--out-dir", default=".", help="output folder to place plot"
+        "-o",
+        "--out_dir",
+        default=Path.cwd(),
+        help="output folder to place plot",
+        type=Path,
     )
     parser.add_argument(
-        "--run-name",
+        "--run_name",
         help="run_name (plot title)",
         default="event-yyyymmdd_location_mMpM_sim-yyyymmddhhmm",
     )
     parser.add_argument(
-        "--comp", help="component", choices=[d.name for d in Components], default="geom"
+        "--comp",
+        help="component",
+        choices=[d.str_value for d in Components],
+        default="geom",
     )
     args = parser.parse_args()
 
     # validate
-    assert len(args.imcsv) > 1
+    assert len(args.imcsv[0]) > 1
+
     for imcsv in args.imcsv:
-        assert os.path.isfile(imcsv[0])
-    os.makedirs(args.out_dir, exist_ok=True)
+        assert Path(imcsv[0]).is_file()
+
+    args.out_dir.mkdir(exist_ok=True)
 
     return args
 
@@ -118,7 +128,7 @@ if __name__ == "__main__":
     # data values
     for i in range(1, len(args.imcsv)):
         psa_vals, psa_means, psa_std = calc_ratio(args.imcsv[0][0], args.imcsv[i][0])
-
+        name = f"{args.imcsv[0][1]}/{args.imcsv[i][1]}"
         plt.fill_between(
             psa_vals,
             psa_means - psa_std,
@@ -135,7 +145,7 @@ if __name__ == "__main__":
             color=FACE_EDGE_COLOURS[i - 1][2],
             linestyle="solid",
             linewidth=5,
-            label=args.imcsv[i][1],
+            label=name,
         )
     plt.plot(
         psa_vals,
@@ -152,15 +162,11 @@ if __name__ == "__main__":
     plt.grid(b=True, axis="x", which="minor")
     fig.set_tight_layout(True)
     plt.legend(loc="best")
-    plt.ylabel(f"pSA residual, ln({args.imcsv[0][1]})-ln(GMM)", fontsize=14)
+    plt.ylabel(f"pSA residual\nln({name})\n-ln(GMM)", fontsize=14)
     plt.xlabel("Vibration period, T (s)", fontsize=14)
     plt.title(args.run_name, fontsize=16)
     plt.xlim([0.01, 10])
     if not (np.max(psa_means) < -2.5 or np.min(psa_means) > 2.5):
         plt.ylim([-2.5, 2.5])
-    plt.savefig(
-        os.path.join(
-            args.out_dir, f"pSAWithPeriod_comp_{args.comp}_{args.run_name}.png"
-        )
-    )
+    plt.savefig(args.out_dir / f"pSAWithPeriod_comp_{args.comp}_{args.run_name}.png")
     plt.close()
