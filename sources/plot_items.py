@@ -529,7 +529,7 @@ def basemap(args, sizing, wd):
         )
     else:
         p.basemap(
-            gmt.region_topo(region),
+            topo=gmt.region_topo(region),
             topo_cpt="grey1",
             land="lightgray",
             scale=args.downscale,
