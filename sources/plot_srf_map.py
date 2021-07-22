@@ -5,7 +5,6 @@
 from argparse import ArgumentParser
 from math import floor, log10
 import os
-from pkg_resources import resource_filename
 from shutil import rmtree
 from subprocess import call
 import sys
@@ -344,7 +343,7 @@ p.spacial("M", nz_region, sizing=full_width, x_shift=zoom_width + gap)
 full_height = gmt.mapproject(nz_region[0], nz_region[3], wd=gmt_tmp)[1]
 p.basemap(
     land="lightgray",
-    topo=gmt.TOPO_LOW,
+    topo=gmt.regional_resource(region_code, resource="topo"),
     topo_cpt="grey1",
     road=None,
 )
@@ -387,7 +386,7 @@ p.ticks(major="2d", minor="30m", sides="ws")
 if args.depth:
     p.spacial("M", plot_region, sizing=zoom_width, x_shift=full_width + gap)
     p.basemap(
-        topo=resource_filename("gmsimviz", "data/Topo/srtm_NZ_1s.grd"),
+        topo=gmt.regional_resource(region_code, resource="topo", mod="1s"),
         land="lightgray",
         topo_cpt="grey1",
     )
