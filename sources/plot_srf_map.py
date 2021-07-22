@@ -144,6 +144,7 @@ else:
 ###
 if not finite_fault:
     hypocentre = srf.get_hypo(args.srf_file, depth=True)
+    region_code = gmt.get_region(hypocentre[0], hypocentre[1])
     plot_region = (
         hypocentre[0] - 0.2,
         hypocentre[0] + 0.2,
