@@ -309,7 +309,7 @@ def render_slice(n):
         x2.astype(np.float32).tofile(os.path.join(swd, "ts.bin"))
     s.clip(cnr_str, is_file=False)
     if args.land_crop:
-        s.clip(gmt.LINZ_COAST["150k"], is_file=True)
+        s.clip(gmt.regional_resource("NZ", resource="coastline"), is_file=True)
     gmt.table2grd(
         os.path.join(swd, "ts.bin"),
         os.path.join(swd, "ts.grd"),

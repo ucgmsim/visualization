@@ -533,7 +533,7 @@ def basemap(args, sizing, wd):
             topo_cpt="grey1",
             land="lightgray",
             scale=args.downscale,
-            res="150k" if region_code == "NZ" else "f",
+            res="NZ" if region_code == "NZ" else "f",
         )
     # border tick labels
     p.ticks(major=2, minor=0.2)
@@ -666,7 +666,7 @@ def render_xyz_col(basename, out_dir, sizing, xyz_info, xyz_i):
     p = gmt.GMTPlot(ps_file, append=True, reset=False)
 
     if args.xyz_landmask:
-        p.clip(path=gmt.LINZ_COAST["150k"], is_file=True)
+        p.clip(path=gmt.regional_resource("NZ", resource="coastline"), is_file=True)
     if "perimiter" in xyz_info:
         p.clip(path=xyz_info["perimiter"])
     if not args.xyz_grid:
