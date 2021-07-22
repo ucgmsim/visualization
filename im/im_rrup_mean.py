@@ -42,7 +42,7 @@ def load_args():
         "--imcsv",
         nargs=2,
         required=True,
-        help="path to IM file and label. if more than one is supplied, will be compared to first one",
+        help="path to IM file and label. can be used more than once to plot multiple sets of data",
         action="append",
     )
     parser.add_argument(

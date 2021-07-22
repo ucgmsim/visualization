@@ -40,7 +40,7 @@ def load_args():
     parser.add_argument(
         "-n",
         "--n_processes",
-        help="Only used for --diff_ani and --plot_items",
+        help="Number of CPU cores to utilize for parallel processing",
         type=int,
         default=1,
     )
@@ -294,24 +294,28 @@ def diff_ani(
 
 def run_all(parallel_jobs, serial_jobs, func_jobs, n_procs=1):
     # Run the currently assembled tasks in parallel
+
     running_tasks = []
-    while len(parallel_jobs) + len(running_tasks) > 0:
+    # multiple serial_jobs can run in parallel if n_procs > 1
+    while len(serial_jobs) + len(running_tasks) > 0:
         for n, t in running_tasks:
             rc = t.poll()
             if rc is not None:
                 running_tasks.remove((n, t))
-        while len(running_tasks) < n_procs and len(parallel_jobs) > 0:
-            n, t = parallel_jobs.pop()
+        while len(running_tasks) < n_procs and len(serial_jobs) > 0:
+            n, t = serial_jobs.pop()
             t1 = [str(x) for x in t]
             print(t1)
             running_tasks.append((n, Popen(t1)))
         sleep(10)  # check
 
-    for n, task in serial_jobs:
+    # parallel jobs already have n_procs value embedded
+    for n, task in parallel_jobs:
         task1 = [str(x) for x in task]
         print(n, task1)
         run(task)
 
+    # funtion calls. can be a function designed to use multiple cores
     for task in func_jobs:
         task()
 
