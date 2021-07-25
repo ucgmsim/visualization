@@ -513,6 +513,7 @@ def load_sizing(xyz_info, wd):
 
 
 def basemap(args, sizing, wd):
+    region_code = gmt.get_region(sizing["region"][0], sizing["region"][2])
     ps_file = os.path.join(wd, f"{os.path.basename(args.filename)}.ps")
     p = gmt.GMTPlot(ps_file, reset=False)
     p.spacial(
@@ -528,7 +529,13 @@ def basemap(args, sizing, wd):
             scale=args.downscale,
         )
     else:
-        p.basemap(topo_cpt="grey1", land="lightgray", scale=args.downscale)
+        p.basemap(
+            topo=gmt.regional_resource(region_code, resource="topo"),
+            topo_cpt="grey1",
+            land="lightgray",
+            scale=args.downscale,
+            res="NZ" if region_code == "NZ" else "f",
+        )
     # border tick labels
     p.ticks(major=2, minor=0.2)
     # QuakeCoRE logo
@@ -660,7 +667,7 @@ def render_xyz_col(basename, out_dir, sizing, xyz_info, args, gmt_temp, xyz_i):
     p = gmt.GMTPlot(ps_file, append=True, reset=False)
 
     if args.xyz_landmask:
-        p.clip(path=gmt.LINZ_COAST["150k"], is_file=True)
+        p.clip(path=gmt.regional_resource("NZ", resource="coastline"), is_file=True)
     if "perimiter" in xyz_info:
         p.clip(path=xyz_info["perimiter"])
     if not args.xyz_grid:

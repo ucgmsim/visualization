@@ -84,6 +84,7 @@ if finite_fault:
     np_bounds = np.array(bounds)
     x_min, y_min = np.min(np.min(np_bounds, axis=0), axis=0)
     x_max, y_max = np.max(np.max(np_bounds, axis=0), axis=0)
+    region_code = gmt.get_region(x_min, y_min)
     plot_region = (x_min - 0.1, x_max + 0.1, y_min - 0.1, y_max + 0.1)
     # read all max slip values (all at once is much faster)
     seg_llslips = srf.srf2llv_py(args.srf_file, value="slip")
@@ -143,6 +144,7 @@ else:
 ###
 if not finite_fault:
     hypocentre = srf.get_hypo(args.srf_file, depth=True)
+    region_code = gmt.get_region(hypocentre[0], hypocentre[1])
     plot_region = (
         hypocentre[0] - 0.2,
         hypocentre[0] + 0.2,
@@ -216,7 +218,7 @@ full_height = gmt.mapproject(
 zoom_width, zoom_height = gmt.map_width("M", full_height, plot_region, wd=gmt_tmp)
 p.spacial("M", plot_region, sizing=zoom_width, x_shift=gap, y_shift=2.5)
 p.basemap(
-    topo=os.path.join(gmt.GMT_DATA, "Topo/srtm_NZ_1s.grd"),
+    topo=gmt.regional_resource(region_code, resource="topo", mod="1s"),
     land="lightgray",
     topo_cpt="grey1",
 )
@@ -342,7 +344,7 @@ p.spacial("M", nz_region, sizing=full_width, x_shift=zoom_width + gap)
 full_height = gmt.mapproject(nz_region[0], nz_region[3], wd=gmt_tmp)[1]
 p.basemap(
     land="lightgray",
-    topo=gmt.TOPO_LOW,
+    topo=gmt.regional_resource(region_code, resource="topo"),
     topo_cpt="grey1",
     road=None,
 )
@@ -385,7 +387,7 @@ p.ticks(major="2d", minor="30m", sides="ws")
 if args.depth:
     p.spacial("M", plot_region, sizing=zoom_width, x_shift=full_width + gap)
     p.basemap(
-        topo=os.path.join(gmt.GMT_DATA, "Topo/srtm_NZ_1s.grd"),
+        topo=gmt.regional_resource(region_code, resource="topo", mod="1s"),
         land="lightgray",
         topo_cpt="grey1",
     )
