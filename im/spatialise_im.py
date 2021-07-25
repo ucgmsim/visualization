@@ -4,9 +4,7 @@ Generate non_uniform.xyz and sim/obs.xyz file
 """
 
 import os
-import sys
 import argparse
-import glob
 
 from qcore import shared, utils, constants, formats
 
@@ -42,33 +40,12 @@ def validate_dir(parser, dir_path):
         parser.error("No such directory {}".format(dir_path))
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("imcsv_filepath", help="path to input IMcsv file")
-    parser.add_argument("station_filepath", help="path to input station_ll file path")
-    parser.add_argument(
-        "-o",
-        "--output_path",
-        default=".",
-        help="path to store output xyz files. Defaults to CWD",
-    )
-    parser.add_argument(
-        "-c",
-        "--component",
-        default="geom",
-        choices=COMPS,
-        help=f"which component of the intensity measure. Available components are {COMPS}. Default is 'geom'",
-    )
-    args = parser.parse_args()
+def write_xyz(imcsv, stat_file, out_dir):
+    utils.setup_dir(out_dir)
 
-    utils.setup_dir(args.output_path)
-    validate_filepath(parser, args.imcsv_filepath)
-    validate_filepath(parser, args.station_filepath)
+    stat_df = formats.load_station_file(stat_file)
+    im_df = formats.load_im_file_pd(imcsv, comp=args.component)
 
-    run_name = os.path.splitext(os.path.basename(args.imcsv_filepath))[0]
-
-    stat_df = formats.load_station_file(args.station_filepath)
-    im_df = formats.load_im_file_pd(args.imcsv_filepath)
     # must have compatible index names to merge
     stat_df.index.rename("station", inplace=True)
 
@@ -83,16 +60,33 @@ if __name__ == "__main__":
     ims = im_df.columns
     columns = ["lon", "lat", *ims]
 
-    non_uniform_filepath = os.path.join(args.output_path, "non_uniform_im.xyz")
-    real_station_filepath = os.path.join(args.output_path, "real_station_im.xyz")
+    non_uniform_filepath = os.path.join(out_dir, "non_uniform_im.xyz")
+    real_station_filepath = os.path.join(out_dir, "real_station_im.xyz")
 
     xyz_df[columns].to_csv(non_uniform_filepath, sep=" ", header=None, index=None)
     xyz_real_station_df[columns].to_csv(
         real_station_filepath, sep=" ", header=None, index=None
     )
 
-    im_col_file = os.path.join(args.output_path, "im_order.txt")
+    im_col_file = os.path.join(out_dir, "im_order.txt")
     with open(im_col_file, "w") as fp:
         fp.write(" ".join(ims))
 
-    print("xyz files are output to {}".format(args.output_path))
+    print("xyz files are output to {}".format(out_dir))
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("imcsv_filepath", help="path to input IMcsv file")
+    parser.add_argument("station_filepath", help="path to input station_ll file path")
+    parser.add_argument(
+        "-o",
+        "--out_dir",
+        default=".",
+        help="path to store output xyz files. Defaults to CWD",
+    )
+
+    args = parser.parse_args()
+    validate_filepath(parser, args.imcsv_filepath)
+    validate_filepath(parser, args.station_filepath)
+    write_xyz(args.imcsv_filepath, args.station_filepath, args.out_dir)
