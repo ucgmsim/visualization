@@ -43,10 +43,9 @@ def validate_dir(parser, dir_path):
 def write_xyz(imcsv, stat_file, out_dir):
     utils.setup_dir(out_dir)
 
-    run_name = os.path.splitext(os.path.basename(imcsv))[0]
-
     stat_df = formats.load_station_file(stat_file)
-    im_df = formats.load_im_file_pd(imcsv)
+    im_df = formats.load_im_file_pd(imcsv, comp=args.component)
+
     # must have compatible index names to merge
     stat_df.index.rename("station", inplace=True)
 
