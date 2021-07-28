@@ -473,6 +473,9 @@ def load_vm_corners(args):
 
 
 def load_sizing(xyz_info, wd):
+    """
+    Get dimensions of plot in geographic and on-page space.
+    """
     pwd = os.path.join(wd, "_size")
     ps_file = os.path.join(pwd, "size.ps")
     os.makedirs(pwd)
@@ -559,7 +562,7 @@ def basemap(args, sizing, wd):
             dy=0.2,
         )
 
-    return p
+    return p, region_code
 
 
 def arg_i(arg, i, default=None):
@@ -657,7 +660,9 @@ def add_items(args, p, gmt_temp, map_width=MAP_WIDTH):
         )
 
 
-def render_xyz_col(basename, out_dir, sizing, xyz_info, args, gmt_temp, xyz_i):
+def render_xyz_col(
+    basename, out_dir, sizing, xyz_info, args, gmt_temp, region_code, xyz_i
+):
     i, xyz = xyz_i
     pwd = os.path.join(gmt_temp, f"_xyz{i}")
     ps_file = os.path.join(pwd, f"{basename}_{i}.ps")
@@ -665,9 +670,13 @@ def render_xyz_col(basename, out_dir, sizing, xyz_info, args, gmt_temp, xyz_i):
     copy(os.path.join(gmt_temp, "gmt.conf"), os.path.join(pwd, "gmt.conf"))
     copy(os.path.join(gmt_temp, "gmt.history"), os.path.join(pwd, "gmt.history"))
     p = gmt.GMTPlot(ps_file, append=True, reset=False)
+    cpt_file = "cpt.cpt"
 
     if args.xyz_landmask:
-        p.clip(path=gmt.regional_resource("NZ", resource="coastline"), is_file=True)
+        # attempt to use higher resolution regional data
+        coast_file = gmt.regional_resource(region_code, resource="coastline")
+        if coast_file is not None:
+            p.clip(path=coast_file, is_file=True)
     if "perimiter" in xyz_info:
         p.clip(path=xyz_info["perimiter"])
     if not args.xyz_grid:
@@ -679,25 +688,32 @@ def render_xyz_col(basename, out_dir, sizing, xyz_info, args, gmt_temp, xyz_i):
             size=args.xyz_size,
             fill=None,
             line=None,
-            cpt="cpt.cpt",
+            cpt=cpt_file,
             cols=f"0,1,{i + 2}",
         )
     else:
         grd_file = os.path.join(pwd, "overlay.nc")
-        p.overlay(grd_file, "cpt.cpt", transparency=args.xyz_transparency)
         if args.xyz_grid_contours_inc is not None:
-            p.contours(grd_file, interval=args.xyz_grid_contours_inc)
+            contours = args.xyz_grid_contours_inc
         elif args.xyz_grid_contours:
-            # use intervals from cpt file
-            p.contours(grd_file, interval="cpt.cpt")
-    if args.xyz_landmask or "perimiter" in xyz_info:
+            contours = cpt_file
+        else:
+            contours = None
+        p.overlay(
+            grd_file,
+            cpt_file,
+            transparency=args.xyz_transparency,
+            contours=contours,
+            land_crop=args.xyz_landmask and coast_file is None,
+        )
+    if args.xyz_landmask and coast_file is not None or "perimiter" in xyz_info:
         p.clip()
 
     # colour scale
     p.cpt_scale(
         "C",
         "B",
-        "cpt.cpt",
+        cpt_file,
         major=None if args.xyz_cpt_categorical else xyz["tick"],
         minor=None if args.xyz_cpt_categorical else xyz["inc"],
         pos="rel_out",
@@ -752,7 +768,7 @@ if __name__ == "__main__":
             )
 
             sizing = load_sizing(xyz_info, gmt_temp)
-            p = basemap(args, sizing, gmt_temp)
+            p, region_code = basemap(args, sizing, gmt_temp)
 
             xyz_cols = xyz_cols.get()
             i_srf_data = i_srf_data.get()
@@ -777,6 +793,7 @@ if __name__ == "__main__":
                         xyz_info,
                         args,
                         gmt_temp,
+                        region_code,
                     ),
                     enumerate(xyz_cols),
                 )
