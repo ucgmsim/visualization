@@ -40,11 +40,11 @@ def validate_dir(parser, dir_path):
         parser.error("No such directory {}".format(dir_path))
 
 
-def write_xyz(imcsv, stat_file, out_dir):
+def write_xyz(imcsv, stat_file, out_dir, component='geom'):
     utils.setup_dir(out_dir)
 
     stat_df = formats.load_station_file(stat_file)
-    im_df = formats.load_im_file_pd(imcsv, comp=args.component)
+    im_df = formats.load_im_file_pd(imcsv, comp=component)
 
     # must have compatible index names to merge
     stat_df.index.rename("station", inplace=True)
@@ -96,4 +96,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     validate_filepath(parser, args.imcsv_filepath)
     validate_filepath(parser, args.station_filepath)
-    write_xyz(args.imcsv_filepath, args.station_filepath, args.out_dir)
+    write_xyz(args.imcsv_filepath, args.station_filepath, args.out_dir, args.component)
