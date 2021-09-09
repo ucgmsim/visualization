@@ -80,6 +80,13 @@ if __name__ == "__main__":
     parser.add_argument("imcsv_filepath", help="path to input IMcsv file")
     parser.add_argument("station_filepath", help="path to input station_ll file path")
     parser.add_argument(
+        "-c",
+        "--component",
+        default="geom",
+        choices=COMPS,
+        help=f"which component of the intensity measure. Available components are {COMPS}. Default is 'geom'",
+    )
+    parser.add_argument(
         "-o",
         "--out_dir",
         default=".",
