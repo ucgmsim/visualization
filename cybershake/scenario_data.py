@@ -33,7 +33,7 @@ def parse_args():
         "-ims",
         type=str,
         nargs="+",
-        help="Faults to extract from the IM CSV's",
+        help="Ims to extract from the IM CSV's",
         required=True,
     )
     parser.add_argument("-output_dir", help="Output directory for the scenario fault files", required=True)
