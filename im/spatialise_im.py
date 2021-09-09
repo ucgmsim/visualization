@@ -40,7 +40,7 @@ def validate_dir(parser, dir_path):
         parser.error("No such directory {}".format(dir_path))
 
 
-def write_xyz(imcsv, stat_file, out_dir, component='geom'):
+def write_xyz(imcsv, stat_file, out_dir, component="geom"):
     utils.setup_dir(out_dir)
 
     stat_df = formats.load_station_file(stat_file)
