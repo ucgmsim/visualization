@@ -81,8 +81,8 @@ def main(config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, out
                 cpt_max = float(config["max_ranges"][im][1])
                 cpt_min = float(config["max_ranges"][im][0])
                 cpt_range = cpt_max + (cpt_min * -1)
-                cpt_inc = round(cpt_range / 11, 2)
-                cpt_tick = round(cpt_range / 5.5, 2)
+                cpt_inc = round(cpt_range / 16, 3)
+                cpt_tick = round(cpt_range / 8, 2)
                 plot_options = f"--xyz-grid --xyz-grid-type nearneighbor --xyz-grid-search 10k --xyz-landmask --xyz-cpt polar --xyz-grid-contours --xyz-transparency 30 --xyz-cpt-bg 0/0/80 --xyz-cpt-fg 80/0/0 --xyz-size 1k --xyz-cpt-inc {cpt_inc} --xyz-cpt-tick {cpt_tick} --xyz-cpt-min {cpt_min} --xyz-cpt-max {cpt_max}"
                 non_uniform_im = xyz_output_dir / "non_uniform_im.xyz"
                 plot_output_filename = f"{fault}_{im}_{model_comp}"

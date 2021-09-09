@@ -14,7 +14,9 @@ Inside this you will want one scenario_data directory, inside this you will want
 
 In the base scenario directory you will then want to create three directories named *scenario_im_faults*, *scenario_ratios* and *scenario_epsilon*.
 
-In each of these you will want to create a *plots* directory. Here is where you will execute the **scenario_ratios.py** script etc and the plots will be generated in there.
+In *scenario_ratios* and *scenario_epsilon* you will want to create a *plots* directory. Here is where you will execute the **scenario_ratios.py** script etc and the plots will be generated in there.
+
+For *scenario_im_faults* however you will want to create the sanme directory layout as *scenario_data* except in each model directory you will want to create a plots folder to place the plots in.
 
 The structure in the end will look a bit like this, the rest of the directories are created via the scripts such as *xyz* and *fault_ims* inside each of the directories with *plots* in them.
 
@@ -24,7 +26,12 @@ The structure in the end will look a bit like this, the rest of the directories 
      * [20p4](./scenario_data/20p4)
      * [emp_20p4](./scenario_data/emp_20p4)
    * [scenario_im_faults](./scenario_im_faults)
-     * [plots](./scenario_im_faults/plots)
+        * [21p6](./scenario_im_faults/21p6)
+          * [plots](./scenario_im_faults/21p6/plots)
+        * [20p4](./scenario_im_faults/20p4)
+          * [plots](./scenario_im_faults/20p4/plots)
+        * [emp_20p4](./scenario_im_faults/emp_20p4)
+          * [plots](./scenario_im_faults/emp_20p4/plots)
    * [scenario_ratios](./scenario_ratios)
      * [plots](./scenario_ratios/plots)
    * [scenario_epsilon](./scenario_epsilon)
@@ -63,7 +70,7 @@ There will be one file per fault for the given model that you are extracting fro
 ## Scenario Im Faults
 Plotting is done using the **scenario_im_fault.py** script.
 
-This should be run in the *scenario_im_faults/plots* directory.
+This should be run in the *scenario_im_faults/MODEL/plots* directory for a single model, otherwise you can run this script inside *scenario_im_faults* and all of the plots for every model will be generated in there.
 
 The script has the following options:
 ```shell script
@@ -195,6 +202,7 @@ srfs:
     Port2GreyL: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/Port2GreyL/Srf/Port2GreyL_REL01.srf"
 station_file: "/isilon/seistech/sites/20p3/non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll"
 ```
+For the max ranges since this is a ratio plot the first value is the min and the second is the max
 
 #### Example
 ```shell script
@@ -254,6 +262,7 @@ srfs:
     Port2GreyL: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/Port2GreyL/Srf/Port2GreyL_REL01.srf"
 station_file: "/isilon/seistech/sites/20p3/non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll"
 ```
+For the max ranges since this is a ratio plot the first value is the min and the second is the max
 
 #### Example
 ```shell script
