@@ -1,52 +1,129 @@
-faults = ["HopeConwayOS", "Wairau", "AlpineK2T", "Port2GreyL"]
-main_path = Path("/home/joel/local/scenarios")
-output_path = Path("/home/joel/local/scenario_epsilon")
+import os
+import argparse
+from pathlib import Path
 
-all_files = list(main_path.glob("**/*.csv"))
-combo = []
+import pandas as pd
+import numpy as np
+import yaml
 
-for fault in faults:
-    file_faults = list(main_path.glob(f"**/*{fault}*.csv"))
-    for file in file_faults:
-        file_faults.remove(file)
-        for file_pair in file_faults:
-            output_filename = output_path / f"{fault}_{file.parent.name}_{file_pair.parent.name}.csv"
-            # os.system(f"/home/joel/code/slurm_gm_workflow/verification/calculate_epsilon.py {file} {file_pair} {output_filename}")
 
-            sim_im_data = pd.read_csv(file, index_col=0)
-            emp_im_data = pd.read_csv(file_pair, index_col=0)
+def main(config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
 
-            matched_ims = set(sim_im_data.columns.values).intersection(emp_im_data.columns.values)
-            im_names = list(matched_ims)
+    # Load the config file
+    with open(config_ffp, "r") as f:
+        config = yaml.safe_load(f)
 
-            emp_im_data.columns = ["emp_" + IM for IM in emp_im_data.columns]
-            merged_data = sim_im_data.merge(emp_im_data, left_index=True, right_index=True)
+    # Calculates epsilon values
+    for fault in config["faults"]:
+        file_faults = list(scenario_data_ffp.glob(f"**/*{fault}*.csv"))
+        for file in file_faults:
+            file_faults.remove(file)
+            for file_pair in file_faults:
+                output_filename = output_dir / f"{fault}_{file.parent.name}_{file_pair.parent.name}.csv"
 
-            print(im_names)
-            epsilon = {}
+                sim_im_data = pd.read_csv(file, index_col=0)
+                emp_im_data = pd.read_csv(file_pair, index_col=0)
 
-            for im in im_names:
-                if im == "component":
-                    epsilon[im] = {}
-                    for station in sim_im_data.index.values:
-                        epsilon[im][station] = "geom"
-                else:
-                    emp_sigma = "emp_" + im
-                    im_epsilon = im + "_epsilon"
-                    emp_im = "emp_" + im
-                    merged_data[im_epsilon] = (
-                                                      np.log(merged_data[im].values) - np.log(merged_data[emp_im])
-                                              ) / merged_data[emp_sigma]
+                matched_ims = set(sim_im_data.columns.values).intersection(emp_im_data.columns.values)
+                im_names = list(matched_ims)
 
-            merged_data.sort_index(inplace=True)
-            merged_data.to_csv(
-                output_filename,
-                columns=[
-                    "component",
-                    "PGA_epsilon",
-                    "PGV_epsilon",
-                    "pSA_0.1_epsilon",
-                    "pSA_1.0_epsilon",
-                    "pSA_5.0_epsilon",
-                ],
-            )
+                emp_im_data.columns = ["emp_" + im for im in emp_im_data.columns]
+                merged_data = sim_im_data.merge(emp_im_data, left_index=True, right_index=True)
+
+                epsilon = {}
+
+                for im in im_names:
+                    if im == "component":
+                        epsilon[im] = {}
+                        for station in sim_im_data.index.values:
+                            epsilon[im][station] = "geom"
+                    else:
+                        emp_sigma = "emp_" + im
+                        im_epsilon = im + "_epsilon"
+                        emp_im = "emp_" + im
+                        merged_data[im_epsilon] = (
+                                                          np.log(merged_data[im].values) - np.log(merged_data[emp_im])
+                                                  ) / merged_data[emp_sigma]
+
+                merged_data.sort_index(inplace=True)
+                columns = ["component"]
+                columns.extend([im for im in config["ims"]])
+                merged_data.to_csv(
+                    output_filename,
+                    columns=columns,
+                )
+
+    # Plots the epsilon values
+    for fault in config["faults"]:
+        file_faults = list(output_dir.glob(f"*{fault}*.csv"))
+        for file in file_faults:
+            df = pd.read_csv(file)
+            for im in config["ims"]:
+                # Creates the Fault_IM file
+                im_df = df[["station", "component", im]]
+                model_comp = "_".join(str(file.stem).split("_")[1:])
+                fault_im_dir = file.parent / "fault_ims"
+                fault_im_dir.mkdir(exist_ok=True, parents=True)
+                fault_im_filename = fault_im_dir / f"{model_comp}_{fault}_{im}.csv"
+                pd.DataFrame.to_csv(im_df, fault_im_filename, index=False)
+
+                # Directory prep for xyz
+                xyz_output_dir = file.parent / "xyz" / model_comp / im / fault
+                xyz_output_dir.mkdir(exist_ok=True, parents=True)
+
+                # Creates the xyz files
+                spatialise_im_ffp = Path(visualization_ffp) / "im/spatialise_im.py"
+                os.system(
+                    f"{spatialise_im_ffp} {fault_im_filename} {config['station_file']} -o {xyz_output_dir}"
+                )
+
+                # Plotting setup
+                cpt_max = float(config["max_ranges"][im][1])
+                cpt_min = float(config["max_ranges"][im][0])
+                cpt_range = cpt_max + (cpt_min * -1)
+                cpt_inc = round(cpt_range / 11, 2)
+                cpt_tick = round(cpt_range / 5.5, 2)
+                plot_options = f"--xyz-grid --xyz-grid-type nearneighbor --xyz-grid-search 10k --xyz-landmask --xyz-cpt polar --xyz-grid-contours --xyz-transparency 30 --xyz-cpt-bg 0/0/80 --xyz-cpt-fg 80/0/0 --xyz-size 1k --xyz-cpt-inc {cpt_inc} --xyz-cpt-tick {cpt_tick} --xyz-cpt-min {cpt_min} --xyz-cpt-max {cpt_max}"
+                non_uniform_im = xyz_output_dir / "non_uniform_im.xyz"
+                plot_output_filename = f"{fault}_{im}_{model_comp}"
+
+                print(f"Plotting {plot_output_filename}")
+                # Plotting xyz file
+                plot_items_ffp = Path(visualization_ffp) / "sources/plot_items.py"
+                os.system(
+                    f"{plot_items_ffp} {plot_options} --xyz {non_uniform_im} -f {plot_output_filename} --xyz-cpt-labels {plot_output_filename} -c '{config['srfs'][fault]}' --outline-fault-colour black "
+                )
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-config_ffp",
+        type=str,
+        help="Full file path to the scenario epsilon config yaml",
+        required=True,
+    )
+    parser.add_argument(
+        "-visualization_ffp",
+        type=str,
+        help="Full file path to the visualization repo",
+        required=True,
+    )
+    parser.add_argument(
+        "-scenario_data_ffp",
+        type=str,
+        help="Full file path to the scenario data directory",
+        required=True,
+    )
+    parser.add_argument(
+        "-output_dir",
+        help="Output directory for the scenario fault files",
+        required=True,
+    )
+
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    main(Path(args.config_ffp), Path(args.visualization_ffp), Path(args.scenario_data_ffp), Path(args.output_dir))
