@@ -10,19 +10,19 @@ ims:
   - "pSA_1.0_epsilon"
   - "pSA_5.0_epsilon"
 max_ranges:
-    PGV:
+    PGV_epsilon:
       - "-0.6"
       - "0.6"
-    PGA:
+    PGA_epsilon:
       - "-60"
       - "60"
-    pSA_0.1:
+    pSA_0.1_epsilon:
       - "-60"
       - "60"
-    pSA_1.0:
+    pSA_1.0_epsilon:
       - "-60"
       - "60"
-    pSA_5.0:
+    pSA_5.0_epsilon:
       - "-60"
       - "60"
 srfs:
