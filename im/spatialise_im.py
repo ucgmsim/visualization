@@ -44,8 +44,7 @@ def write_xyz(imcsv, stat_file, out_dir):
     utils.setup_dir(out_dir)
 
     stat_df = formats.load_station_file(stat_file)
-    im_df = formats.load_im_file_pd(imcsv, comp="geom")
-    # im_df = formats.load_im_file_pd(imcsv, comp=args.component)
+    im_df = formats.load_im_file_pd(imcsv, comp=args.component)
 
     # must have compatible index names to merge
     stat_df.index.rename("station", inplace=True)
