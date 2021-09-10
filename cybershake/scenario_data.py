@@ -3,9 +3,18 @@ import argparse
 from pathlib import Path
 from typing import Sequence
 
-def main(summarise_im_ffp: str, im_csv_dir: str, faults: Sequence[str], ims: Sequence[str], output_dir: Path):
+
+def main(
+    summarise_im_ffp: str,
+    im_csv_dir: str,
+    faults: Sequence[str],
+    ims: Sequence[str],
+    output_dir: Path,
+):
     for fault in faults:
-        os.system(f"{summarise_im_ffp} {im_csv_dir} {fault} --im {' '.join(ims)} --output {output_dir}")
+        os.system(
+            f"{summarise_im_ffp} {im_csv_dir} {fault} --im {' '.join(ims)} --output {output_dir}"
+        )
 
 
 def parse_args():
@@ -36,9 +45,14 @@ def parse_args():
         help="Ims to extract from the IM CSV's",
         required=True,
     )
-    parser.add_argument("-output_dir", help="Output directory for the scenario fault files", required=True)
+    parser.add_argument(
+        "-output_dir",
+        help="Output directory for the scenario fault files",
+        required=True,
+    )
 
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     args = parse_args()

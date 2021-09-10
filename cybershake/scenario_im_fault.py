@@ -5,7 +5,14 @@ from pathlib import Path
 import yaml
 import pandas as pd
 
-def main(config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, output_dir: str, model: str):
+
+def main(
+    config_ffp: Path,
+    visualization_ffp: Path,
+    scenario_data_ffp: Path,
+    output_dir: str,
+    model: str,
+):
 
     # Load the config file
     with open(config_ffp, "r") as f:
@@ -85,4 +92,10 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    main(Path(args.config_ffp), Path(args.visualization_ffp), Path(args.scenario_data_ffp), args.output_dir, args.model)
+    main(
+        Path(args.config_ffp),
+        Path(args.visualization_ffp),
+        Path(args.scenario_data_ffp),
+        args.output_dir,
+        args.model,
+    )

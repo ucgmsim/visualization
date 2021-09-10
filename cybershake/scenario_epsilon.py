@@ -7,7 +7,9 @@ import numpy as np
 import yaml
 
 
-def main(config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
+def main(
+    config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, output_dir: Path
+):
 
     # Load the config file
     with open(config_ffp, "r") as f:
@@ -19,16 +21,23 @@ def main(config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, out
         for file in file_faults:
             file_faults.remove(file)
             for file_pair in file_faults:
-                output_filename = output_dir / f"{fault}_{file.parent.name}_{file_pair.parent.name}.csv"
+                output_filename = (
+                    output_dir
+                    / f"{fault}_{file.parent.name}_{file_pair.parent.name}.csv"
+                )
 
                 sim_im_data = pd.read_csv(file, index_col=0)
                 emp_im_data = pd.read_csv(file_pair, index_col=0)
 
-                matched_ims = set(sim_im_data.columns.values).intersection(emp_im_data.columns.values)
+                matched_ims = set(sim_im_data.columns.values).intersection(
+                    emp_im_data.columns.values
+                )
                 im_names = list(matched_ims)
 
                 emp_im_data.columns = ["emp_" + im for im in emp_im_data.columns]
-                merged_data = sim_im_data.merge(emp_im_data, left_index=True, right_index=True)
+                merged_data = sim_im_data.merge(
+                    emp_im_data, left_index=True, right_index=True
+                )
 
                 epsilon = {}
 
@@ -42,8 +51,8 @@ def main(config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, out
                         im_epsilon = im + "_epsilon"
                         emp_im = "emp_" + im
                         merged_data[im_epsilon] = (
-                                                          np.log(merged_data[im].values) - np.log(merged_data[emp_im])
-                                                  ) / merged_data[emp_sigma]
+                            np.log(merged_data[im].values) - np.log(merged_data[emp_im])
+                        ) / merged_data[emp_sigma]
 
                 merged_data.sort_index(inplace=True)
                 columns = ["component"]
@@ -126,4 +135,9 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    main(Path(args.config_ffp), Path(args.visualization_ffp), Path(args.scenario_data_ffp), Path(args.output_dir))
+    main(
+        Path(args.config_ffp),
+        Path(args.visualization_ffp),
+        Path(args.scenario_data_ffp),
+        Path(args.output_dir),
+    )

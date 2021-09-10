@@ -6,7 +6,9 @@ import yaml
 import pandas as pd
 
 
-def main(config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, output_dir: str):
+def main(
+    config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, output_dir: str
+):
 
     # Load the config file
     with open(config_ffp, "r") as f:
@@ -18,7 +20,10 @@ def main(config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, out
         for file in file_faults:
             file_faults.remove(file)
             for file_pair in file_faults:
-                output_filename = Path(output_dir) / f"{fault}_{file.parent.name}_{file_pair.parent.name}.csv"
+                output_filename = (
+                    Path(output_dir)
+                    / f"{fault}_{file.parent.name}_{file_pair.parent.name}.csv"
+                )
                 im_ratios_ffp = visualization_ffp / "im/im_ratios.py"
                 os.system(f"{im_ratios_ffp} {file} {file_pair} {output_filename}")
 
@@ -64,6 +69,7 @@ def main(config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, out
                         f"{plot_items_ffp} {plot_options} --xyz {non_uniform_im} -f {plot_output_filename} --xyz-cpt-labels {plot_output_filename} -c '{config['srfs'][fault]}' --outline-fault-colour black "
                     )
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -95,4 +101,9 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    main(Path(args.config_ffp), Path(args.visualization_ffp), Path(args.scenario_data_ffp), args.output_dir)
+    main(
+        Path(args.config_ffp),
+        Path(args.visualization_ffp),
+        Path(args.scenario_data_ffp),
+        args.output_dir,
+    )
