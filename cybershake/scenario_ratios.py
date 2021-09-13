@@ -32,7 +32,7 @@ def main(
                     output_dir
                     / f"{fault}_{file.parent.name}_{file_pair.parent.name}.csv"
                 )
-                im_ratios_ffp = visualization_ffp / "im/im_ratios.py"
+                im_ratios_ffp = visualization_ffp / "im" / "im_ratios.py"
                 subprocess.Popen(
                     shlex.split(f"{im_ratios_ffp} {file} {file_pair} {output_filename}")
                 )
@@ -57,7 +57,7 @@ def main(
                     xyz_output_dir.mkdir(exist_ok=True, parents=True)
 
                     # Creates the xyz files
-                    spatialise_im_ffp = visualization_ffp / "im/spatialise_im.py"
+                    spatialise_im_ffp = visualization_ffp / "im" / "spatialise_im.py"
                     subprocess.Popen(
                         shlex.split(
                             f"{spatialise_im_ffp} {fault_im_filename} {config['station_file']} -o {xyz_output_dir}"
@@ -76,7 +76,7 @@ def main(
 
                     print(f"Plotting {plot_output_filename}")
                     # Plotting xyz file
-                    plot_items_ffp = visualization_ffp / "sources/plot_items.py"
+                    plot_items_ffp = visualization_ffp / "sources" / "plot_items.py"
                     subprocess.Popen(
                         shlex.split(
                             f"{plot_items_ffp} {plot_options} --xyz {non_uniform_im} -f {plot_output_filename} --xyz-cpt-labels {plot_output_filename} -c '{config['srfs'][fault]}' --outline-fault-colour black "
@@ -85,7 +85,9 @@ def main(
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Script for generating scenario ratio plots as ima nd sigma ratios between different models. The script will compare each model found in the scenario data directory and generate an im and sigma ratio im_csv. These im_csvs will then be broken down into single IM fault files and then into xyz files. After the xyz files have been generated these files will be used to plot the scenario epsilon data in the directory this script was run in."
+    )
     parser.add_argument(
         "-config_ffp",
         type=Path,

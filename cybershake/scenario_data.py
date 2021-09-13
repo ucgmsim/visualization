@@ -19,11 +19,17 @@ def main(
     output_dir: Path,
 ):
     for fault in faults:
-        subprocess.Popen(shlex.split(f"{summarise_im_ffp} {im_csv_dir} {fault} --im {' '.join(ims)} --output {output_dir}"))
+        subprocess.Popen(
+            shlex.split(
+                f"{summarise_im_ffp} {im_csv_dir} {fault} --im {' '.join(ims)} --output {output_dir}"
+            )
+        )
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Script for generating scenario data for a given model. The script will combine realisation files to create one im_csv with IM and sigma values. These im_csvs will generated for each fault specified in the arguments outputted into the given output directory."
+    )
     parser.add_argument(
         "-summarise_im_ffp",
         type=Path,

@@ -88,7 +88,7 @@ def main(
                 xyz_output_dir.mkdir(exist_ok=True, parents=True)
 
                 # Creates the xyz files
-                spatialise_im_ffp = visualization_ffp / "im/spatialise_im.py"
+                spatialise_im_ffp = visualization_ffp / "im" / "spatialise_im.py"
                 subprocess.Popen(shlex.split(f"{spatialise_im_ffp} {fault_im_filename} {config['station_file']} -o {xyz_output_dir}"))
 
                 # Plotting setup
@@ -103,12 +103,14 @@ def main(
 
                 print(f"Plotting {plot_output_filename}")
                 # Plotting xyz file
-                plot_items_ffp = visualization_ffp / "sources/plot_items.py"
+                plot_items_ffp = visualization_ffp / "sources" / "plot_items.py"
                 subprocess.Popen(shlex.split(f"{plot_items_ffp} {plot_options} --xyz {non_uniform_im} -f {plot_output_filename} --xyz-cpt-labels {plot_output_filename} -c '{config['srfs'][fault]}' --outline-fault-colour black "))
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Script for generating scenario epsilon plots as a ratio between different models. The script will compare each model found in the scenario data directory and generate a epsilon ratio im_csv. These im_csvs will then be broken down into single IM fault files and then into xyz files. After the xyz files have been generated these files will be used to plot the scenario epsilon data in the directory this script was run in."
+    )
     parser.add_argument(
         "-config_ffp",
         type=Path,
