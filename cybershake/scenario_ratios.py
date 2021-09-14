@@ -33,7 +33,7 @@ def main(config_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
                     / f"{fault}_{file.parent.name}_{file_pair.parent.name}.csv"
                 )
                 im_ratios_ffp = visualization_ffp / "im" / "im_ratios.py"
-                subprocess.Popen([im_ratios_ffp, file, file_pair, output_filename])
+                subprocess.Popen([str(im_ratios_ffp), str(file), str(file_pair), str(output_filename)])
 
     # Splitting up the ratio im_csvs to plot
     for fault in config["faults"]:
@@ -58,11 +58,11 @@ def main(config_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
                     spatialise_im_ffp = visualization_ffp / "im" / "spatialise_im.py"
                     subprocess.Popen(
                         [
-                            spatialise_im_ffp,
-                            fault_im_filename,
-                            config["station_file"],
+                            str(spatialise_im_ffp),
+                            str(fault_im_filename),
+                            str(config["station_file"]),
                             "-o",
-                            xyz_output_dir,
+                            str(xyz_output_dir),
                         ]
                     )
 
@@ -91,13 +91,13 @@ def main(config_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
                         "--xyz-size",
                         "1k",
                         "--xyz-cpt-inc",
-                        cpt_inc,
+                        str(cpt_inc),
                         "--xyz-cpt-tick",
-                        cpt_tick,
+                        str(cpt_tick),
                         "--xyz-cpt-min",
-                        cpt_min,
+                        str(cpt_min),
                         "--xyz-cpt-max",
-                        cpt_max,
+                        str(cpt_max),
                     ]
                     non_uniform_im = xyz_output_dir / "non_uniform_im.xyz"
                     plot_output_filename = f"{fault}_{im}_{model_comp}"
@@ -106,15 +106,15 @@ def main(config_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
                     # Plotting xyz file
                     plot_items_ffp = visualization_ffp / "sources" / "plot_items.py"
                     plot_cmd = [
-                        plot_items_ffp,
+                        str(plot_items_ffp),
                         "--xyz",
-                        non_uniform_im,
+                        str(non_uniform_im),
                         "-f",
-                        plot_output_filename,
+                        str(plot_output_filename),
                         "--xyz-cpt-labels",
-                        plot_output_filename,
+                        str(plot_output_filename),
                         "-c",
-                        config["srfs"][fault],
+                        str(config["srfs"][fault]),
                         "--outline-fault-colour",
                         "black",
                     ]
@@ -123,23 +123,21 @@ def main(config_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Script for generating scenario ratio plots as IM and sigma ratios between different models. The script will compare each model found in the scenario data directory and generate an im and sigma ratio im_csv. These im_csvs will then be broken down into single IM fault files and then into xyz files. After the xyz files have been generated these files will be used to plot the scenario epsilon data in the directory this script was run in."
-    )
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "-config_ffp",
+        "--config_ffp",
         type=Path,
         help="Full file path to the scenario ratios config yaml",
         required=True,
     )
     parser.add_argument(
-        "-scenario_data_ffp",
+        "--scenario_data_ffp",
         type=Path,
         help="Full file path to the scenario data directory",
         required=True,
     )
     parser.add_argument(
-        "-output_dir",
+        "--output_dir",
         type=Path,
         help="Output directory for the scenario ratio files",
         required=True,

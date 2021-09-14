@@ -47,11 +47,11 @@ def main(
                 spatialise_im_ffp = visualization_ffp / "im" / "spatialise_im.py"
                 subprocess.Popen(
                     [
-                        spatialise_im_ffp,
-                        fault_im_filename,
-                        config["station_file"],
+                        str(spatialise_im_ffp),
+                        str(fault_im_filename),
+                        str(config["station_file"]),
                         "-o",
-                        xyz_output_dir,
+                        str(xyz_output_dir),
                     ]
                 )
 
@@ -74,13 +74,13 @@ def main(
                     "--xyz-size",
                     "1k",
                     "--xyz-cpt-inc",
-                    cpt_inc,
+                    str(cpt_inc),
                     "--xyz-cpt-tick",
-                    cpt_tick,
+                    str(cpt_tick),
                     "--xyz-cpt-min",
                     "0",
                     "--xyz-cpt-max",
-                    cpt_max,
+                    str(cpt_max),
                     "--xyz-cpt-invert",
                 ]
                 non_uniform_im = xyz_output_dir / "non_uniform_im.xyz"
@@ -90,15 +90,15 @@ def main(
                 # Plotting xyz file
                 plot_items_ffp = visualization_ffp / "sources" / "plot_items.py"
                 plot_cmd = [
-                    plot_items_ffp,
+                    str(plot_items_ffp),
                     "--xyz",
-                    non_uniform_im,
+                    str(non_uniform_im),
                     "-f",
-                    plot_output_filename,
+                    str(plot_output_filename),
                     "--xyz-cpt-labels",
-                    plot_output_filename,
+                    str(plot_output_filename),
                     "-c",
-                    config["srfs"][fault],
+                    str(config["srfs"][fault]),
                     "--outline-fault-colour",
                     "black",
                 ]
@@ -107,23 +107,21 @@ def main(
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Script for generating scenario im fault plots as a hazard map plot. The script will plot each model and im on a hazard map plot and takes the scenario data im_csv data directly as inputs. These im_csvs will then be broken down into single IM fault files and then into xyz files. After the xyz files have been generated these files will be used to plot the scenario epsilon data in the directory this script was run in."
-    )
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "-config_ffp",
+        "--config_ffp",
         type=Path,
         help="Full file path to the scenario im fault config yaml",
         required=True,
     )
     parser.add_argument(
-        "-scenario_data_ffp",
+        "--scenario_data_ffp",
         type=Path,
         help="Full file path to the scenario data directory",
         required=True,
     )
     parser.add_argument(
-        "-output_dir",
+        "--output_dir",
         type=Path,
         help="Output directory for the scenario fault files",
         required=True,
