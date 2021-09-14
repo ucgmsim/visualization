@@ -7,7 +7,6 @@ After the xyz files have been generated these files will be used to plot the sce
 directory this script was run in.
 """
 import subprocess
-import shlex
 import argparse
 from pathlib import Path
 
@@ -17,11 +16,13 @@ import pandas as pd
 
 def main(
     config_ffp: Path,
-    visualization_ffp: Path,
     scenario_data_ffp: Path,
     output_dir: Path,
     model: str,
 ):
+    # Sets the visualization full file path to call other scripts
+    visualization_ffp = Path(__file__).parent.parent
+
     # Load the config file
     with open(config_ffp, "r") as f:
         config = yaml.safe_load(f)
@@ -45,27 +46,64 @@ def main(
                 # Creates the xyz files
                 spatialise_im_ffp = visualization_ffp / "im" / "spatialise_im.py"
                 subprocess.Popen(
-                    shlex.split(
-                        f"{spatialise_im_ffp} {fault_im_filename} {config['station_file']} -o {xyz_output_dir}"
-                    )
+                    [
+                        spatialise_im_ffp,
+                        fault_im_filename,
+                        config["station_file"],
+                        "-o",
+                        xyz_output_dir,
+                    ]
                 )
 
                 # Plotting setup
                 cpt_max = float(config["max_ranges"][im])
                 cpt_inc = cpt_max / 10
                 cpt_tick = cpt_max / 5
-                plot_options = f"--xyz-grid --xyz-grid-type nearneighbor --xyz-grid-search 10k --xyz-landmask --xyz-cpt hot --xyz-grid-contours --xyz-transparency 30 --xyz-size 1k --xyz-cpt-inc {cpt_inc} --xyz-cpt-tick {cpt_tick} --xyz-cpt-min 0 --xyz-cpt-max {cpt_max} --xyz-cpt-invert"
+                plot_options = [
+                    "--xyz-grid",
+                    "--xyz-grid-type",
+                    "nearneighbor",
+                    "--xyz-grid-search",
+                    "10k",
+                    "--xyz-landmask",
+                    "--xyz-cpt",
+                    "hot",
+                    "--xyz-grid-contours",
+                    "--xyz-transparency",
+                    "30",
+                    "--xyz-size",
+                    "1k",
+                    "--xyz-cpt-inc",
+                    cpt_inc,
+                    "--xyz-cpt-tick",
+                    cpt_tick,
+                    "--xyz-cpt-min",
+                    "0",
+                    "--xyz-cpt-max",
+                    cpt_max,
+                    "--xyz-cpt-invert",
+                ]
                 non_uniform_im = xyz_output_dir / "non_uniform_im.xyz"
                 plot_output_filename = f"{fault}_{im}_{file.parent.name}"
 
                 print(f"Plotting {plot_output_filename}")
                 # Plotting xyz file
                 plot_items_ffp = visualization_ffp / "sources" / "plot_items.py"
-                subprocess.Popen(
-                    shlex.split(
-                        f"{plot_items_ffp} {plot_options} --xyz {non_uniform_im} -f {plot_output_filename} --xyz-cpt-labels {plot_output_filename} -c '{config['srfs'][fault]}' --outline-fault-colour black "
-                    )
-                )
+                plot_cmd = [
+                    plot_items_ffp,
+                    "--xyz",
+                    non_uniform_im,
+                    "-f",
+                    plot_output_filename,
+                    "--xyz-cpt-labels",
+                    plot_output_filename,
+                    "-c",
+                    config["srfs"][fault],
+                    "--outline-fault-colour",
+                    "black",
+                ]
+                plot_cmd.extend(plot_options)
+                subprocess.Popen(plot_cmd)
 
 
 def parse_args():
@@ -76,12 +114,6 @@ def parse_args():
         "-config_ffp",
         type=Path,
         help="Full file path to the scenario im fault config yaml",
-        required=True,
-    )
-    parser.add_argument(
-        "-visualization_ffp",
-        type=Path,
-        help="Full file path to the visualization repo",
         required=True,
     )
     parser.add_argument(
@@ -109,7 +141,6 @@ if __name__ == "__main__":
     args = parse_args()
     main(
         args.config_ffp,
-        args.visualization_ffp,
         args.scenario_data_ffp,
         args.output_dir,
         args.model,

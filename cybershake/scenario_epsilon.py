@@ -7,7 +7,6 @@ After the xyz files have been generated these files will be used to plot the sce
 directory this script was run in.
 """
 import subprocess
-import shlex
 import argparse
 from pathlib import Path
 
@@ -16,9 +15,10 @@ import numpy as np
 import yaml
 
 
-def main(
-    config_ffp: Path, visualization_ffp: Path, scenario_data_ffp: Path, output_dir: Path
-):
+def main(config_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
+    # Sets the visualization full file path to call other scripts
+    visualization_ffp = Path(__file__).parent.parent
+
     # Load the config file
     with open(config_ffp, "r") as f:
         config = yaml.safe_load(f)
@@ -89,7 +89,15 @@ def main(
 
                 # Creates the xyz files
                 spatialise_im_ffp = visualization_ffp / "im" / "spatialise_im.py"
-                subprocess.Popen(shlex.split(f"{spatialise_im_ffp} {fault_im_filename} {config['station_file']} -o {xyz_output_dir}"))
+                subprocess.Popen(
+                    [
+                        spatialise_im_ffp,
+                        fault_im_filename,
+                        config["station_file"],
+                        "-o",
+                        xyz_output_dir,
+                    ]
+                )
 
                 # Plotting setup
                 cpt_max = float(config["max_ranges"][im][1])
@@ -97,14 +105,54 @@ def main(
                 cpt_range = cpt_max + (cpt_min * -1)
                 cpt_inc = round(cpt_range / 16, 3)
                 cpt_tick = round(cpt_range / 8, 2)
-                plot_options = f"--xyz-grid --xyz-grid-type nearneighbor --xyz-grid-search 10k --xyz-landmask --xyz-cpt polar --xyz-grid-contours --xyz-transparency 30 --xyz-cpt-bg 0/0/80 --xyz-cpt-fg 80/0/0 --xyz-size 1k --xyz-cpt-inc {cpt_inc} --xyz-cpt-tick {cpt_tick} --xyz-cpt-min {cpt_min} --xyz-cpt-max {cpt_max}"
+                plot_options = [
+                    "--xyz-grid",
+                    "--xyz-grid-type",
+                    "nearneighbor",
+                    "--xyz-grid-search",
+                    "10k",
+                    "--xyz-landmask",
+                    "--xyz-cpt",
+                    "polar",
+                    "--xyz-grid-contours",
+                    "--xyz-transparency",
+                    "30",
+                    "--xyz-cpt-bg",
+                    "0/0/80",
+                    "--xyz-cpt-fg",
+                    "80/0/0",
+                    "--xyz-size",
+                    "1k",
+                    "--xyz-cpt-inc",
+                    cpt_inc,
+                    "--xyz-cpt-tick",
+                    cpt_tick,
+                    "--xyz-cpt-min",
+                    cpt_min,
+                    "--xyz-cpt-max",
+                    cpt_max,
+                ]
                 non_uniform_im = xyz_output_dir / "non_uniform_im.xyz"
                 plot_output_filename = f"{fault}_{im}_{model_comp}"
 
                 print(f"Plotting {plot_output_filename}")
                 # Plotting xyz file
                 plot_items_ffp = visualization_ffp / "sources" / "plot_items.py"
-                subprocess.Popen(shlex.split(f"{plot_items_ffp} {plot_options} --xyz {non_uniform_im} -f {plot_output_filename} --xyz-cpt-labels {plot_output_filename} -c '{config['srfs'][fault]}' --outline-fault-colour black "))
+                plot_cmd = [
+                    plot_items_ffp,
+                    "--xyz",
+                    non_uniform_im,
+                    "-f",
+                    plot_output_filename,
+                    "--xyz-cpt-labels",
+                    plot_output_filename,
+                    "-c",
+                    config["srfs"][fault],
+                    "--outline-fault-colour",
+                    "black",
+                ]
+                plot_cmd.extend(plot_options)
+                subprocess.Popen(plot_cmd)
 
 
 def parse_args():
@@ -115,12 +163,6 @@ def parse_args():
         "-config_ffp",
         type=Path,
         help="Full file path to the scenario epsilon config yaml",
-        required=True,
-    )
-    parser.add_argument(
-        "-visualization_ffp",
-        type=Path,
-        help="Full file path to the visualization repo",
         required=True,
     )
     parser.add_argument(
@@ -143,7 +185,6 @@ if __name__ == "__main__":
     args = parse_args()
     main(
         args.config_ffp,
-        args.visualization_ffp,
         args.scenario_data_ffp,
         args.output_dir,
     )
