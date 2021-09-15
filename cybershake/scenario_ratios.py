@@ -33,7 +33,14 @@ def main(config_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
                     / f"{fault}_{file.parent.name}_{file_pair.parent.name}.csv"
                 )
                 im_ratios_ffp = visualization_ffp / "im" / "im_ratios.py"
-                subprocess.Popen([str(im_ratios_ffp), str(file), str(file_pair), str(output_filename)])
+                subprocess.Popen(
+                    [
+                        str(im_ratios_ffp),
+                        str(file),
+                        str(file_pair),
+                        str(output_filename),
+                    ]
+                )
 
     # Splitting up the ratio im_csvs to plot
     for fault in config["faults"]:
