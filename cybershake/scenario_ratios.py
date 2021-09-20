@@ -33,7 +33,7 @@ def main(config_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
                     / f"{fault}_{file.parent.name}_{file_pair.parent.name}.csv"
                 )
                 im_ratios_ffp = visualization_ffp / "im" / "im_ratios.py"
-                subprocess.Popen(
+                subprocess.call(
                     [
                         str(im_ratios_ffp),
                         str(file),
@@ -63,7 +63,7 @@ def main(config_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
 
                     # Creates the xyz files
                     spatialise_im_ffp = visualization_ffp / "im" / "spatialise_im.py"
-                    subprocess.Popen(
+                    subprocess.call(
                         [
                             str(spatialise_im_ffp),
                             str(fault_im_filename),
@@ -126,7 +126,7 @@ def main(config_ffp: Path, scenario_data_ffp: Path, output_dir: Path):
                         "black",
                     ]
                     plot_cmd.extend(plot_options)
-                    subprocess.Popen(plot_cmd)
+                    subprocess.call(plot_cmd)
 
 
 def parse_args():
