@@ -1,7 +1,7 @@
 faults:
   - "HopeConwayOS"
-#  - "Wairau"
-#  - "AlpineK2T"
+  - "Wairau"
+  - "AlpineK2T"
   - "Port2GreyL"
 ims:
   - "PGV"

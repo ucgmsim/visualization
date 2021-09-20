@@ -33,7 +33,9 @@ def main(
             df = pd.read_csv(file)
             for im in config["ims"]:
                 # Creates the Fault_IM file
-                im_df = df.loc[df['component'] == config["component"], ["station", "component", im]]
+                im_df = df.loc[
+                    df["component"] == config["component"], ["station", "component", im]
+                ]
                 fault_im_dir = output_dir / file.parent.name
                 fault_im_filename = fault_im_dir / f"{fault}_{im}.csv"
                 fault_im_dir.mkdir(exist_ok=True, parents=True)

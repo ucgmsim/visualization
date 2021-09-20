@@ -122,6 +122,7 @@ srfs:
     AlpineK2T: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/AlpineK2T/Srf/AlpineK2T_REL01.srf"
     Port2GreyL: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/Port2GreyL/Srf/Port2GreyL_REL01.srf"
 station_file: "/isilon/seistech/sites/20p3/non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll"
+component: "geom"
 ```
 
 #### Example
@@ -200,6 +201,7 @@ srfs:
     AlpineK2T: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/AlpineK2T/Srf/AlpineK2T_REL01.srf"
     Port2GreyL: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/Port2GreyL/Srf/Port2GreyL_REL01.srf"
 station_file: "/isilon/seistech/sites/20p3/non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll"
+component: "geom"
 ```
 For the max ranges since this is a ratio plot the first value is the min and the second is the max
 
@@ -259,6 +261,7 @@ srfs:
     AlpineK2T: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/AlpineK2T/Srf/AlpineK2T_REL01.srf"
     Port2GreyL: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/Port2GreyL/Srf/Port2GreyL_REL01.srf"
 station_file: "/isilon/seistech/sites/20p3/non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll"
+component: "geom"
 ```
 For the max ranges since this is a ratio plot the first value is the min and the second is the max
 
