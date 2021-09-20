@@ -159,7 +159,8 @@ while km_inch / major_tick > tick_factor:
 # start plot
 p = gmt.GMTPlot(
     os.path.join(
-        gmt_temp, f"{os.path.splitext(os.path.basename(args.srf_file))[0]}_slip_rise_rake.ps"
+        gmt_temp,
+        f"{os.path.splitext(os.path.basename(args.srf_file))[0]}_slip_rise_rake.ps",
     )
 )
 # override GMT defaults
