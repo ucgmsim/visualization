@@ -159,7 +159,8 @@ while km_inch / major_tick > tick_factor:
 # start plot
 p = gmt.GMTPlot(
     os.path.join(
-        gmt_temp, f"{os.path.splitext(os.path.basename(args.srf_file))[0]}_square.ps"
+        gmt_temp,
+        f"{os.path.splitext(os.path.basename(args.srf_file))[0]}_slip_rise_rake.ps",
     )
 )
 # override GMT defaults
@@ -301,7 +302,7 @@ for s, seg in enumerate(planes):
         # overlay data
         if r != 2:
             grd_table = "\n".join(
-                ["{row[0]:f} {row[1]:f} {row[2]:f}" for row in row_data]
+                [f"{row[0]:f} {row[1]:f} {row[2]:f}" for row in row_data]
             )
             gmt.table2grd(
                 grd_table,
