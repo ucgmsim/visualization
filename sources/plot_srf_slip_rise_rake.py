@@ -301,7 +301,7 @@ for s, seg in enumerate(planes):
         # overlay data
         if r != 2:
             grd_table = "\n".join(
-                ["{row[0]:f} {row[1]:f} {row[2]:f}" for row in row_data]
+                [f"{row[0]:f} {row[1]:f} {row[2]:f}" for row in row_data]
             )
             gmt.table2grd(
                 grd_table,
