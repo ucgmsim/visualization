@@ -33,19 +33,21 @@ def main(
             df = pd.read_csv(file)
             for im in config["ims"]:
                 # Creates the Fault_IM file
-                im_df = df[["station", "component", im]]
+                im_df = df.loc[
+                    df["component"] == config["component"], ["station", "component", im]
+                ]
                 fault_im_dir = output_dir / file.parent.name
                 fault_im_filename = fault_im_dir / f"{fault}_{im}.csv"
                 fault_im_dir.mkdir(exist_ok=True, parents=True)
                 im_df.to_csv(fault_im_filename, index=False)
 
                 # Directory prep for xyz
-                xyz_output_dir = output_dir / file.parent.name / "xyz" / im
+                xyz_output_dir = output_dir / file.parent.name / "xyz" / fault / im
                 xyz_output_dir.mkdir(exist_ok=True, parents=True)
 
                 # Creates the xyz files
                 spatialise_im_ffp = visualization_ffp / "im" / "spatialise_im.py"
-                subprocess.Popen(
+                subprocess.call(
                     [
                         str(spatialise_im_ffp),
                         str(fault_im_filename),
@@ -103,7 +105,7 @@ def main(
                     "black",
                 ]
                 plot_cmd.extend(plot_options)
-                subprocess.Popen(plot_cmd)
+                subprocess.call(plot_cmd)
 
 
 def parse_args():
