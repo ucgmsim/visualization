@@ -146,13 +146,10 @@ def plot_station(
                 meta = read_ascii(
                     os.path.join(source, f"{station}{ext}"), meta=True
                 )[1]
-                print(meta)
                 vals = np.array(read_ascii(os.path.join(source, f"{station}{ext}")))
-                print(vals)
                 timeline = (
                     np.arange(meta["nt"], dtype=np.float32) * meta["dt"] + meta["sec"]
                 )
-                print(timeline)
 
                 ts_per_s.append(np.vstack((vals, timeline)))
             timeseries.append(ts_per_s)
@@ -170,7 +167,6 @@ def plot_station(
 
     x_max = max(x_maxes)
 
-    print(x_max)
     if tmax is not None:
         x_max = min(tmax, x_max)
 
@@ -205,7 +201,6 @@ def plot_station(
     plt.xlim([0, x_max])
 
     # subplots
-    print(timeseries)
     for i, s in enumerate(timeseries): #s is each source
         for j in range(len(extensions)):
             ax = axis[j]
@@ -270,8 +265,6 @@ if __name__ == "__main__":
 
     # binary class object or text folder location
     sources = [load_location(source[0], args.v) for source in args.waveforms]
-
-    print(sources)
 
     # station list
     stations = intersection([load_stations(source) for source in sources])
