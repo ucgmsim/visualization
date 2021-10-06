@@ -19,6 +19,8 @@ from visualization.util import intersection
 
 # files that contain the 3 components (text based)
 extensions = [".090", ".000", ".ver"]
+#extensions = [".090", ".000"]
+
 BINARY_FORMATS = {"BB": BBSeis, "LF": LFSeis, "HF": HFSeis}
 colours = ["black", "red", "blue", "magenta", "darkgreen", "orange"]
 
@@ -132,33 +134,58 @@ def plot_station(
             timeline = (
                 np.arange(source.nt, dtype=np.float32) * source.dt + source.start_sec
             )
-            timeseries.append(np.vstack((source.vel(station).T, timeline)))
+            ts_per_s = []
+            for j in range(len(extensions)):
+                vals = source.vel(station,comp=j)
+                ts_per_s.append(np.vstack((vals, timeline)))
+            timeseries.append(ts_per_s)
         else:
             # text directory
-            meta = read_ascii(
-                os.path.join(source, f"{station}{extensions[0]}"), meta=True
-            )[1]
-            vals = np.array(
-                [
-                    read_ascii(os.path.join(source, f"{station}{ext}"))
-                    for ext in extensions
-                ]
-            )
-            timeline = (
-                np.arange(meta["nt"], dtype=np.float32) * meta["dt"] + meta["sec"]
-            )
-            timeseries.append(np.vstack((vals, timeline)))
-    x_max = max([ts[-1, -1] for ts in timeseries])
+            ts_per_s = []
+            for ext in extensions:
+                meta = read_ascii(
+                    os.path.join(source, f"{station}{ext}"), meta=True
+                )[1]
+                print(meta)
+                vals = np.array(read_ascii(os.path.join(source, f"{station}{ext}")))
+                print(vals)
+                timeline = (
+                    np.arange(meta["nt"], dtype=np.float32) * meta["dt"] + meta["sec"]
+                )
+                print(timeline)
+
+                ts_per_s.append(np.vstack((vals, timeline)))
+            timeseries.append(ts_per_s)
+
+    x_maxes= []
+
+    all_ys_per_comp = {}
+    for i, ts in enumerate(timeseries):
+        ys=[]
+        for j, ext in enumerate(extensions):
+            x_maxes.append(max(ts[j][1]))
+            if j not in all_ys_per_comp:
+                all_ys_per_comp[j] = np.array([])
+            all_ys_per_comp[j] = np.concatenate([ all_ys_per_comp[j],ts[j][0] ])
+
+    x_max = max(x_maxes)
+
+    print(x_max)
     if tmax is not None:
         x_max = min(tmax, x_max)
 
-    all_y = np.concatenate([ts[:-1] for ts in timeseries], axis=1)
-    # get axis min/max
-    y_min, y_max = np.min(all_y), np.max(all_y)
+    ppgvs = np.zeros(len(extensions))
+    npgvs = np.zeros(len(extensions))
+    pgvs = np.zeros(len(extensions))
+    for j in range(len(extensions)):
+        ppgvs[j] = np.max(all_ys_per_comp[j])
+        npgvs[j] = np.min(all_ys_per_comp[j])
+        pgvs[j] = np.max(np.abs(all_ys_per_comp[j]))
+    y_min = np.min(npgvs)
+    y_max = np.max(ppgvs)
+
     y_diff = y_max - y_min
-    pgvs = np.max(np.abs(all_y), axis=1)
-    ppgvs = np.max(all_y, axis=1)
-    npgvs = np.min(all_y, axis=1)
+
 
     scale_length = max(int(round(x_max / 25.0)) * 5, 5)
 
@@ -178,19 +205,21 @@ def plot_station(
     plt.xlim([0, x_max])
 
     # subplots
-    for i, s in enumerate(timeseries):
+    print(timeseries)
+    for i, s in enumerate(timeseries): #s is each source
         for j in range(len(extensions)):
             ax = axis[j]
             ax.set_axis_off()
             ax.set_ylim([y_min - y_diff * 0.15, y_max])
 
+            assert j < len(ppgvs) and len(npgvs), f"{i} {j}"
             (line,) = ax.plot(
-                s[len(extensions)],
-                s[j] * min(y_max / ppgvs[j], y_min / npgvs[j]),
+                s[j][1],
+                s[j][0] * min(y_max / ppgvs[j], y_min / npgvs[j]),
                 color=colours[i % len(colours)],
                 linewidth=1,
             )
-            if j == 2:
+            if j == len(extensions)-1:
                 line.set_label(labels[i])
                 ax.legend()
 
@@ -241,6 +270,9 @@ if __name__ == "__main__":
 
     # binary class object or text folder location
     sources = [load_location(source[0], args.v) for source in args.waveforms]
+
+    print(sources)
+
     # station list
     stations = intersection([load_stations(source) for source in sources])
     if args.n_stations is not None and args.n_stations < len(stations):
