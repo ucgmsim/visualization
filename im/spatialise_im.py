@@ -78,7 +78,9 @@ def write_xyz(imcsv, stat_file, out_dir, component="geom"):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("imcsv_filepath", type=Path, help="path to input IMcsv file")
-    parser.add_argument("station_filepath", type=Path, help="path to input station_ll file path")
+    parser.add_argument(
+        "station_filepath", type=Path, help="path to input station_ll file path"
+    )
     parser.add_argument(
         "-c",
         "--component",
