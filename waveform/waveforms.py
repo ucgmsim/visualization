@@ -18,8 +18,8 @@ from qcore.timeseries import BBSeis, LFSeis, HFSeis, read_ascii
 from visualization.util import intersection
 
 # files that contain the 3 components (text based)
-extensions = [".090", ".000", ".ver"]
-#extensions = [".090", ".000"]
+components = [".090", ".000", ".ver"]
+# components = [".090", ".000"]
 
 BINARY_FORMATS = {"BB": BBSeis, "LF": LFSeis, "HF": HFSeis}
 colours = ["black", "red", "blue", "magenta", "darkgreen", "orange"]
@@ -57,6 +57,13 @@ def load_args():
     )
     parser.add_argument(
         "-t", "--tmax", type=float, help="maximum duration of waveform simulation"
+    )
+
+    parser.add_argument(
+        "-a",
+        "--align",
+        action="store_true",
+        help="align timeline across different waveforms",
     )
     args = parser.parse_args()
 
@@ -109,79 +116,101 @@ def load_stations(source):
         return list(source.stations.name)
 
     # path to directory containing text data
-    files = glob(os.path.join(source, f"*{extensions[0]}"))
+    files = glob(os.path.join(source, f"*{components[0]}"))
     stations = list(map(lambda f: os.path.basename(f)[:-4], files))
     return stations
 
 
-def plot_station(
-    output,
-    sources,
-    labels,
-    tmax,
-    verbose,
-    station,
-):
+def plot_station(output, sources, labels, tmax, verbose, align, station):
     """Creates a waveform plot for a specific station."""
 
     if verbose:
         print("Plotting station: {}...".format(station))
 
     timeseries = []
+
     for source in sources:
         if type(source).__name__ != "str":
             # opened binary object
             timeline = (
                 np.arange(source.nt, dtype=np.float32) * source.dt + source.start_sec
             )
-            ts_per_s = []
-            for j in range(len(extensions)):
-                vals = source.vel(station,comp=j)
-                ts_per_s.append(np.vstack((vals, timeline)))
-            timeseries.append(ts_per_s)
+            ts_pair_dict = {}
+            for j, comp in enumerate(components):
+                vals = source.vel(station, comp=j)
+                ts_pair_dict[comp] = (vals, timeline)
+            timeseries.append(ts_pair_dict)
         else:
             # text directory
-            ts_per_s = []
-            for ext in extensions:
-                meta = read_ascii(
-                    os.path.join(source, f"{station}{ext}"), meta=True
-                )[1]
-                vals = np.array(read_ascii(os.path.join(source, f"{station}{ext}")))
+            ts_pair_dict = {}
+            for comp in components:
+                vals, meta = read_ascii(
+                    os.path.join(source, f"{station}{comp}"), meta=True
+                )
                 timeline = (
                     np.arange(meta["nt"], dtype=np.float32) * meta["dt"] + meta["sec"]
                 )
+                ts_pair_dict[comp] = (
+                    vals,
+                    timeline,
+                )  # each comp may have different timeline if it is observation data
+            timeseries.append(ts_pair_dict)
 
-                ts_per_s.append(np.vstack((vals, timeline)))
-            timeseries.append(ts_per_s)
+    x_max = -1 * np.inf
+    x_mins = [np.inf] * len(timeseries)
+    ppgvs = np.zeros(len(components))
+    npgvs = np.zeros(len(components))
+    pgvs = np.zeros(len(components))
 
-    x_maxes= []
+    vals_from_same_comp = {}
+    for i, ts_pair_dict in enumerate(timeseries):
+        for j, comp in enumerate(components):
+            vals, timeline = ts_pair_dict[comp]
+            x_max = max(
+                x_max, max(timeline)
+            )  # work out the timeline for all components and all sources of timeseries
+            x_mins[i] = min(x_mins[i], min(timeline))
+            if j not in vals_from_same_comp:
+                vals_from_same_comp[j] = np.array([])
+            vals_from_same_comp[j] = np.concatenate(
+                [vals_from_same_comp[j], vals]
+            )  # group vals from the same components together
 
-    all_ys_per_comp = {}
-    for i, ts in enumerate(timeseries):
-        ys=[]
-        for j, ext in enumerate(extensions):
-            x_maxes.append(max(ts[j][1]))
-            if j not in all_ys_per_comp:
-                all_ys_per_comp[j] = np.array([])
-            all_ys_per_comp[j] = np.concatenate([ all_ys_per_comp[j],ts[j][0] ])
-
-    x_max = max(x_maxes)
+    if align:
+        # each timeseries may not have the same begin time (often observation doesn't start at 0)
+        sync_target_i = np.argmax(
+            x_mins
+        )  # find the timeseries whose begin time is the greatest. Everyone else will sync to that
+        for i, ts_pair_dict in enumerate(timeseries):
+            for j, comp in enumerate(components):
+                vals, timeline = ts_pair_dict[comp]
+                if i != sync_target_i:  # needs timeline shifting
+                    sync_target_vals, sync_target_timeline = timeseries[sync_target_i][
+                        comp
+                    ]
+                    sync_target_peak_index = np.argmax(
+                        sync_target_vals
+                    )  # find when the sync target timeseries peaks
+                    my_peak_index = np.argmax(vals)
+                    shift_by = (
+                        sync_target_timeline[sync_target_peak_index]
+                        - timeline[my_peak_index]
+                    )
+                    new_timeline = timeline + shift_by
+                    ts_pair_dict[comp] = (vals, new_timeline)  # shift timeline
+                    x_max = max(x_max, max(new_timeline))
 
     if tmax is not None:
         x_max = min(tmax, x_max)
 
-    ppgvs = np.zeros(len(extensions))
-    npgvs = np.zeros(len(extensions))
-    pgvs = np.zeros(len(extensions))
-    for j in range(len(extensions)):
-        ppgvs[j] = np.max(all_ys_per_comp[j])
-        npgvs[j] = np.min(all_ys_per_comp[j])
-        pgvs[j] = np.max(np.abs(all_ys_per_comp[j]))
+    for j in range(len(components)):
+        ppgvs[j] = np.max(vals_from_same_comp[j])
+        npgvs[j] = np.min(vals_from_same_comp[j])
+        pgvs[j] = np.max(np.abs(vals_from_same_comp[j]))
     y_min = np.min(npgvs)
     y_max = np.max(ppgvs)
 
     y_diff = y_max - y_min
-
 
     scale_length = max(int(round(x_max / 25.0)) * 5, 5)
 
@@ -201,20 +230,20 @@ def plot_station(
     plt.xlim([0, x_max])
 
     # subplots
-    for i, s in enumerate(timeseries): #s is each source
-        for j in range(len(extensions)):
+    for i, ts_pair_dict in enumerate(timeseries):  # s is each source
+        for j, comp in enumerate(components):
             ax = axis[j]
             ax.set_axis_off()
             ax.set_ylim([y_min - y_diff * 0.15, y_max])
-
+            vals, timeline = ts_pair_dict[comp]
             assert j < len(ppgvs) and len(npgvs), f"{i} {j}"
             (line,) = ax.plot(
-                s[j][1],
-                s[j][0] * min(y_max / ppgvs[j], y_min / npgvs[j]),
+                timeline,
+                vals * min(y_max / ppgvs[j], y_min / npgvs[j]),
                 color=colours[i % len(colours)],
                 linewidth=1,
             )
-            if j == len(extensions)-1:
+            if j == len(components) - 1:
                 line.set_label(labels[i])
                 ax.legend()
 
@@ -253,7 +282,7 @@ def plot_station(
 
             if i == 0:
                 # Add component label
-                ax.set_title(extensions[j][1:], fontsize=18)
+                ax.set_title(components[j][1:], fontsize=18)
                 ax.text(x_max, y_max, "{:.1f}".format(pgvs[j]), fontsize=14)
 
     plt.savefig(os.path.join(output, f"{station}.png"))
@@ -284,5 +313,6 @@ if __name__ == "__main__":
         [source[1] for source in args.waveforms],
         args.tmax,
         args.v,
+        args.align,
     )
     p.map(single_station, stations)
