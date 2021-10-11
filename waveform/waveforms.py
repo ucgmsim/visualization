@@ -19,7 +19,6 @@ from visualization.util import intersection
 
 # files that contain the 3 components (text based)
 components = [".090", ".000", ".ver"]
-# components = [".090", ".000"]
 
 BINARY_FORMATS = {"BB": BBSeis, "LF": LFSeis, "HF": HFSeis}
 colours = ["black", "red", "blue", "magenta", "darkgreen", "orange"]
@@ -230,7 +229,7 @@ def plot_station(output, sources, labels, tmax, verbose, align, station):
     plt.xlim([0, x_max])
 
     # subplots
-    for i, ts_pair_dict in enumerate(timeseries):  # s is each source
+    for i, ts_pair_dict in enumerate(timeseries):
         for j, comp in enumerate(components):
             ax = axis[j]
             ax.set_axis_off()
