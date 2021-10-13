@@ -17,8 +17,8 @@ import numpy as np
 from qcore.timeseries import BBSeis, LFSeis, HFSeis, read_ascii
 from visualization.util import intersection
 
-# files that contain the 3 components (text based)
-components = [".090", ".000", ".ver"]
+# extension names of 3 components (text based) if waveform data is ascii-based
+components = ["090", "000", "ver"]
 
 BINARY_FORMATS = {"BB": BBSeis, "LF": LFSeis, "HF": HFSeis}
 colours = ["black", "red", "blue", "magenta", "darkgreen", "orange"]
@@ -58,12 +58,6 @@ def load_args():
         "-t", "--tmax", type=float, help="maximum duration of waveform simulation"
     )
 
-    parser.add_argument(
-        "-a",
-        "--align",
-        action="store_true",
-        help="align timeline across different waveforms",
-    )
     args = parser.parse_args()
 
     # validate
@@ -115,7 +109,7 @@ def load_stations(source):
         return list(source.stations.name)
 
     # path to directory containing text data
-    files = glob(os.path.join(source, f"*{components[0]}"))
+    files = glob(os.path.join(source, f"*.{components[0]}"))
     stations = list(map(lambda f: os.path.basename(f)[:-4], files))
     return stations
 
@@ -144,7 +138,7 @@ def plot_station(output, sources, labels, tmax, verbose, align, station):
             ts_pair_dict = {}
             for comp in components:
                 vals, meta = read_ascii(
-                    os.path.join(source, f"{station}{comp}"), meta=True
+                    os.path.join(source, f"{station}.{comp}"), meta=True
                 )
                 timeline = (
                     np.arange(meta["nt"], dtype=np.float32) * meta["dt"] + meta["sec"]
@@ -156,7 +150,6 @@ def plot_station(output, sources, labels, tmax, verbose, align, station):
             timeseries.append(ts_pair_dict)
 
     x_max = -1 * np.inf
-    x_mins = [np.inf] * len(timeseries)
     ppgvs = np.zeros(len(components))
     npgvs = np.zeros(len(components))
     pgvs = np.zeros(len(components))
@@ -168,36 +161,12 @@ def plot_station(output, sources, labels, tmax, verbose, align, station):
             x_max = max(
                 x_max, max(timeline)
             )  # work out the timeline for all components and all sources of timeseries
-            x_mins[i] = min(x_mins[i], min(timeline))
             if j not in vals_from_same_comp:
                 vals_from_same_comp[j] = np.array([])
             vals_from_same_comp[j] = np.concatenate(
                 [vals_from_same_comp[j], vals]
             )  # group vals from the same components together
 
-    if align:
-        # each timeseries may not have the same begin time (often observation doesn't start at 0)
-        sync_target_i = np.argmax(
-            x_mins
-        )  # find the timeseries whose begin time is the greatest. Everyone else will sync to that
-        for i, ts_pair_dict in enumerate(timeseries):
-            for j, comp in enumerate(components):
-                vals, timeline = ts_pair_dict[comp]
-                if i != sync_target_i:  # needs timeline shifting
-                    sync_target_vals, sync_target_timeline = timeseries[sync_target_i][
-                        comp
-                    ]
-                    sync_target_peak_index = np.argmax(
-                        sync_target_vals
-                    )  # find when the sync target timeseries peaks
-                    my_peak_index = np.argmax(vals)
-                    shift_by = (
-                        sync_target_timeline[sync_target_peak_index]
-                        - timeline[my_peak_index]
-                    )
-                    new_timeline = timeline + shift_by
-                    ts_pair_dict[comp] = (vals, new_timeline)  # shift timeline
-                    x_max = max(x_max, max(new_timeline))
 
     if tmax is not None:
         x_max = min(tmax, x_max)
