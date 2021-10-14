@@ -167,7 +167,6 @@ def plot_station(output, sources, labels, tmax, verbose, station):
                 [vals_from_same_comp[j], vals]
             )  # group vals from the same components together
 
-
     if tmax is not None:
         x_max = min(tmax, x_max)
 
