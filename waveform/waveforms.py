@@ -114,7 +114,7 @@ def load_stations(source):
     return stations
 
 
-def plot_station(output, sources, labels, tmax, verbose, align, station):
+def plot_station(output, sources, labels, tmax, verbose, station):
     """Creates a waveform plot for a specific station."""
 
     if verbose:
@@ -281,6 +281,5 @@ if __name__ == "__main__":
         [source[1] for source in args.waveforms],
         args.tmax,
         args.v,
-        args.align,
     )
     p.map(single_station, stations)
