@@ -149,34 +149,36 @@ def plot_station(output, sources, labels, tmax, verbose, station):
                 )  # each comp may have different timeline if it is observation data
             timeseries.append(ts_pair_dict)
 
-    x_max = -1 * np.inf
-    ppgvs = np.zeros(len(components))
-    npgvs = np.zeros(len(components))
-    pgvs = np.zeros(len(components))
+    x_max = -float(
+        "inf"
+    )  # find maximum time for all components and sources to determine plotting range
+    same_comp_vals = dict.fromkeys(
+        components, np.empty(0)
+    )  # a container to store all vals from the same component
 
-    vals_from_same_comp = {}
     for i, ts_pair_dict in enumerate(timeseries):
         for j, comp in enumerate(components):
             vals, timeline = ts_pair_dict[comp]
             x_max = max(
-                x_max, max(timeline)
-            )  # work out the timeline for all components and all sources of timeseries
-            if j not in vals_from_same_comp:
-                vals_from_same_comp[j] = np.array([])
-            vals_from_same_comp[j] = np.concatenate(
-                [vals_from_same_comp[j], vals]
-            )  # group vals from the same components together
+                x_max, np.max(timeline)
+            )  # work out the timeline for all components and all sources
+            same_comp_vals[comp] = np.concatenate(
+                [same_comp_vals[comp], vals]
+            )  # vals from all sources for the same components are grouped together
 
     if tmax is not None:
-        x_max = min(tmax, x_max)
+        x_max = min(tmax, x_max)  # if user specified the maximum time, use it insteads
 
-    for j in range(len(components)):
-        ppgvs[j] = np.max(vals_from_same_comp[j])
-        npgvs[j] = np.min(vals_from_same_comp[j])
-        pgvs[j] = np.max(np.abs(vals_from_same_comp[j]))
-    y_min = np.min(npgvs)
-    y_max = np.max(ppgvs)
-
+    # find maximum/minimum values for each component (from all sources) to determine plotting range
+    ppgvs = {}
+    npgvs = {}
+    pgvs = {}
+    for comp in components:  # vals from all sources for the same components
+        ppgvs[comp] = np.max(same_comp_vals[comp])
+        npgvs[comp] = np.min(same_comp_vals[comp])
+        pgvs[comp] = np.max(np.abs(same_comp_vals[comp]))
+    y_min = np.min(list(npgvs.values()))
+    y_max = np.max(list(ppgvs.values()))
     y_diff = y_max - y_min
 
     scale_length = max(int(round(x_max / 25.0)) * 5, 5)
@@ -203,10 +205,10 @@ def plot_station(output, sources, labels, tmax, verbose, station):
             ax.set_axis_off()
             ax.set_ylim([y_min - y_diff * 0.15, y_max])
             vals, timeline = ts_pair_dict[comp]
-            assert j < len(ppgvs) and len(npgvs), f"{i} {j}"
+
             (line,) = ax.plot(
                 timeline,
-                vals * min(y_max / ppgvs[j], y_min / npgvs[j]),
+                vals * min(y_max / ppgvs[comp], y_min / npgvs[comp]),
                 color=colours[i % len(colours)],
                 linewidth=1,
             )
@@ -250,7 +252,7 @@ def plot_station(output, sources, labels, tmax, verbose, station):
             if i == 0:
                 # Add component label
                 ax.set_title(components[j][1:], fontsize=18)
-                ax.text(x_max, y_max, "{:.1f}".format(pgvs[j]), fontsize=14)
+                ax.text(x_max, y_max, "{:.1f}".format(pgvs[comp]), fontsize=14)
 
     plt.savefig(os.path.join(output, f"{station}.png"))
     plt.close()
