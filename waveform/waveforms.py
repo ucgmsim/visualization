@@ -151,7 +151,8 @@ def plot_station(output, sources, labels, tmax, verbose, station):
 
     x_max = -float(
         "inf"
-    )  # find maximum time for all components and sources to determine plotting range
+    )  # to find the maximum time for all components and sources to determine plotting range
+
     same_comp_vals = dict.fromkeys(
         components, np.empty(0)
     )  # a container to store all vals from the same component
@@ -167,18 +168,18 @@ def plot_station(output, sources, labels, tmax, verbose, station):
             )  # vals from all sources for the same components are grouped together
 
     if tmax is not None:
-        x_max = min(tmax, x_max)  # if user specified the maximum time, use it insteads
+        x_max = min(tmax, x_max)  # if user specified the maximum time, use it instead
 
     # find maximum/minimum values for each component (from all sources) to determine plotting range
     ppgvs = {}
     npgvs = {}
     pgvs = {}
-    for comp in components:  # vals from all sources for the same components
+    for comp in components:
         ppgvs[comp] = np.max(same_comp_vals[comp])
         npgvs[comp] = np.min(same_comp_vals[comp])
         pgvs[comp] = np.max(np.abs(same_comp_vals[comp]))
-    y_min = np.min(list(npgvs.values()))
-    y_max = np.max(list(ppgvs.values()))
+    y_min = np.min(list(npgvs.values()))  # minimum value for all components and sources
+    y_max = np.max(list(ppgvs.values()))  # maximum value for all components and sources
     y_diff = y_max - y_min
 
     scale_length = max(int(round(x_max / 25.0)) * 5, 5)
