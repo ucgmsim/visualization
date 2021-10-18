@@ -252,7 +252,7 @@ def plot_station(output, sources, labels, tmax, verbose, station):
 
             if i == 0:
                 # Add component label
-                ax.set_title(components[j][1:], fontsize=18)
+                ax.set_title(components[j], fontsize=18)
                 ax.text(x_max, y_max, "{:.1f}".format(pgvs[comp]), fontsize=14)
 
     plt.savefig(os.path.join(output, f"{station}.png"))
