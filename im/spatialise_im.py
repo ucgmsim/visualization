@@ -19,7 +19,7 @@ def validate_filepath(parser, file_path):
     :param file_path: user input
     :return: parser error if error
     """
-    if file_path.is_file:
+    if file_path.is_file():
         try:
             with open(file_path, "r") as f:
                 return
