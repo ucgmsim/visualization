@@ -31,6 +31,7 @@ if args.out_dir is None:
     args.out_dir = os.path.dirname(args.srf_file)
 if args.out_dir == "":
     args.out_dir = "."
+os.makedirs(args.out_dir, exist_ok=True)
 if not os.path.isdir(args.out_dir):
     os.makedirs(args.out_dir)
 
