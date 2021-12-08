@@ -44,7 +44,9 @@ args = get_args()
 # output directory for srf resources
 gmt_tmp = os.path.abspath(mkdtemp())
 if not args.outdir:
-    outdir=os.path.dirname(os.path.abspath(args.srf_file)) #default outdir is the same directory as SRF
+    args.outdir=os.path.dirname(os.path.abspath(args.srf_file)) #default outdir is the same directory as SRF
+
+os.makedirs(args.outdir, exist_ok=True)
 
 # whether we are plotting a finite fault or point source
 finite_fault = srf.is_ff(args.srf_file)
@@ -643,6 +645,6 @@ p.png(
     dpi=args.dpi * args.downscale,
     downscale=args.downscale,
     background="white",
-    out_dir=outdir,
+    out_dir=args.outdir,
 )
 rmtree(gmt_tmp)
