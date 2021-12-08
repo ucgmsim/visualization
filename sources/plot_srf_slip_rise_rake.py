@@ -32,8 +32,6 @@ if args.out_dir is None:
 if args.out_dir == "":
     args.out_dir = "."
 os.makedirs(args.out_dir, exist_ok=True)
-if not os.path.isdir(args.out_dir):
-    os.makedirs(args.out_dir)
 
 gmt_temp = mkdtemp(prefix="_GMT_WD_SRF_")
 
