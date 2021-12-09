@@ -45,7 +45,7 @@ gmt_tmp = os.path.abspath(mkdtemp())
 if not args.out_dir:
     args.out_dir=os.path.dirname(os.path.abspath(args.srf_file)) #default out_dir is the same directory as SRF
 
-os.makedirs(args.outdir, exist_ok=True)
+os.makedirs(args.out_dir, exist_ok=True)
 
 # whether we are plotting a finite fault or point source
 finite_fault = srf.is_ff(args.srf_file)
