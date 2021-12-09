@@ -27,12 +27,14 @@ def get_args():
     arg("--cpt", help="CPT for SRF slip", default=gmt.CPTS["slip"])
     arg("--depth", help="also make a depth only plot", action="store_true")
     arg("--downscale", help="render resolution multiplier", type=int, default=4)
-    arg("--out_dir", help="output directory")
+    arg("--out_dir", help="output directory. default: same directory as srf_file")
 
     args = parser.parse_args()
     args.srf_file = os.path.abspath(args.srf_file)
     if not os.path.exists(args.srf_file):
         sys.exit("SRF file not found.")
+    if not args.out_dir:
+        args.out_dir=os.path.dirname(os.path.abspath(args.srf_file)) #default out_dir is the same directory as SRF
 
     return args
 
@@ -42,8 +44,6 @@ faults = "/nesi/project/nesi00213/PlottingData/Paths/faults/FAULTS_20161219.ll"
 args = get_args()
 # output directory for srf resources
 gmt_tmp = os.path.abspath(mkdtemp())
-if not args.out_dir:
-    args.out_dir=os.path.dirname(os.path.abspath(args.srf_file)) #default out_dir is the same directory as SRF
 
 os.makedirs(args.out_dir, exist_ok=True)
 
