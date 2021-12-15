@@ -176,6 +176,10 @@ plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
 ###
 perimeters, top_edges = srf.get_perimeter(args.srf_file)
 nz_region = gmt.nz_region
+
+if region_code == "KR":
+    nz_region = gmt.kr_region
+
 if finite_fault:
     gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
     gmt.makecpt(
@@ -221,6 +225,7 @@ p.basemap(
     topo=gmt.regional_resource(region_code, resource="topo", mod="1s"),
     land="lightgray",
     topo_cpt="grey1",
+    resource_region=region_code,
 )
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.4p", colour="red")
@@ -347,6 +352,7 @@ p.basemap(
     topo=gmt.regional_resource(region_code, resource="topo"),
     topo_cpt="grey1",
     road=None,
+    resource_region=region_code,
 )
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.1p", colour="red")
