@@ -175,10 +175,10 @@ plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
 ### OUTPUT 3: GMT MAP
 ###
 perimeters, top_edges = srf.get_perimeter(args.srf_file)
-nz_region = gmt.nz_region
+region_corners = gmt.nz_region #(lon_min,lon_max,lat_min,lat_max)
 
 if region_code == "KR":
-    nz_region = gmt.kr_region
+    region_corners = gmt.kr_region
 
 if finite_fault:
     gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
@@ -212,9 +212,9 @@ p = gmt.GMTPlot(
 )
 # this is how high the NZ map will end up being
 full_height = gmt.mapproject(
-    nz_region[0],
-    nz_region[3],
-    region=nz_region,
+    region_corners[0],
+    region_corners[3],
+    region=region_corners,
     projection="M%s" % (full_width),
     wd=gmt_tmp,
 )[1]
@@ -344,9 +344,9 @@ p.ticks(major="%sd" % (major_tick), minor="%sd" % (minor_tick), sides="ws")
 
 ### PART B: NZ map
 # draw NZ wide map to show rough location in country
-p.spacial("M", nz_region, sizing=full_width, x_shift=zoom_width + gap)
+p.spacial("M", region_corners, sizing=full_width, x_shift=zoom_width + gap)
 # height of NZ map
-full_height = gmt.mapproject(nz_region[0], nz_region[3], wd=gmt_tmp)[1]
+full_height = gmt.mapproject(region_corners[0], region_corners[3], wd=gmt_tmp)[1]
 p.basemap(
     land="lightgray",
     topo=gmt.regional_resource(region_code, resource="topo"),
