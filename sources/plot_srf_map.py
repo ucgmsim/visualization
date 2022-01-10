@@ -34,7 +34,9 @@ def get_args():
     if not os.path.exists(args.srf_file):
         sys.exit("SRF file not found.")
     if not args.out_dir:
-        args.out_dir=os.path.dirname(os.path.abspath(args.srf_file)) #default out_dir is the same directory as SRF
+        args.out_dir = os.path.dirname(
+            os.path.abspath(args.srf_file)
+        )  # default out_dir is the same directory as SRF
 
     return args
 
