@@ -165,7 +165,7 @@ if not finite_fault:
     # arbitrary, only changes size of beachball which is relative anyway
     mw = 8
     strike, dip, rake = srf.ps_params(args.srf_file)
-# for plotting region on NZ-wide map
+# for plotting region-wide map
 plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
     plot_region[0],
     plot_region[2],
@@ -209,7 +209,7 @@ if finite_fault:
 gmt.gmt_defaults(wd=gmt_tmp)
 # gap on left of maps
 gap = 1
-# width of NZ map, if changed, other things also need updating
+# width of the region map, if changed, other things also need updating
 # including tick font size and or tick increment for that map
 full_width = 4
 
@@ -217,7 +217,7 @@ full_width = 4
 p = gmt.GMTPlot(
     "%s/%s_map.ps" % (gmt_tmp, os.path.splitext(os.path.basename(args.srf_file))[0])
 )
-# this is how high the NZ map will end up being
+# this is how high the region map will end up being
 full_height = gmt.mapproject(
     region_corners[0],
     region_corners[3],
