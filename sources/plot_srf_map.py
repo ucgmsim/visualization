@@ -349,10 +349,10 @@ major_tick, minor_tick = gmt.auto_tick(plot_region[0], plot_region[1], zoom_widt
 major_tick = max(0.1, major_tick)
 p.ticks(major="%sd" % (major_tick), minor="%sd" % (minor_tick), sides="ws")
 
-### PART B: NZ map
-# draw NZ wide map to show rough location in country
+### PART B: Region map
+# draw a map of the region (country) to show rough location
 p.spacial("M", region_corners, sizing=full_width, x_shift=zoom_width + gap)
-# height of NZ map
+# height of the region map
 full_height = gmt.mapproject(region_corners[0], region_corners[3], wd=gmt_tmp)[1]
 p.basemap(
     land="lightgray",
