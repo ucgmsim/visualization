@@ -124,8 +124,8 @@ else:
     highcut = None
 convergence_limit = cpt_inc * 0.2
 corners, cnr_str = xyts.corners(gmt_format=True)
-region=xyts.region()
-region_code = gmt.get_region(region[0],region[2])
+region = xyts.region()
+region_code = gmt.get_region(region[0], region[2])
 ll_region = xyts.region(corners=corners)
 grd_dxy = "%sk" % (xyts.dx / 2.0)
 # determine map sizing
@@ -170,7 +170,7 @@ def bottom_template():
     else:
         b.spacial("M", borderless_region, sizing=map_width_a)
         # topo, water, overlay cpt scale
-        b.basemap(land="lightgray", topo_cpt="grey1",resource_region=region_code)
+        b.basemap(land="lightgray", topo_cpt="grey1", resource_region=region_code)
         # map margins are semi-transparent
         b.background(
             map_width_a,
@@ -185,7 +185,7 @@ def bottom_template():
     )
     if args.borders:
         # topo, water, overlay cpt scale
-        b.basemap(land="lightgray", topo_cpt="grey1",resource_region=region_code)
+        b.basemap(land="lightgray", topo_cpt="grey1", resource_region=region_code)
     # title, fault model and velocity model subtitles
     b.text(sum(ll_region[:2]) / 2.0, ll_region[3], args.title, size=20, dy=0.6)
     b.text(ll_region[0], ll_region[3], args.subtitle1, size=14, align="LB", dy=0.3)
