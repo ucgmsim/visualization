@@ -530,6 +530,7 @@ def basemap(args, sizing, wd):
             road=None,
             highway=None,
             scale=args.downscale,
+            resource_region=region_code,
         )
     else:
         p.basemap(
@@ -538,6 +539,7 @@ def basemap(args, sizing, wd):
             land="lightgray",
             scale=args.downscale,
             res="NZ" if region_code == "NZ" else "f",
+            resource_region=region_code,
         )
     # border tick labels
     p.ticks(major=2, minor=0.2)

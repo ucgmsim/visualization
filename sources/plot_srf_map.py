@@ -165,7 +165,7 @@ if not finite_fault:
     # arbitrary, only changes size of beachball which is relative anyway
     mw = 8
     strike, dip, rake = srf.ps_params(args.srf_file)
-# for plotting region on NZ-wide map
+# for plotting region-wide map
 plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
     plot_region[0],
     plot_region[2],
@@ -182,7 +182,11 @@ plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
 ### OUTPUT 3: GMT MAP
 ###
 perimeters, top_edges = srf.get_perimeter(args.srf_file)
-nz_region = gmt.nz_region
+region_corners = gmt.nz_region  # (lon_min,lon_max,lat_min,lat_max)
+
+if region_code == "KR":
+    region_corners = gmt.kr_region
+
 if finite_fault:
     gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
     gmt.makecpt(
@@ -205,7 +209,7 @@ if finite_fault:
 gmt.gmt_defaults(wd=gmt_tmp)
 # gap on left of maps
 gap = 1
-# width of NZ map, if changed, other things also need updating
+# width of the region map, if changed, other things also need updating
 # including tick font size and or tick increment for that map
 full_width = 4
 
@@ -213,11 +217,11 @@ full_width = 4
 p = gmt.GMTPlot(
     "%s/%s_map.ps" % (gmt_tmp, os.path.splitext(os.path.basename(args.srf_file))[0])
 )
-# this is how high the NZ map will end up being
+# this is how high the region map will end up being
 full_height = gmt.mapproject(
-    nz_region[0],
-    nz_region[3],
-    region=nz_region,
+    region_corners[0],
+    region_corners[3],
+    region=region_corners,
     projection="M%s" % (full_width),
     wd=gmt_tmp,
 )[1]
@@ -228,6 +232,7 @@ p.basemap(
     topo=gmt.regional_resource(region_code, resource="topo", mod="1s"),
     land="lightgray",
     topo_cpt="grey1",
+    resource_region=region_code,
 )
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.4p", colour="red")
@@ -344,16 +349,17 @@ major_tick, minor_tick = gmt.auto_tick(plot_region[0], plot_region[1], zoom_widt
 major_tick = max(0.1, major_tick)
 p.ticks(major="%sd" % (major_tick), minor="%sd" % (minor_tick), sides="ws")
 
-### PART B: NZ map
-# draw NZ wide map to show rough location in country
-p.spacial("M", nz_region, sizing=full_width, x_shift=zoom_width + gap)
-# height of NZ map
-full_height = gmt.mapproject(nz_region[0], nz_region[3], wd=gmt_tmp)[1]
+### PART B: Region map
+# draw a map of the region (country) to show rough location
+p.spacial("M", region_corners, sizing=full_width, x_shift=zoom_width + gap)
+# height of the region map
+full_height = gmt.mapproject(region_corners[0], region_corners[3], wd=gmt_tmp)[1]
 p.basemap(
     land="lightgray",
     topo=gmt.regional_resource(region_code, resource="topo"),
     topo_cpt="grey1",
     road=None,
+    resource_region=region_code,
 )
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.1p", colour="red")
