@@ -27,11 +27,16 @@ def get_args():
     arg("--cpt", help="CPT for SRF slip", default=gmt.CPTS["slip"])
     arg("--depth", help="also make a depth only plot", action="store_true")
     arg("--downscale", help="render resolution multiplier", type=int, default=4)
+    arg("--out_dir", help="output directory. default: same directory as srf_file")
 
     args = parser.parse_args()
     args.srf_file = os.path.abspath(args.srf_file)
     if not os.path.exists(args.srf_file):
         sys.exit("SRF file not found.")
+    if not args.out_dir:
+        args.out_dir = os.path.dirname(
+            os.path.abspath(args.srf_file)
+        )  # default out_dir is the same directory as SRF
 
     return args
 
@@ -41,6 +46,8 @@ faults = "/nesi/project/nesi00213/PlottingData/Paths/faults/FAULTS_20161219.ll"
 args = get_args()
 # output directory for srf resources
 gmt_tmp = os.path.abspath(mkdtemp())
+
+os.makedirs(args.out_dir, exist_ok=True)
 
 # whether we are plotting a finite fault or point source
 finite_fault = srf.is_ff(args.srf_file)
@@ -158,7 +165,7 @@ if not finite_fault:
     # arbitrary, only changes size of beachball which is relative anyway
     mw = 8
     strike, dip, rake = srf.ps_params(args.srf_file)
-# for plotting region on NZ-wide map
+# for plotting region-wide map
 plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
     plot_region[0],
     plot_region[2],
@@ -175,7 +182,11 @@ plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
 ### OUTPUT 3: GMT MAP
 ###
 perimeters, top_edges = srf.get_perimeter(args.srf_file)
-nz_region = gmt.nz_region
+region_corners = gmt.nz_region  # (lon_min,lon_max,lat_min,lat_max)
+
+if region_code == "KR":
+    region_corners = gmt.kr_region
+
 if finite_fault:
     gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
     gmt.makecpt(
@@ -198,7 +209,7 @@ if finite_fault:
 gmt.gmt_defaults(wd=gmt_tmp)
 # gap on left of maps
 gap = 1
-# width of NZ map, if changed, other things also need updating
+# width of the region map, if changed, other things also need updating
 # including tick font size and or tick increment for that map
 full_width = 4
 
@@ -206,11 +217,11 @@ full_width = 4
 p = gmt.GMTPlot(
     "%s/%s_map.ps" % (gmt_tmp, os.path.splitext(os.path.basename(args.srf_file))[0])
 )
-# this is how high the NZ map will end up being
+# this is how high the region map will end up being
 full_height = gmt.mapproject(
-    nz_region[0],
-    nz_region[3],
-    region=nz_region,
+    region_corners[0],
+    region_corners[3],
+    region=region_corners,
     projection="M%s" % (full_width),
     wd=gmt_tmp,
 )[1]
@@ -221,6 +232,7 @@ p.basemap(
     topo=gmt.regional_resource(region_code, resource="topo", mod="1s"),
     land="lightgray",
     topo_cpt="grey1",
+    resource_region=region_code,
 )
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.4p", colour="red")
@@ -337,16 +349,17 @@ major_tick, minor_tick = gmt.auto_tick(plot_region[0], plot_region[1], zoom_widt
 major_tick = max(0.1, major_tick)
 p.ticks(major="%sd" % (major_tick), minor="%sd" % (minor_tick), sides="ws")
 
-### PART B: NZ map
-# draw NZ wide map to show rough location in country
-p.spacial("M", nz_region, sizing=full_width, x_shift=zoom_width + gap)
-# height of NZ map
-full_height = gmt.mapproject(nz_region[0], nz_region[3], wd=gmt_tmp)[1]
+### PART B: Region map
+# draw a map of the region (country) to show rough location
+p.spacial("M", region_corners, sizing=full_width, x_shift=zoom_width + gap)
+# height of the region map
+full_height = gmt.mapproject(region_corners[0], region_corners[3], wd=gmt_tmp)[1]
 p.basemap(
     land="lightgray",
     topo=gmt.regional_resource(region_code, resource="topo"),
     topo_cpt="grey1",
     road=None,
+    resource_region=region_code,
 )
 if args.active_faults:
     p.path(faults, is_file=True, close=False, width="0.1p", colour="red")
@@ -639,6 +652,6 @@ p.png(
     dpi=args.dpi * args.downscale,
     downscale=args.downscale,
     background="white",
-    out_dir=".",
+    out_dir=args.out_dir,
 )
 rmtree(gmt_tmp)

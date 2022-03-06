@@ -3,8 +3,8 @@
 Generate non_uniform.xyz and sim/obs.xyz file
 """
 
-import os
 import argparse
+from pathlib import Path
 
 from qcore import shared, utils, constants, formats
 
@@ -19,7 +19,7 @@ def validate_filepath(parser, file_path):
     :param file_path: user input
     :return: parser error if error
     """
-    if os.path.isfile(file_path):
+    if file_path.is_file():
         try:
             with open(file_path, "r") as f:
                 return
@@ -36,15 +36,15 @@ def validate_dir(parser, dir_path):
     :param dir_path: user input
     :return:
     """
-    if not os.path.isdir(dir_path):
+    if not dir_path.is_dir():
         parser.error("No such directory {}".format(dir_path))
 
 
-def write_xyz(imcsv, stat_file, out_dir):
+def write_xyz(imcsv, stat_file, out_dir, component="geom"):
     utils.setup_dir(out_dir)
 
     stat_df = formats.load_station_file(stat_file)
-    im_df = formats.load_im_file_pd(imcsv, comp=args.component)
+    im_df = formats.load_im_file_pd(imcsv, comp=component)
 
     # must have compatible index names to merge
     stat_df.index.rename("station", inplace=True)
@@ -60,15 +60,15 @@ def write_xyz(imcsv, stat_file, out_dir):
     ims = im_df.columns
     columns = ["lon", "lat", *ims]
 
-    non_uniform_filepath = os.path.join(out_dir, "non_uniform_im.xyz")
-    real_station_filepath = os.path.join(out_dir, "real_station_im.xyz")
+    non_uniform_filepath = out_dir / "non_uniform_im.xyz"
+    real_station_filepath = out_dir / "real_station_im.xyz"
 
     xyz_df[columns].to_csv(non_uniform_filepath, sep=" ", header=None, index=None)
     xyz_real_station_df[columns].to_csv(
         real_station_filepath, sep=" ", header=None, index=None
     )
 
-    im_col_file = os.path.join(out_dir, "im_order.txt")
+    im_col_file = out_dir / "im_order.txt"
     with open(im_col_file, "w") as fp:
         fp.write(" ".join(ims))
 
@@ -77,16 +77,26 @@ def write_xyz(imcsv, stat_file, out_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("imcsv_filepath", help="path to input IMcsv file")
-    parser.add_argument("station_filepath", help="path to input station_ll file path")
+    parser.add_argument("imcsv_filepath", type=Path, help="path to input IMcsv file")
+    parser.add_argument(
+        "station_filepath", type=Path, help="path to input station_ll file path"
+    )
+    parser.add_argument(
+        "-c",
+        "--component",
+        default="geom",
+        choices=COMPS,
+        help=f"which component of the intensity measure. Available components are {COMPS}. Default is 'geom'",
+    )
     parser.add_argument(
         "-o",
         "--out_dir",
-        default=".",
+        type=Path,
+        default=Path.cwd(),
         help="path to store output xyz files. Defaults to CWD",
     )
 
     args = parser.parse_args()
     validate_filepath(parser, args.imcsv_filepath)
     validate_filepath(parser, args.station_filepath)
-    write_xyz(args.imcsv_filepath, args.station_filepath, args.out_dir)
+    write_xyz(args.imcsv_filepath, args.station_filepath, args.out_dir, args.component)

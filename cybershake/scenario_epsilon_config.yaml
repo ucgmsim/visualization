@@ -1,0 +1,34 @@
+faults:
+  - "HopeConwayOS"
+  - "Wairau"
+  - "AlpineK2T"
+  - "Port2GreyL"
+ims:
+  - "PGV_epsilon"
+  - "PGA_epsilon"
+  - "pSA_0.1_epsilon"
+  - "pSA_1.0_epsilon"
+  - "pSA_5.0_epsilon"
+max_ranges:
+    PGV_epsilon:
+      - "-0.6"
+      - "0.6"
+    PGA_epsilon:
+      - "-60"
+      - "60"
+    pSA_0.1_epsilon:
+      - "-60"
+      - "60"
+    pSA_1.0_epsilon:
+      - "-60"
+      - "60"
+    pSA_5.0_epsilon:
+      - "-60"
+      - "60"
+srfs:
+    HopeConwayOS: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/HopeConwayOS/Srf/HopeConwayOS_REL01.srf"
+    Wairau: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/Wairau/Srf/Wairau_REL01.srf"
+    AlpineK2T: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/AlpineK2T/Srf/AlpineK2T_REL01.srf"
+    Port2GreyL: "/isilon/cybershake/v20p4/Sources/scale_wlg_nobackup/filesets/nobackup/nesi00213/RunFolder/jpa198/cybershake_sources/Data/Sources/Port2GreyL/Srf/Port2GreyL_REL01.srf"
+station_file: "/isilon/seistech/sites/20p3/non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll"
+component: "geom"
