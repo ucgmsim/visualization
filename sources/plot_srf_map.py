@@ -204,7 +204,8 @@ if finite_fault:
         cpt_depth_max,
         0.1,
         invert=False,
-        bg="purple",
+        bg="white",
+        fg="77/0/1",
     )
 gmt.gmt_defaults(wd=gmt_tmp)
 # gap on left of maps
