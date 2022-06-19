@@ -68,7 +68,7 @@ b6 = []
 with open(balls, "r") as b:
     for l in b:
         man, exp = map(float, l.split()[9:11])
-        mag = mom2mag(man * 10 ** exp)
+        mag = mom2mag(man * 10**exp)
         if mag < 5:
             b5.append(l)
         elif mag < 6:

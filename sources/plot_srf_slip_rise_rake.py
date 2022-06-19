@@ -133,7 +133,7 @@ km_inch, x_space = kminch_scale()
 # automatic rake arrow decimation
 if args.rake_spacing is None:
     subfault_size = planes[0]["length"] / planes[0]["nstrike"] / km_inch
-    args.rake_spacing = int(round(0.5 / subfault_size * scale_factor ** 2))
+    args.rake_spacing = int(round(0.5 / subfault_size * scale_factor**2))
     if args.rake_spacing < 1:
         args.rake_spacing = 1
 

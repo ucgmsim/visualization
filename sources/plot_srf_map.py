@@ -229,6 +229,7 @@ full_height = gmt.mapproject(
 # match height of zoomed in map with full size map
 zoom_width, zoom_height = gmt.map_width("M", full_height, plot_region, wd=gmt_tmp)
 p.spacial("M", plot_region, sizing=zoom_width, x_shift=gap, y_shift=2.5)
+print("before basemap call", p.z)
 p.basemap(
     topo=gmt.regional_resource(region_code, resource="topo", mod="1s"),
     land="lightgray",
