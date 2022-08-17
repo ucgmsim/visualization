@@ -145,7 +145,7 @@ if __name__ == "__main__":
             color=FACE_EDGE_COLOURS[i - 1][2],
             linestyle="solid",
             linewidth=5,
-            label=name,
+            label=f"ln({name})",
         )
     plt.plot(
         psa_vals,
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     plt.grid(b=True, axis="x", which="minor")
     fig.set_tight_layout(True)
     plt.legend(loc="best")
-    plt.ylabel(f"pSA residual\nln({name})", fontsize=14)
+    plt.ylabel(f"pSA residual", fontsize=14)
     plt.xlabel("Vibration period, T (s)", fontsize=14)
     plt.title(args.run_name, fontsize=16)
     plt.xlim([0.01, 10])
