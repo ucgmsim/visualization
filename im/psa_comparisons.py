@@ -4,6 +4,7 @@ Compare spectral acceleration with vibration period.
 """
 
 import matplotlib as mpl
+from qcore import shared
 
 mpl.use("Agg")
 
@@ -12,9 +13,9 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from qcore.formats import load_im_file_pd
-from qcore.nputil import argsearch
 from visualization.util import intersection
 
 NOT_FOUND = np.ma.masked
@@ -34,7 +35,8 @@ def load_args():
         "--imcsv",
         required=True,
         nargs=2,
-        help="path to IM file and label. if more than one is supplied, will be compared to first one",
+        help="Path to IM file and label. Each file will be plotted together. "
+             "Repeated labels will have the log space mean plotted along with the individual sites.",
         action="append",
     )
     parser.add_argument(
@@ -47,6 +49,11 @@ def load_args():
     )
     parser.add_argument("--comp", help="component", default="geom")
     parser.add_argument("--stations", help="limit stations to plot", nargs="+")
+    parser.add_argument(
+        "--real_only",
+        help="limit stations to plot to only 'real' ones",
+        action="store_true",
+    )
     args = parser.parse_args()
 
     # validate
@@ -62,17 +69,25 @@ if __name__ == "__main__":
     args = load_args()
 
     # load im tables
-    ims = []
+    ims = {}
     psas = []
-    for imcsv in args.imcsv:
-        ims.append(load_im_file_pd(imcsv[0], all_ims=True, comp=args.comp))
-        im_names = ims[-1].columns.values.astype(str)
+    for imcsv, label in args.imcsv:
+        if label not in ims:
+            ims[label] = []
+        ims[label].append(load_im_file_pd(imcsv, all_ims=True, comp=args.comp))
+        im_names = ims[label][-1].columns.values.astype(str)
         psas.append(
             im_names[
                 np_startswith(im_names, "pSA_")
                 & np.invert(np_endswith(im_names, "_sigma"))
-            ]
+                ]
         )
+    ims = {
+        key: pd.concat(
+            value, keys=range(1, len(value) + 1), names=["rel"] + value[0].index.names
+        )
+        for key, value in ims.items()
+    }
 
     # only common pSAs
     psa_names = intersection(psas)
@@ -82,29 +97,53 @@ if __name__ == "__main__":
     psa_names = psa_names[sort_idx]
     psa_vals = psa_vals[sort_idx]
     # value range
-    y_max = max([ims[i][psa_names].max().max() for i in range(len(ims))])
-    y_min = min([ims[i][psa_names].min().min() for i in range(len(ims))])
+    y_max = max([df[psa_names].max().max() for df in ims.values()])
+    y_min = min([df[psa_names].min().min() for df in ims.values()])
+
+    stations = intersection([[index[1] for index in df.index] for df in ims.values()])
 
     # each station is a plot containing imcsvs as series
-    for station in [index[0] for index in ims[0].index]:
+    for station in stations:
         if args.stations is not None and station not in args.stations:
+            continue
+        if args.real_only and shared.is_virtual_station(station):
             continue
         fig = plt.figure(figsize=(7.6, 7.5), dpi=100)
         plt.rcParams.update({"font.size": 14})
 
         # add a series for each csv
-        for i, imcsv in enumerate(args.imcsv):
-            if station not in ims[i].index:
-                continue
-            plt.loglog(
-                psa_vals,
-                ims[i].loc[(station, args.comp), psa_names].values,
-                label=f"{station} {imcsv[1]}",
-                linewidth=3,
-            )
+        for label, df in ims.items():
+            colour = None
+            df: pd.DataFrame
+            rels = df.index.get_level_values(0).unique()
+            multi_rel = len(rels) > 1
+            for rel in rels:
+                line: plt.Line2D = plt.loglog(
+                    psa_vals,
+                    df.loc[(rel, station, args.comp), psa_names].values,
+                    label=f"{station} {label}",
+                    linewidth=3,
+                    color=colour,
+                    alpha=0.3 if multi_rel else 1.0,
+                )[0]
+                if colour is None:
+                    colour = line.get_color()
+            if multi_rel:
+                log_mean_vals = np.exp(
+                    np.log(df.xs(station, axis=0, level=1)).groupby(level=1).mean()
+                )[psa_names].values.squeeze()
+                plt.loglog(
+                    psa_vals,
+                    log_mean_vals,
+                    label=f"{station} {label} mean",
+                    linewidth=5,
+                    color=colour,
+                )
 
         # plot formatting
-        plt.legend(loc="best")
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys(), loc="best")
         plt.ylabel("Spectral acceleration (g)", fontsize=14)
         plt.xlabel("Vibration period, T (s)", fontsize=14)
         plt.title(args.run_name)
@@ -115,7 +154,7 @@ if __name__ == "__main__":
         plt.savefig(
             os.path.join(
                 args.out_dir,
-                f"pSA_comp_{args.comp}_vs_Period_{args.run_name}_{station}.png",
+                f"pSA_comp_{args.comp}_vs_Period_{args.run_name.replace(' ', '_')}_{station}.png",
             )
         )
         plt.close()
