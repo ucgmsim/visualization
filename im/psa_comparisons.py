@@ -36,7 +36,7 @@ def load_args():
         required=True,
         nargs=2,
         help="Path to IM file and label. Each file will be plotted together. "
-             "Repeated labels will have the log space mean plotted along with the individual sites.",
+        "Repeated labels will have the log space mean plotted along with the individual sites.",
         action="append",
     )
     parser.add_argument(
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             im_names[
                 np_startswith(im_names, "pSA_")
                 & np.invert(np_endswith(im_names, "_sigma"))
-                ]
+            ]
         )
     ims = {
         key: pd.concat(
