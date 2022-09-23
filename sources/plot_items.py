@@ -180,6 +180,13 @@ def get_args():
         default=True,
         action="store_false",
     )
+    arg(
+        "--disable-roads",
+        dest="enable_roads",
+        help="Flag to disable roads/highways - these are plotted by default",
+        default=True,
+        action="store_false",
+    )
     arg("-n", "--nproc", help="max number of processes", type=int, default=1)
     arg("-d", "--dpi", help="render DPI", type=int, default=300)
     arg(
@@ -522,6 +529,8 @@ def basemap(args, sizing, wd):
     p.spacial(
         "M", sizing["region"], sizing="%si" % (sizing["size"][0]), x_shift=2, y_shift=2
     )
+    roads = "auto" if args.enable_roads else None
+
     if args.fast:
         p.basemap(
             res="f",
@@ -538,6 +547,8 @@ def basemap(args, sizing, wd):
             topo_cpt="grey1",
             land="lightgray",
             scale=args.downscale,
+            road=roads,
+            highway=roads,
             res="NZ" if region_code == "NZ" else "f",
             resource_region=region_code,
         )
