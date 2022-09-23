@@ -529,15 +529,15 @@ def basemap(args, sizing, wd):
     p.spacial(
         "M", sizing["region"], sizing="%si" % (sizing["size"][0]), x_shift=2, y_shift=2
     )
-    roads = "auto" if args.enable_roads and not args.fast else None
+    roads = "auto" if args.enable_roads else None
 
     if args.fast:
         p.basemap(
             res="f",
             land="lightgray",
             topo=None,
-            road=roads,
-            highway=roads,
+            road=None,
+            highway=None,
             scale=args.downscale,
             resource_region=region_code,
         )
