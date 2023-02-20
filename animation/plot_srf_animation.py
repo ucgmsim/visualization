@@ -294,7 +294,9 @@ def slip_sequence(frame):
     pwd = os.path.join(gwd, f"ss{frame:04}")
     if not os.path.exists(pwd):
         os.makedirs(pwd)
-    ps_file = os.path.join(pwd, f"seq_{zoom_frames - zoom_frames * draft + frame:04}.ps")
+    ps_file = os.path.join(
+        pwd, f"seq_{zoom_frames - zoom_frames * draft + frame:04}.ps"
+    )
     copyfile(os.path.join(gwd, "basemap.ps"), ps_file)
     copyfile(os.path.join(gwd, "gmt.conf"), os.path.join(pwd, "gmt.conf"))
     copyfile(os.path.join(gwd, "gmt.history"), os.path.join(pwd, "gmt.history"))
