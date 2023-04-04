@@ -32,7 +32,7 @@ def load_args():
 
     parser.add_argument(
         "--waveforms",
-        help="directory to text data or binary file followed by label",
+        help="directory to ascii data or binary file followed by label",
         nargs=2,
         action="append",
         required=True,
@@ -48,6 +48,21 @@ def load_args():
         help="Limit number of stations to plot (selected randomly).",
         type=int,
     )
+
+    parser.add_argument(
+        "--acc",
+        help="Compare acceleration (g) - By default, velocity (cm/s)",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "--no-amp-normalize",
+        help="Do not normalize component-wise amplitude",
+        action="store_true",
+    )
+
+    parser.add_argument("--axis-label", help="Add axis labels", action="store_true")
+
     parser.add_argument("--stations", help="Specific stations to plot.", nargs="+")
     parser.add_argument("-v", help="verbose messages", action="store_true")
     parser.add_argument(
@@ -118,6 +133,9 @@ def plot_station(
     labels,
     tmax,
     verbose,
+    acc,
+    no_normalize_amp,
+    axis_label,
     station,
 ):
     """Creates a waveform plot for a specific station."""
@@ -132,7 +150,10 @@ def plot_station(
             timeline = (
                 np.arange(source.nt, dtype=np.float32) * source.dt + source.start_sec
             )
-            timeseries.append(np.vstack((source.vel(station).T, timeline)))
+            if acc:
+                timeseries.append(np.vstack((source.acc(station).T, timeline)))
+            else:
+                timeseries.append(np.vstack((source.vel(station).T, timeline)))
         else:
             # text directory
             meta = read_ascii(
@@ -181,12 +202,17 @@ def plot_station(
     for i, s in enumerate(timeseries):
         for j in range(len(extensions)):
             ax = axis[j]
-            ax.set_axis_off()
+            if not axis_label:
+                ax.set_axis_off()
             ax.set_ylim([y_min - y_diff * 0.15, y_max])
 
+            if no_normalize_amp:
+                amp_normalize_factor = 1
+            else:
+                amp_normalize_factor = min(y_max / ppgvs[j], y_min / npgvs[j])
             (line,) = ax.plot(
                 s[len(extensions)],
-                s[j] * min(y_max / ppgvs[j], y_min / npgvs[j]),
+                s[j] * amp_normalize_factor,
                 color=colours[i % len(colours)],
                 linewidth=1,
             )
@@ -226,11 +252,15 @@ def plot_station(
                     verticalalignment="top",
                     horizontalalignment="center",
                 )
-
+                if acc:
+                    ax.set_ylabel("Acc (g)")
+                else:
+                    ax.set_ylabel("Vel (cm/s)")
             if i == 0:
                 # Add component label
                 ax.set_title(extensions[j][1:], fontsize=18)
                 ax.text(x_max, y_max, "{:.1f}".format(pgvs[j]), fontsize=14)
+                ax.set_xlabel("Time (s)")
 
     plt.savefig(os.path.join(output, f"{station}.png"))
     plt.close()
@@ -259,5 +289,8 @@ if __name__ == "__main__":
         [source[1] for source in args.waveforms],
         args.tmax,
         args.v,
+        args.acc,
+        args.no_amp_normalize,
+        args.axis_label,
     )
     p.map(single_station, stations)
