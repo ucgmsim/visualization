@@ -182,10 +182,8 @@ plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
 ### OUTPUT 3: GMT MAP
 ###
 perimeters, top_edges = srf.get_perimeter(args.srf_file)
-region_corners = gmt.nz_region  # (lon_min,lon_max,lat_min,lat_max)
 
-if region_code == "KR":
-    region_corners = gmt.kr_region
+region_corners = gmt.region_dict[region_code]
 
 if finite_fault:
     gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
