@@ -41,7 +41,7 @@ def get_args():
         )  # default out_dir is the same directory as SRF
 
     if not os.path.exists(args.faultlines_file):
-        sys.exit(f"Faults file not found : {args.faultlines_file}")
+        sys.exit(f"Faultlines file not found : {args.faultlines_file}")
 
     return args
 
