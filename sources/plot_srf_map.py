@@ -16,7 +16,10 @@ import qcore.geo as geo
 import qcore.gmt as gmt
 import qcore.srf as srf
 
-DEFAULT_FAULTLINES_FILE = f"{os.path.dirname(os.path.realpath(__file__))}//FAULTS_20161219.ll"
+DEFAULT_FAULTLINES_FILE = (
+    f"{os.path.dirname(os.path.realpath(__file__))}//FAULTS_20161219.ll"
+)
+
 
 def get_args():
     parser = ArgumentParser()
@@ -25,7 +28,11 @@ def get_args():
     arg("srf_file", help="srf file to plot")
     arg("--dpi", help="render dpi", type=int, default=300)
     arg("--active-faults", help="show active fault lines", action="store_true")
-    arg("--faultlines_file", help="faultline coordinates file for --active-faults option", default=DEFAULT_FAULTLINES_FILE)
+    arg(
+        "--faultlines_file",
+        help="faultline coordinates file for --active-faults option",
+        default=DEFAULT_FAULTLINES_FILE,
+    )
     arg("--cpt", help="CPT for SRF slip", default=gmt.CPTS["slip"])
     arg("--depth", help="also make a depth only plot", action="store_true")
     arg("--downscale", help="render resolution multiplier", type=int, default=4)
@@ -408,7 +415,9 @@ if args.depth:
         topo_cpt="grey1",
     )
     if args.active_faults:
-        p.path(args.faultlines_file, is_file=True, close=False, width="0.4p", colour="red")
+        p.path(
+            args.faultlines_file, is_file=True, close=False, width="0.4p", colour="red"
+        )
     for seg in range(len(bounds)):
         gmt_outline = "\n".join(" ".join(list(map(str, x))) for x in perimeters[seg])
         gmt_top_edge = "\n".join(" ".join(list(map(str, x))) for x in top_edges[seg])
