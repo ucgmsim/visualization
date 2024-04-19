@@ -732,9 +732,11 @@ def render_xyz_col(
         pos="rel_out",
         dy=0.5,
         length=sizing["size"][0] * 0.8,
-        label=args.xyz_cpt_labels[0]
-        if len(args.xyz_cpt_labels) == 1
-        else args.xyz_cpt_labels[i],
+        label=(
+            args.xyz_cpt_labels[0]
+            if len(args.xyz_cpt_labels) == 1
+            else args.xyz_cpt_labels[i]
+        ),
         arrow_f=False if args.xyz_cpt_categorical else xyz["max"] > 0,
         arrow_b=False if args.xyz_cpt_categorical else xyz["min"] < 0,
         categorical=args.xyz_cpt_categorical,
