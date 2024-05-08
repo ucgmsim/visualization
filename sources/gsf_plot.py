@@ -39,7 +39,7 @@ def parse_gsf(gsf_file_handle: TextIO) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame containing all the points in the GSF file. The DataFrame's columns are 
+        A DataFrame containing all the points in the GSF file. The DataFrame's columns are
         - lon (longitude)
         - lat (latitude)
         - depth (Kilometres below ground, i.e. depth = 10 indicates a point 10km underground).
@@ -182,7 +182,7 @@ def plot_gsf_file(
     plot_dpi : int
         The output plot DPI (higher for better quality plot output).
     """
-    with open(gsf_filepath, "r", encoding='utf-8') as gsf_file_handle:
+    with open(gsf_filepath, "r", encoding="utf-8") as gsf_file_handle:
         points = parse_gsf(gsf_file_handle)
 
     fig = plot_gsf_points(points, grid_resolution)
