@@ -29,17 +29,28 @@ app = typer.Typer()
 
 
 def parse_gsf(gsf_file_handle: TextIO) -> pd.DataFrame:
-    """parse_gsf.
+    """Parse a GSF file into a pandas DataFrame.
 
     Parameters
     ----------
     gsf_file_handle : TextIO
-        gsf_file_handle
+        The file handle pointing to the GSF file to read.
 
     Returns
     -------
     pd.DataFrame
-
+        A DataFrame containing all the points in the GSF file. The DataFrame's columns are 
+        - lon (longitude)
+        - lat (latitude)
+        - depth (Kilometres below ground, i.e. depth = 10 indicates a point 10km underground).
+        - sub_dx (The subdivision size in the strike direction)
+        - sub_dy (The subdivision size in the dip direction)
+        - strike
+        - dip
+        - rake
+        - slip (nearly always -1)
+        - init_time (nearly always -1)
+        - seg_no (the fault segment this point belongs to)
     """
     while gsf_file_handle.readline()[0] == "#":
         pass
