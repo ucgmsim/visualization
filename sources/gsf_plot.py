@@ -10,18 +10,18 @@ Arguments:
   PLOT_FILE_PATH         The path where the plot image will be saved.
 
 Options:
-  --grid-resolution=GRID_RESOLUTION   The resolution of the grid (in metres). This can be different to 
-                                      to the resolution of the GSF file. Interpolation will occur 
+  --grid-resolution=GRID_RESOLUTION   The resolution of the grid (in metres). This can be different to
+                                      to the resolution of the GSF file. Interpolation will occur
                                       between grid points.
   --plot-dpi=PLOT_DPI                 The output plot DPI (higher is better). [default: 1200]
 """
 
-import pygmt
-import collections
 import re
-from typing import TextIO, Annotated
 from pathlib import Path
+from typing import Annotated, TextIO
+
 import pandas as pd
+import pygmt
 import typer
 from pygmt_helper import plotting
 
@@ -171,7 +171,7 @@ def plot_gsf_file(
     plot_dpi : int
         The output plot DPI (higher for better quality plot output).
     """
-    with open(gsf_filepath, "r") as gsf_file_handle:
+    with open(gsf_filepath, "r", encoding='utf-8') as gsf_file_handle:
         points = parse_gsf(gsf_file_handle)
 
     fig = plot_gsf_points(points, grid_resolution)
