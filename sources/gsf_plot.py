@@ -28,7 +28,7 @@ from pygmt_helper import plotting
 app = typer.Typer()
 
 
-def parse_gsf(gsf_file_handle: TextIO) -> pd.DataFrame:
+def parse_gsf(gsf_filepath: str) -> pd.DataFrame:
     """Parse a GSF file into a pandas DataFrame.
 
     Parameters
@@ -42,7 +42,7 @@ def parse_gsf(gsf_file_handle: TextIO) -> pd.DataFrame:
         A DataFrame containing all the points in the GSF file. The DataFrame's columns are
         - lon (longitude)
         - lat (latitude)
-        - depth (Kilometres below ground, i.e. depth = 10 indicates a point 10km underground).
+        - depth (Kilometres below ground, i.e. depth = -10 indicates a point 10km underground).
         - sub_dx (The subdivision size in the strike direction)
         - sub_dy (The subdivision size in the dip direction)
         - strike
@@ -52,56 +52,32 @@ def parse_gsf(gsf_file_handle: TextIO) -> pd.DataFrame:
         - init_time (nearly always -1)
         - seg_no (the fault segment this point belongs to)
     """
-    while gsf_file_handle.readline()[0] == "#":
-        pass
-    # NOTE: This skips one line past the last line beginning with #.
-    # This is ok as this line is always the number of points in the GSF file, which we do not need.
-    points = []
-    for line in gsf_file_handle:
-        (
-            lon,
-            lat,
-            depth,
-            sub_dx,
-            sub_dy,
-            strike,
-            dip,
-            rake,
-            slip,
-            init_time,
-            seg_no,
-        ) = re.split(r"\s+", line.strip())
-        points.append(
-            [
-                float(lon),
-                float(lat),
-                -float(depth),
-                float(sub_dx),
-                float(sub_dy),
-                float(strike),
-                float(dip),
-                float(rake),
-                float(slip),
-                float(init_time),
-                int(seg_no),
-            ]
+    with open(gsf_filepath, mode="r", encoding="utf-8") as gsf_file_handle:
+        # we could use pd.read_csv with the skiprows argument, but it's not
+        # as versatile as simply skipping the first n rows with '#'
+        while gsf_file_handle.readline()[0] == "#":
+            pass
+        # NOTE: This skips one line past the last line beginning with #.
+        # This is ok as this line is always the number of points in the GSF
+        # file, which we do not need.
+        return pd.read_csv(
+            gsf_file_handle,
+            sep=r"\s+",
+            skipinitialspace=True,
+            names=[
+                "lon",
+                "lat",
+                "depth",
+                "sub_dx",
+                "sub_dy",
+                "strike",
+                "dip",
+                "rake",
+                "slip",
+                "init_time",
+                "seg_no",
+            ],
         )
-    return pd.DataFrame(
-        columns=[
-            "lon",
-            "lat",
-            "depth",
-            "sub_dx",
-            "sub_dy",
-            "strike",
-            "dip",
-            "rake",
-            "slip",
-            "init_time",
-            "seg_no",
-        ],
-        data=points,
-    )
 
 
 def plot_gsf_points(points: pd.DataFrame, grid_resolution: int) -> pygmt.Figure:
@@ -182,9 +158,8 @@ def plot_gsf_file(
     plot_dpi : int
         The output plot DPI (higher for better quality plot output).
     """
-    with open(gsf_filepath, "r", encoding="utf-8") as gsf_file_handle:
-        points = parse_gsf(gsf_file_handle)
-
+    points = parse_gsf(gsf_filepath)
+    points["depth"] *= -1
     fig = plot_gsf_points(points, grid_resolution)
     fig.savefig(figure_plot_path, anti_alias=True, dpi=plot_dpi)
 
