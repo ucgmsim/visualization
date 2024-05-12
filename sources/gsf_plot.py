@@ -148,7 +148,7 @@ def plot_gsf_file(
         ),
     ] = None,
     plot_dpi: Annotated[
-        int, typer.Option(help="The output plot DPI (higher is better).")
+        int, typer.Option(help="The output plot DPI (higher is better).", min=0)
     ] = 1200,
 ):
     """Plot a GSF file using GMT.
