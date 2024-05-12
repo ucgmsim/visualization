@@ -130,7 +130,7 @@ def plot_gsf_file(
         Path, typer.Argument(help="GSF file path to read.", exists=True, readable=True)
     ],
     figure_plot_path: Annotated[
-        Path, typer.Argument(help="The file path to output the plot to.")
+        Path, typer.Argument(help="The file path to output the plot to.", writable=True)
     ],
     grid_resolution: Annotated[
         int,
