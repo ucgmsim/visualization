@@ -63,7 +63,6 @@ def parse_gsf(gsf_filepath: str) -> pd.DataFrame:
         return pd.read_csv(
             gsf_file_handle,
             sep=r"\s+",
-            skipinitialspace=True,
             names=[
                 "lon",
                 "lat",
