@@ -166,6 +166,8 @@ def plot_gsf_file(
         The output plot DPI (higher for better quality plot output).
     """
     points = parse_gsf(gsf_filepath)
+    # the plotting module functions will expect the depth parameter to be
+    # positive, so we multiply by -1 to make it so.
     points["depth"] *= -1
     fig = plot_gsf_points(
         points, grid_resolution, title=plot_title or gsf_filepath.stem
