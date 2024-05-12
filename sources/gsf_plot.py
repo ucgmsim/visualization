@@ -79,7 +79,9 @@ def parse_gsf(gsf_filepath: str) -> pd.DataFrame:
         )
 
 
-def plot_gsf_points(points: pd.DataFrame, grid_resolution: int) -> pygmt.Figure:
+def plot_gsf_points(
+    points: pd.DataFrame, grid_resolution: int, title: str
+) -> pygmt.Figure:
     """Plot a set of GSF points (lat, lon, depth) in a map using PyGMT.
 
     Parameters
@@ -102,7 +104,7 @@ def plot_gsf_points(points: pd.DataFrame, grid_resolution: int) -> pygmt.Figure:
         points["lat"].min() - 1,
         points["lat"].max() + 1,
     ]
-    fig = plotting.gen_region_fig("GSF File", region=region, map_data=None)
+    fig = plotting.gen_region_fig(title, region=region, map_data=None)
     point_grid = plotting.create_grid(
         points,
         "depth",
@@ -139,6 +141,12 @@ def plot_gsf_file(
             min=5,
         ),
     ] = 100,
+    plot_title: Annotated[
+        str,
+        typer.Option(
+            help="The output plot tite. If not specified, this is just the name of the GSF file."
+        ),
+    ] = None,
     plot_dpi: Annotated[
         int, typer.Option(help="The output plot DPI (higher is better).")
     ] = 1200,
@@ -159,7 +167,9 @@ def plot_gsf_file(
     """
     points = parse_gsf(gsf_filepath)
     points["depth"] *= -1
-    fig = plot_gsf_points(points, grid_resolution)
+    fig = plot_gsf_points(
+        points, grid_resolution, title=plot_title or gsf_filepath.stem
+    )
     fig.savefig(figure_plot_path, anti_alias=True, dpi=plot_dpi)
 
 
