@@ -16,112 +16,90 @@ Options:
   --plot-dpi=PLOT_DPI                 The output plot DPI (higher is better). [default: 1200]
 """
 
-import re
+import functools
 from pathlib import Path
-from typing import Annotated, TextIO
+from typing import Annotated, Optional
 
+import numpy as np
 import pandas as pd
-import pygmt
 import typer
+from matplotlib.pyplot import Figure
 from pygmt_helper import plotting
+from qcore import coordinates, gsf
 
 app = typer.Typer()
 
 
-def parse_gsf(gsf_filepath: str) -> pd.DataFrame:
-    """Parse a GSF file into a pandas DataFrame.
+def plot_gsf_segment(fig: Figure, segment_points: pd.DataFrame):
+    """Plot a segment of a fault in a given figure.
 
     Parameters
     ----------
-    gsf_file_handle : TextIO
-        The file handle pointing to the GSF file to read.
-
-    Returns
-    -------
-    pd.DataFrame
-        A DataFrame containing all the points in the GSF file. The DataFrame's columns are
-        - lon (longitude)
-        - lat (latitude)
-        - depth (Kilometres below ground, i.e. depth = -10 indicates a point 10km underground).
-        - sub_dx (The subdivision size in the strike direction)
-        - sub_dy (The subdivision size in the dip direction)
-        - strike
-        - dip
-        - rake
-        - slip (nearly always -1)
-        - init_time (nearly always -1)
-        - seg_no (the fault segment this point belongs to)
+    fig : Figure
+        The figure to plot in.
+    segment_points : pd.DataFrame
+        The points of the segment to plot.
     """
-    with open(gsf_filepath, mode="r", encoding="utf-8") as gsf_file_handle:
-        # we could use pd.read_csv with the skiprows argument, but it's not
-        # as versatile as simply skipping the first n rows with '#'
-        while gsf_file_handle.readline()[0] == "#":
-            pass
-        # NOTE: This skips one line past the last line beginning with #.
-        # This is ok as this line is always the number of points in the GSF
-        # file, which we do not need.
-        return pd.read_csv(
-            gsf_file_handle,
-            sep=r"\s+",
-            names=[
-                "lon",
-                "lat",
-                "depth",
-                "sub_dx",
-                "sub_dy",
-                "strike",
-                "dip",
-                "rake",
-                "slip",
-                "init_time",
-                "seg_no",
-            ],
-        )
+    min_depth = segment_points["depth"].min()
+    max_depth = segment_points["depth"].max()
+    top_edge = segment_points.loc[segment_points["depth"] == min_depth]
+    bottom_edge = segment_points.loc[segment_points["depth"] == max_depth]
+    top_edge = coordinates.wgs_depth_to_nztm(
+        top_edge[["lat", "lon", "depth"]].to_numpy()
+    )
+    bottom_edge = coordinates.wgs_depth_to_nztm(
+        bottom_edge[["lat", "lon", "depth"]].to_numpy()
+    )
+    # luckily GSF points are in order of strike, so the first and
+    # last elements of the top and bottom edges *must* be the corners of the segment.
+    top_left = coordinates.nztm_to_wgs_depth(top_edge[0])
+    top_right = coordinates.nztm_to_wgs_depth(top_edge[-1])
+    bottom_left = coordinates.nztm_to_wgs_depth(bottom_edge[0])
+    bottom_right = coordinates.nztm_to_wgs_depth(bottom_edge[-1])
+    corners = np.vstack([top_left, top_right, bottom_left, bottom_right])
+    ymin, ymax = corners[:, 0].min(), corners[:, 0].max()
+    xmin, xmax = corners[:, 1].min(), corners[:, 1].max()
 
-
-def plot_gsf_points(
-    points: pd.DataFrame, grid_resolution: int, title: str
-) -> pygmt.Figure:
-    """Plot a set of GSF points (lat, lon, depth) in a map using PyGMT.
-
-    Parameters
-    ----------
-    points : pd.DataFrame
-        The GSF points to plot. DataFrame must at least contain the lat, lon and depth columns.
-    grid_resolution : int
-        The resolution of the grid. If this is smaller than the resolution
-        of the grid points in the GSF file, interpolation will occur between
-        gridpoints.
-
-    Returns
-    -------
-    pygmt.Figure
-        The figure containing the plot.
-    """
-    region = [
-        points["lon"].min() - 1,
-        points["lon"].max() + 1,
-        points["lat"].min() - 1,
-        points["lat"].max() + 1,
-    ]
-    fig = plotting.gen_region_fig(title, region=region, map_data=None)
-    point_grid = plotting.create_grid(
-        points,
+    cur_grid = plotting.create_grid(
+        segment_points,
         "depth",
-        grid_spacing=f"{grid_resolution}e/{grid_resolution}e",
-        region=region,
+        grid_spacing="50e/50e",
+        region=(xmin, xmax, ymin, ymax),
         set_water_to_nan=False,
     )
+
     plotting.plot_grid(
         fig,
-        point_grid,
+        cur_grid,
         "hot",
-        (0, points["depth"].max(), 1),
+        (min_depth, max_depth, (max_depth - min_depth) / 20),
         ("white", "black"),
-        plot_contours=False,
+        cb_label="Depth (km)",
+        transparency=0,
+        reverse_cmap=True,
     )
-
-    return fig
+    # plot left, right, and bottom edges with dashed lines.
+    fig.plot(
+        x=[top_left[1], bottom_left[1]],
+        y=[top_left[0], bottom_left[0]],
+        pen="0.5p,black,-",
+    )
+    fig.plot(
+        x=[top_right[1], bottom_right[1]],
+        y=[top_right[0], bottom_right[0]],
+        pen="0.5p,black,-",
+    )
+    fig.plot(
+        x=[bottom_left[1], bottom_right[1]],
+        y=[bottom_left[0], bottom_right[0]],
+        pen="0.5p,black,-",
+    )
+    # plot the fault trace in bold.
+    fig.plot(
+        x=[top_left[1], top_right[1]],
+        y=[top_left[0], top_right[0]],
+        pen="0.5p,black",
+    )
 
 
 @app.command(help="Plot a GSF file using GMT.")
@@ -132,17 +110,8 @@ def plot_gsf_file(
     figure_plot_path: Annotated[
         Path, typer.Argument(help="The file path to output the plot to.", writable=True)
     ],
-    grid_resolution: Annotated[
-        int,
-        typer.Option(
-            help="The resolution to plot the grid points at (in metres)."
-            " This can be different to the resolution of the GSF file."
-            " Interpolation will occur between grid points.",
-            min=5,
-        ),
-    ] = 100,
     plot_title: Annotated[
-        str,
+        Optional[str],
         typer.Option(
             help="The output plot tite. If not specified, this is just the name of the GSF file."
         ),
@@ -165,12 +134,18 @@ def plot_gsf_file(
     plot_dpi : int
         The output plot DPI (higher for better quality plot output).
     """
-    points = parse_gsf(gsf_filepath)
-    # the plotting module functions will expect the depth parameter to be
-    # positive, so we multiply by -1 to make it so.
-    points["depth"] *= -1
-    fig = plot_gsf_points(
-        points, grid_resolution, title=plot_title or gsf_filepath.stem
+    points = gsf.read_gsf(gsf_filepath)
+    region = [
+        points["lon"].min() - 0.5,
+        points["lon"].max() + 0.5,
+        points["lat"].min() - 0.5,
+        points["lat"].max() + 0.5,
+    ]
+    fig = plotting.gen_region_fig(
+        plot_title or gsf_filepath.stem, region=region, map_data=None
+    )
+    points.groupby("seg_no").apply(
+        functools.partial(plot_gsf_segment, fig), include_groups=False
     )
     fig.savefig(figure_plot_path, anti_alias=True, dpi=plot_dpi)
 
