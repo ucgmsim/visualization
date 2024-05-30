@@ -110,7 +110,6 @@ def im_rrup(
     comp_im_csv: Path = None,
     comp_label: str = None,
 ):
-
     im_rrup_path = (git_base / "visualization" / "im" / "im_rrup_mean.py").resolve()
 
     cmd_args = ["python", im_rrup_path, rrup_path, "--imcsv", base_im_csv, base_label]
@@ -156,7 +155,6 @@ def psa_ratios_rrup(
     comp_im_csv: Path,
     comp_label: str,
 ):
-
     psa_ratios_rrup_path = (
         git_base / "visualization" / "im" / "psa_ratios_rrup.py"
     ).resolve()
@@ -191,7 +189,6 @@ def psa_bias(
     comp_im_csv: Path,
     comp_label: str,
 ):
-
     psa_bias_path = (git_base / "visualization" / "im" / "psa_bias.py").resolve()
     cmd_args = [
         "python",
@@ -408,7 +405,6 @@ def main():
         )
 
     if args.plot_items or args.all:
-
         out_dir_plot_items = out_dir / "plot_items"
         stat_file = args.plot_items_stat_file.resolve()
         # Generate spatial ratio XYZ, generate spatial plots from XYZ

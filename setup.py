@@ -3,6 +3,7 @@ Install using pip, e.g. pip install ./visualization
 use --no-deps to prevent re-installation of dependencies
 use -I to force re-install
 """
+
 from glob import glob
 from setuptools import setup
 
