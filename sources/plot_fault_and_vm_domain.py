@@ -50,7 +50,7 @@ map_center = calculate_polygon_center(model_polygon)
 fault_traces = extract_fault_traces_from_hdf5(args.srfinfo)
 
 # Step 5: Check if all fault traces are inside the model corners
-all_inside = all(is_point_in_polygon((trace[1], trace[2]), model_polygon) for trace in fault_traces)
+all_inside = all(is_point_in_polygon(point, model_polygon) for plane in fault_traces for point in plane)
 
 if all_inside:
     print("All fault traces are inside the model corners.")
