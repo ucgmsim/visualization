@@ -1,11 +1,12 @@
-import sqlite3
-import folium
-import webbrowser
 import argparse
 import re
 from pathlib import Path
-from shapely.geometry import Point, Polygon
+import sys
+import webbrowser
+
+import folium
 import h5py
+from shapely.geometry import Point, Polygon
 
 def parse_model_params(file_path):
     with open(file_path, 'r') as file:
@@ -54,7 +55,7 @@ all_inside = all(is_point_in_polygon((trace[1], trace[2]), model_polygon) for tr
 if all_inside:
     print("All fault traces are inside the model corners.")
 else:
-    print("Some fault traces are outside the model corners.")
+    print("ERROR: Some fault traces are outside the model corners.", file=sys.stderr)
 
 # Step 6: Create a folium map centered around the center of the model polygon
 fault_map = folium.Map(location=map_center, zoom_start=7)
