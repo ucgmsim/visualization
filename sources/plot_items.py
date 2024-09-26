@@ -180,6 +180,13 @@ def get_args():
         default=True,
         action="store_false",
     )
+    arg(
+        "--disable-roads",
+        dest="enable_roads",
+        help="Flag to disable roads/highways - these are plotted by default",
+        default=True,
+        action="store_false",
+    )
     arg("-n", "--nproc", help="max number of processes", type=int, default=1)
     arg("-d", "--dpi", help="render DPI", type=int, default=300)
     arg(
@@ -522,6 +529,8 @@ def basemap(args, sizing, wd):
     p.spacial(
         "M", sizing["region"], sizing="%si" % (sizing["size"][0]), x_shift=2, y_shift=2
     )
+    roads = "auto" if args.enable_roads else None
+
     if args.fast:
         p.basemap(
             res="f",
@@ -538,6 +547,8 @@ def basemap(args, sizing, wd):
             topo_cpt="grey1",
             land="lightgray",
             scale=args.downscale,
+            road=roads,
+            highway=roads,
             res="NZ" if region_code == "NZ" else "f",
             resource_region=region_code,
         )
@@ -721,9 +732,11 @@ def render_xyz_col(
         pos="rel_out",
         dy=0.5,
         length=sizing["size"][0] * 0.8,
-        label=args.xyz_cpt_labels[0]
-        if len(args.xyz_cpt_labels) == 1
-        else args.xyz_cpt_labels[i],
+        label=(
+            args.xyz_cpt_labels[0]
+            if len(args.xyz_cpt_labels) == 1
+            else args.xyz_cpt_labels[i]
+        ),
         arrow_f=False if args.xyz_cpt_categorical else xyz["max"] > 0,
         arrow_b=False if args.xyz_cpt_categorical else xyz["min"] < 0,
         categorical=args.xyz_cpt_categorical,

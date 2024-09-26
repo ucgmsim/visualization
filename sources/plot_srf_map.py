@@ -5,16 +5,20 @@
 from argparse import ArgumentParser
 from math import floor, log10
 import os
+from pathlib import Path
 from shutil import rmtree
 from subprocess import call
 import sys
-from tempfile import mkdtemp
+from tempfile import TemporaryDirectory
+
 
 import numpy as np
 
 import qcore.geo as geo
 import qcore.gmt as gmt
 import qcore.srf as srf
+
+DEFAULT_FAULTLINES_FILE = Path(__file__).resolve().parent / "FAULTS_20161219.ll"
 
 
 def get_args():
@@ -23,31 +27,37 @@ def get_args():
 
     arg("srf_file", help="srf file to plot")
     arg("--dpi", help="render dpi", type=int, default=300)
-    arg("--active-faults", help="show active faults", action="store_true")
+    arg("--active-faults", help="show active fault lines", action="store_true")
+    arg(
+        "--faultlines_file",
+        help="faultline coordinates file for --active-faults option",
+        default=DEFAULT_FAULTLINES_FILE,
+    )
     arg("--cpt", help="CPT for SRF slip", default=gmt.CPTS["slip"])
     arg("--depth", help="also make a depth only plot", action="store_true")
     arg("--downscale", help="render resolution multiplier", type=int, default=4)
     arg("--out_dir", help="output directory. default: same directory as srf_file")
 
     args = parser.parse_args()
-    args.srf_file = os.path.abspath(args.srf_file)
-    if not os.path.exists(args.srf_file):
+    args.srf_file = Path(args.srf_file).resolve()
+    if not args.srf_file.exists():
         sys.exit("SRF file not found.")
     if not args.out_dir:
-        args.out_dir = os.path.dirname(
-            os.path.abspath(args.srf_file)
+        args.out_dir = (
+            args.srf_file.parent
         )  # default out_dir is the same directory as SRF
+
+    if not Path(args.faultlines_file).exists():
+        sys.exit(f"Faultlines file not found : {args.faultlines_file}")
 
     return args
 
 
-faults = "/nesi/project/nesi00213/PlottingData/Paths/faults/FAULTS_20161219.ll"
-
 args = get_args()
 # output directory for srf resources
-gmt_tmp = os.path.abspath(mkdtemp())
+gmt_tmp = Path(TemporaryDirectory().name).resolve()
 
-os.makedirs(args.out_dir, exist_ok=True)
+args.out_dir.mkdir(parents=True, exist_ok=True)
 
 # whether we are plotting a finite fault or point source
 finite_fault = srf.is_ff(args.srf_file)
@@ -62,7 +72,7 @@ if finite_fault:
     plot_dx = "%sk" % (dx * 0.6)
     plot_dy = "%sk" % (dy * 0.6)
     # output for plane data
-    os.makedirs(os.path.join(gmt_tmp, "PLANES"))
+    (Path(gmt_tmp) / "PLANES").mkdir(parents=True, exist_ok=True)
 else:
     text_dx = "N/A"
     text_dy = "N/A"
@@ -181,13 +191,11 @@ plot_bounds = "%f %f\n%f %f\n%f %f\n%f %f\n" % (
 ###
 ### OUTPUT 3: GMT MAP
 ###
-perimeters, top_edges = srf.get_perimeter(args.srf_file)
-region_corners = gmt.nz_region  # (lon_min,lon_max,lat_min,lat_max)
 
-if region_code == "KR":
-    region_corners = gmt.kr_region
+region_corners = gmt.region_dict[region_code]
 
 if finite_fault:
+    perimeters, top_edges = srf.get_perimeter(args.srf_file)
     gmt.makecpt(args.cpt, "%s/slip.cpt" % (gmt_tmp), 0, cpt_max, 1)
     gmt.makecpt(
         "gray",
@@ -215,9 +223,7 @@ gap = 1
 full_width = 4
 
 ### PART A: zoomed in map
-p = gmt.GMTPlot(
-    "%s/%s_map.ps" % (gmt_tmp, os.path.splitext(os.path.basename(args.srf_file))[0])
-)
+p = gmt.GMTPlot("%s/%s_map.ps" % (gmt_tmp, args.srf_file.stem))
 # this is how high the region map will end up being
 full_height = gmt.mapproject(
     region_corners[0],
@@ -237,7 +243,7 @@ p.basemap(
     resource_region=region_code,
 )
 if args.active_faults:
-    p.path(faults, is_file=True, close=False, width="0.4p", colour="red")
+    p.path(args.faultlines_file, is_file=True, close=False, width="0.4p", colour="red")
 for seg in range(len(bounds)):
     gmt_outline = "\n".join(" ".join(list(map(str, x))) for x in perimeters[seg])
     gmt_top_edge = "\n".join(" ".join(list(map(str, x))) for x in top_edges[seg])
@@ -364,7 +370,7 @@ p.basemap(
     resource_region=region_code,
 )
 if args.active_faults:
-    p.path(faults, is_file=True, close=False, width="0.1p", colour="red")
+    p.path(args.faultlines_file, is_file=True, close=False, width="0.1p", colour="red")
 p.path(plot_bounds, is_file=False, close=True, colour="black")
 # get displacement of box to draw zoom lines later
 window_bottom = gmt.mapproject(plot_region[1], plot_region[2], wd=gmt_tmp)
@@ -407,7 +413,9 @@ if args.depth:
         topo_cpt="grey1",
     )
     if args.active_faults:
-        p.path(faults, is_file=True, close=False, width="0.4p", colour="red")
+        p.path(
+            args.faultlines_file, is_file=True, close=False, width="0.4p", colour="red"
+        )
     for seg in range(len(bounds)):
         gmt_outline = "\n".join(" ".join(list(map(str, x))) for x in perimeters[seg])
         gmt_top_edge = "\n".join(" ".join(list(map(str, x))) for x in top_edges[seg])
@@ -503,7 +511,7 @@ p.spacial(
 p.text(
     total_width - full_width / 2.0 if args.depth else total_width / 2.0,
     total_height,
-    os.path.basename(args.srf_file),
+    args.srf_file.name,
     align="CB",
     size="20p",
     dy=0.8,

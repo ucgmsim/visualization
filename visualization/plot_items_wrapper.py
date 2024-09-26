@@ -5,18 +5,17 @@ Supports a global options dictionary, or individual option yaml
 files that have the same name as the input csv (except with extension .yaml)
 """
 
-import os
 import glob
-import shutil
-import tempfile
-import subprocess
 import multiprocessing as mp
+import os
+import pathlib
+import shutil
+import subprocess
+import tempfile
 from typing import Dict, Iterable
 
-import yaml
 import pandas as pd
-
-from qcore.utils import change_file_ext
+import yaml
 
 PLOT_CMD_TEMPLATE = "{} {} --xyz {} -f {}"
 
@@ -131,15 +130,15 @@ def plot_single(
         If set then nothing is done if the
         plot file already exists
     """
-    out_ffp = change_file_ext(in_ffp, "png")
-    if no_clobber and os.path.exists(out_ffp):
-        print(f"{os.path.basename(out_ffp)} already exists, skipping.")
+    out_ffp = pathlib.Path(in_ffp).with_suffix(".png")
+    if no_clobber and out_ffp.exists():
+        print(f"{out_ffp.name} already exists, skipping.")
         return None
 
     # Check if there is a individual options dict
-    ind_options_ffp, ind_options_dict = change_file_ext(in_ffp, "yaml"), None
-    if os.path.exists(ind_options_ffp):
-        with open(ind_options_ffp, "r") as f:
+    ind_options_ffp, ind_options_dict = pathlib.Path(in_ffp).with_suffix(".yaml"), None
+    if ind_options_ffp.exists():
+        with open(ind_options_ffp, "r", encoding="utf-8") as f:
             ind_options_dict = yaml.safe_load(f)
 
     options_dict = gen_options_dict
