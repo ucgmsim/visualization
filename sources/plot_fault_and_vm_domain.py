@@ -46,10 +46,16 @@ parser.add_argument(
 parser.add_argument(
     "--show", action="store_true", help="Show the map in the web browser"
 )
+parser.add_argument(
+    "--outdir", type=Path, help="Output directory for the HTML file"
+)
 args = parser.parse_args()
 
 assert args.srfinfo.exists(), f"File {args.srfinfo} does not exist."
 assert args.model_params_file.exists(), f"File {args.model_params_file} does not exist."
+
+if args.outdir is None:
+    args.outdir = args.srfinfo.parent
 
 # Step 2: Parse the model_params file to extract corners
 model_corners = parse_model_params(args.model_params_file)
@@ -68,9 +74,8 @@ all_inside = all(
     for point in plane
 )
 
-if all_inside:
-    print("All fault traces are inside the model corners.")
-else:
+
+if not all_inside:
     print("ERROR: Some fault traces are outside the model corners.", file=sys.stderr)
 
 # Step 6: Create a folium map centered around the center of the model polygon
@@ -85,8 +90,9 @@ for plane in fault_traces:
 folium.Polygon(model_corners, color="red", weight=2.5, opacity=1).add_to(fault_map)
 
 # Step 9: Save the map to an HTML file and open it in the web browser
-map_path = args.srfinfo.with_suffix(".html")
+map_path = args.outdir / f"{args.srfinfo.stem}.html"
 fault_map.save(map_path)
+print(f"Map saved to {map_path}")
 
 if args.show:
     webbrowser.open(str(map_path))
