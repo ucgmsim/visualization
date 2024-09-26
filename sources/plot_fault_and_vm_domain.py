@@ -8,32 +8,44 @@ import folium
 import h5py
 from shapely.geometry import Point, Polygon
 
+
 def parse_model_params(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         content = file.read()
-    corners = re.findall(r'c\d= *([\d\.\-]+) *([\d\.\-]+)', content)
+    corners = re.findall(r"c\d= *([\d\.\-]+) *([\d\.\-]+)", content)
     return [(float(lat), float(lon)) for lon, lat in corners]
+
 
 def is_point_in_polygon(point, polygon):
     return polygon.contains(Point(point))
+
 
 def calculate_polygon_center(polygon):
     centroid = polygon.centroid
     return [centroid.x, centroid.y]
 
+
 def extract_fault_traces_from_hdf5(file_path):
-    with h5py.File(file_path, 'r') as f:
-        corners = f['/'].attrs['corners']
+    with h5py.File(file_path, "r") as f:
+        corners = f["/"].attrs["corners"]
         fault_traces = []
         for plane in corners:
             plane_traces = [(point[1], point[0]) for point in plane]
             fault_traces.append(plane_traces)
     return fault_traces
 
+
 # Step 1: Parse command-line arguments
-parser = argparse.ArgumentParser(description="Plot fault traces and model corners on a map.")
+parser = argparse.ArgumentParser(
+    description="Plot fault traces and model corners on a map."
+)
 parser.add_argument("srfinfo", type=Path, help="Path to the srfinfo file")
-parser.add_argument("model_params_file", type=Path, help="Path to the model_params file")
+parser.add_argument(
+    "model_params_file", type=Path, help="Path to the model_params file"
+)
+parser.add_argument(
+    "--show", action="store_true", help="Show the map in the web browser"
+)
 args = parser.parse_args()
 
 assert args.srfinfo.exists(), f"File {args.srfinfo} does not exist."
@@ -50,7 +62,11 @@ map_center = calculate_polygon_center(model_polygon)
 fault_traces = extract_fault_traces_from_hdf5(args.srfinfo)
 
 # Step 5: Check if all fault traces are inside the model corners
-all_inside = all(is_point_in_polygon(point, model_polygon) for plane in fault_traces for point in plane)
+all_inside = all(
+    is_point_in_polygon(point, model_polygon)
+    for plane in fault_traces
+    for point in plane
+)
 
 if all_inside:
     print("All fault traces are inside the model corners.")
@@ -69,6 +85,8 @@ for plane in fault_traces:
 folium.Polygon(model_corners, color="red", weight=2.5, opacity=1).add_to(fault_map)
 
 # Step 9: Save the map to an HTML file and open it in the web browser
-map_path = args.srfinfo.with_suffix('.html')
+map_path = args.srfinfo.with_suffix(".html")
 fault_map.save(map_path)
-webbrowser.open(str(map_path))
+
+if args.show:
+    webbrowser.open(str(map_path))
