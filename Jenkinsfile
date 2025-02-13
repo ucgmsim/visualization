@@ -7,6 +7,7 @@ pipeline {
             steps {
                 echo "[[ Install GMT ]]"
                 sh """
+                   apt-get update
                    apt-get install -y gmt
                 """
             }
