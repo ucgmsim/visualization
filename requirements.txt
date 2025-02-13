@@ -1,3 +1,0 @@
-pytest>=3.5.0
-pytest-black
-PyYAML
