@@ -1,0 +1,13 @@
+diffimg
+matplotlib
+numpy
+pygmt_helper @ git+https://github.com/ucgmsim/pygmt_helper.git
+qcore @ git+https://github.com/ucgmsim/qcore.git
+geopandas
+pandas
+shapely
+pooch
+pytest
+pytest-cov
+scipy
+typer
