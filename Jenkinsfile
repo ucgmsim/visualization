@@ -3,13 +3,15 @@ pipeline {
         docker { image 'python:3.13' }
     }
     stages {
-        stage('Setting up env') {
+        stage('Installing OS Dependencies') {
             steps {
                 echo "[[ Install GMT ]]"
                 sh """
-                   sudo apt install gmt
+                   sudo apt-get install -y gmt
                 """
             }
+        }
+        stage('Setting up env') {
             steps {
                 echo "[[ Start virtual environment ]]"
                 sh """
