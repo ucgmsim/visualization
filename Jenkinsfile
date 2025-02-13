@@ -8,7 +8,7 @@ pipeline {
                 echo "[[ Install GMT ]]"
                 sh """
                    apt-get update
-                   apt-get install -y gmt
+                   apt-get install -y gmt libgmt-dev libgmt6
                 """
             }
         }
