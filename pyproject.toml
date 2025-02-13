@@ -1,0 +1,99 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "visualisation"
+authors = [{ name = "QuakeCoRE" }]
+description = "Visualisation repository for plotting scripts."
+readme = "README.md"
+requires-python = ">=3.12"
+dynamic = ["version", "dependencies"]
+
+
+[project.scripts]
+plot-srf-moment = "visualisation.sources.plot_srf_moment:app"
+plot-srf-cumulative-moment = "visualisation.sources.plot_srf_cumulative_moment:app"
+plot-srf = "visualisation.sources.plot_srf:app"
+plot-srf-rakes = "visualisation.sources.plot_rakes:app"
+plot-srf-rise = "visualisation.sources.plot_rise:app"
+plot-mw-contributions = "visualisation.sources.plot_mw_contributions:app"
+plot-slip-rise-rake = "visualisation.sources.plot_slip_rise_rake:app"
+plot-srf-distribution = "visualisation.sources.plot_srf_distribution:app"
+
+[tool.setuptools.package-dir]
+visualisation = "visualisation"
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.ruff.lint]
+extend-select = [
+  # isort imports
+  "I",
+  # Use r'\s+' rather than '\s+'
+  "W605",
+  # All the naming errors, like using camel case for function names.
+  "N",
+  # Missing docstrings in classes, methods, and functions
+  "D101",
+  "D102",
+  "D103",
+  "D105",
+  "D107",
+  # Use f-string instead of a format call
+  "UP032",
+  # Standard library import is deprecated
+  "UP035",
+  # Missing function argument type-annotation
+  "ANN001",
+  # Using except without specifying an exception type to catch
+  "BLE001"
+]
+ignore = ["D104"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "visualisation",
+    "workflow",
+    "pygmt_helper",
+    "qcore",
+    "empirical",
+    "nshmdb",
+    "IM_calculation",
+    "mera"
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore no docstring in __init__.py
+"__init__.py" = ["D104"]
+# Ignore docstring errors in tests folder
+"tests/**.py" = ["D"]
+# ignore everything in the ccld.py module
+
+[tool.numpydoc_validation]
+checks = [
+  "GL05",
+  "GL08",
+  "GL10",
+  "PR01",
+  "PR02",
+  "PR03",
+  "PR04",
+  "PR05",
+  "PR06",
+  "PR07",
+  "RT01",
+  "RT02",
+  "RT03",
+  "RT04",
+  "YD01",
+]
+# remember to use single quotes for regex in TOML
+exclude = [  # don't report on objects that match any of these regex
+    '\.undocumented_method$',
+    '\.__repr__$',
+]
