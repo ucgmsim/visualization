@@ -5,6 +5,12 @@ pipeline {
     stages {
         stage('Setting up env') {
             steps {
+                echo "[[ Install GMT ]]"
+                sh """
+                   sudo apt install gmt
+                """
+            }
+            steps {
                 echo "[[ Start virtual environment ]]"
                 sh """
                     cd ${env.WORKSPACE}
