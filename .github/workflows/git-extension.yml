@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: sed -i '/git\+/ { /\.git$/! s/$/.git/ }' requirements.txt
+      - run: sed -ir '/git\+/ { /\.git(@\w+)?$/! s/(@\w+)?$/.git\1/ }' requirements.txt
       - uses: parkerbxyz/suggest-changes@v2
         with:
           comment: 'Please change the following dependencies for consistency.'
