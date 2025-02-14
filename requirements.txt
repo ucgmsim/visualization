@@ -11,5 +11,4 @@ shapely
 pooch
 pytest
 pytest-cov
-scipy
 typer
