@@ -6,8 +6,8 @@ from typing import Annotated
 import numpy as np
 import typer
 from matplotlib import pyplot as plt
-
 from source_modelling import moment, rupture_propagation, srf
+
 from workflow.realisations import (
     RealisationMetadata,
     RupturePropagationConfig,

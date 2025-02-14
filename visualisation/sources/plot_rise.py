@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
+from source_modelling import srf
 
 from pygmt_helper import plotting
-from source_modelling import srf
 
 app = typer.Typer()
 

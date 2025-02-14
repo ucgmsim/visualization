@@ -3,16 +3,16 @@ from pathlib import Path
 
 import diffimg
 import pytest
+
 from visualisation.sources import (
     plot_rakes,
     plot_rise,
+    plot_slip_rise_rake,
     plot_srf,
     plot_srf_cumulative_moment,
-    plot_srf_moment,
     plot_srf_distribution,
-    plot_slip_rise_rake,
+    plot_srf_moment,
 )
-
 
 PLOT_IMAGE_DIRECTORY = Path("wiki/images")
 SRF_FFP = Path(__file__).parent / "srfs" / "rupture_1.srf"
