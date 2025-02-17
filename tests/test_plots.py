@@ -12,6 +12,7 @@ from visualisation.sources import (
     plot_srf_cumulative_moment,
     plot_srf_distribution,
     plot_srf_moment,
+    plot_mw_contributions,
 )
 
 PLOT_IMAGE_DIRECTORY = Path("wiki/images")
@@ -50,6 +51,18 @@ def test_plot_functions(
     original = PLOT_IMAGE_DIRECTORY / expected_image_name
     generated = output_image_path
 
+    diff = diffimg.diff(original, generated)
+    assert diff <= 0.05
+
+
+def test_plot_mw_contributions(tmp_path: Path):
+
+    original = PLOT_IMAGE_DIRECTORY / "example_mw_contributions.png"
+    generated = tmp_path / "output.png"
+
+    plot_mw_contributions.plot_mw_contributions(
+        SRF_FFP, REALISATION_FFP, generated, width=15, height=15
+    )
     diff = diffimg.diff(original, generated)
     assert diff <= 0.05
 
