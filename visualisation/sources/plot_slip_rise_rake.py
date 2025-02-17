@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Annotated, NamedTuple, Optional
 
 import geopandas as gpd
+import matplotlib
 import numpy as np
 import pandas as pd
 import pooch
@@ -468,6 +469,7 @@ def plot_slip_rise_rake(
     width : float
         Plot width (cm)
     """
+    matplotlib.rcParams.update(matplotlib.rcParamsDefault)
     srf_data = srf.read_srf(srf_ffp)
     centimeters = 1 / 2.54
 
@@ -523,7 +525,6 @@ def plot_slip_rise_rake(
         axes[3].set_title(f"Slip Density on Segment {i + 1}")
     else:
         plt.rcParams.update(PLOT_CONFIG)
-
         fig = plt.figure(figsize=(width * centimeters, height * centimeters))
         gs = fig.add_gridspec(rows, cols + 1, width_ratios=[1] * cols + [cols])
 
