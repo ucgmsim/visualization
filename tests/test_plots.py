@@ -5,6 +5,7 @@ import diffimg
 import pytest
 
 from visualisation.sources import (
+    plot_mw_contributions,
     plot_rakes,
     plot_rise,
     plot_slip_rise_rake,
@@ -12,7 +13,6 @@ from visualisation.sources import (
     plot_srf_cumulative_moment,
     plot_srf_distribution,
     plot_srf_moment,
-    plot_mw_contributions,
 )
 
 PLOT_IMAGE_DIRECTORY = Path("wiki/images")
