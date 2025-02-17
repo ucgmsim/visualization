@@ -20,6 +20,7 @@ pipeline {
             steps {
                 echo "[[ Start virtual environment ]]"
                 sh """
+                    source $HOME/.local/bin/env sh
                     cd ${env.WORKSPACE}
                     uv venv
                     source .venv/bin/activate
