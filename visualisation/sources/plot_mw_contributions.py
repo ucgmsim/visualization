@@ -13,27 +13,20 @@ from workflow.realisations import (
     RupturePropagationConfig,
     SourceConfig,
 )
+from visualisation import utils
 
 app = typer.Typer()
 
 
-@app.command(help="Plot segment magnitudes against the Leonard scaling relation.")
+@app.command()
+@utils.from_docstring
 def plot_mw_contributions(
-    srf_ffp: Annotated[
-        Path, typer.Argument(help="Path to SRF file", exists=True, dir_okay=False)
-    ],
-    realisation_ffp: Annotated[
-        Path,
-        typer.Argument(help="Realisation filepath", dir_okay=False, exists=True),
-    ],
-    output_ffp: Annotated[
-        Path, typer.Argument(help="Output plot path.", writable=True, dir_okay=False)
-    ],
-    dpi: Annotated[
-        float, typer.Option(help="Output plot DPI (higher is better).")
-    ] = 300,
-    height: Annotated[float, typer.Option(help="Plot height (cm)", min=0)] = 10,
-    width: Annotated[float, typer.Option(help="Plot width (cm)", min=0)] = 10,
+    srf_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    realisation_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    output_ffp: Annotated[Path, typer.Argument(dir_okay=False)],
+    dpi: Annotated[float, typer.Option()] = 300,
+    height: Annotated[float, typer.Option(min=0)] = 10,
+    width: Annotated[float, typer.Option(min=0)] = 10,
 ) -> None:
     """Plot segment magnitudes against the Leonard scaling relation.
 

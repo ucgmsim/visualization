@@ -9,42 +9,24 @@ from source_modelling import srf
 
 from pygmt_helper import plotting
 from qcore import coordinates
+from visualisation import utils
 
 app = typer.Typer()
 
 
-@app.command(help="Plot multi-segment rupture with slip.")
+@app.command()
+@utils.from_docstring
 def plot_srf(
-    srf_ffp: Annotated[
-        Path, typer.Argument(help="Path to SRF file to plot.", exists=True)
-    ],
-    output_ffp: Annotated[
-        Path, typer.Argument(help="Output plot image.", dir_okay=False)
-    ],
-    dpi: Annotated[
-        float, typer.Option(help="Plot output DPI (higher is better)")
-    ] = 300,
-    title: Annotated[Optional[str], typer.Option(help="Plot title to use")] = None,
-    levels: Annotated[
-        float,
-        typer.Option(
-            help="Plot time as contours of every LEVELS seconds", metavar="LEVELS"
-        ),
-    ] = 1,
-    realisation_ffp: Annotated[
-        Optional[Path],
-        typer.Option(
-            help="Path to realisation, used to mark jump points.", exists=True
-        ),
-    ] = None,
-    latitude_pad: Annotated[
-        float, typer.Option(help="Latitude padding to apply (degrees)")
-    ] = 0,
-    longitude_pad: Annotated[
-        float, typer.Option(help="longitude padding to apply (degrees)")
-    ] = 0,
-    annotations: Annotated[bool, typer.Option(help="Label contours")] = True,
-    width: Annotated[float, typer.Option(help="Plot width (cm)", min=0)] = 17,
+    srf_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    output_ffp: Annotated[Path, typer.Argument(dir_okay=False)],
+    dpi: Annotated[float, typer.Option()] = 300,
+    title: Annotated[Optional[str], typer.Option()] = None,
+    levels: Annotated[float, typer.Option(metavar="LEVELS", min=0)] = 1,
+    realisation_ffp: Annotated[Optional[Path], typer.Option(exists=True)] = None,
+    latitude_pad: Annotated[float, typer.Option()] = 0,
+    longitude_pad: Annotated[float, typer.Option()] = 0,
+    annotations: Annotated[bool, typer.Option()] = True,
+    width: Annotated[float, typer.Option(min=0)] = 17,
 ) -> None:
     """Plot multi-segment rupture with slip.
 
@@ -57,7 +39,7 @@ def plot_srf(
     dpi : float
         Plot output DPI (higher is better).
     title : Optional[str]
-        Plot title to use
+        Plot title to use.
     levels : float
         Plot time as contours of every `levels` seconds.
     realisation_ffp : Optional[Path]

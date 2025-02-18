@@ -7,52 +7,42 @@ import numpy as np
 import typer
 from source_modelling import srf
 
+from visualisation import utils
 from pygmt_helper import plotting
 
 app = typer.Typer()
 
 
-@app.command(help="Plot a sample of rake values across a multi-segment rupture.")
+@app.command()
+@utils.from_docstring
 def plot_rakes(
-    srf_ffp: Annotated[
-        Path, typer.Argument(help="Path to SRF file to plot.", exists=True)
-    ],
-    output_ffp: Annotated[
-        Path, typer.Argument(help="Output plot image.", dir_okay=False)
-    ],
-    dpi: Annotated[
-        float, typer.Option(help="Plot output DPI (higher is better).")
-    ] = 300,
-    title: Annotated[Optional[str], typer.Option(help="Plot title to use.")] = None,
-    sample_size: Annotated[
-        int, typer.Option(help="Number of points to sample for rake.")
-    ] = 200,
-    vector_length: Annotated[
-        float, typer.Option(help="Length of rake vectors (cm).")
-    ] = 0.2,
-    seed: Annotated[
-        Optional[int], typer.Option(help="Random seed to sample rakes with")
-    ] = None,
-    width: Annotated[float, typer.Option(help="Plot width (cm)", min=0)] = 17,
+    srf_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    output_ffp: Annotated[Path, typer.Argument(dir_okay=False)],
+    dpi: Annotated[float, typer.Option()] = 300,
+    title: Annotated[Optional[str], typer.Option()] = None,
+    sample_size: Annotated[int, typer.Option()] = 200,
+    vector_length: Annotated[float, typer.Option()] = 0.2,
+    seed: Annotated[Optional[int], typer.Option()] = None,
+    width: Annotated[float, typer.Option(min=0)] = 17,
 ) -> None:
-    """Plot an SRF file and output a PNG file.
+    """Plot a sample of rake values across a multi-segment rupture.
 
     Parameters
     ----------
     srf_ffp : Path
-        Path to the SRF file.
+        Path to the SRF file to plot.
     output_ffp : Path
-        Path of the output plot image.
-    dpi : float, default 300
+        Output plot image.
+    dpi : float
         Plot output DPI (higher is better).
-    title : Optional[str], default None
+    title : Optional[str]
         Plot title to use.
-    sample_size : int, default 200
+    sample_size : int
         Number of points to sample for rake.
-    vector_length : float, default 0.2cm
+    vector_length : float
         Length of rake vectors (cm).
-    seed : int
-        The random seed to sample rakes with.
+    seed : Optional[int]
+        Random seed to sample rakes with.
     width : float
         Width of plot (in cm).
     """

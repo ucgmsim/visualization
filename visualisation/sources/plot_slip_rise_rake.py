@@ -10,13 +10,13 @@ import pandas as pd
 import pooch
 import shapely
 import typer
-from matplotlib import cm as cm
 from matplotlib import pyplot as plt
 from pooch import Unzip
 from source_modelling import rupture_propagation, srf
 from source_modelling.sources import Fault
 
 from qcore import coordinates
+from visualisation import utils
 from workflow.realisations import RupturePropagationConfig, SourceConfig
 
 app = typer.Typer()
@@ -36,30 +36,6 @@ PLOT_CONFIG = {
     "legend.fontsize": 12,
     "figure.titlesize": 18,
 }
-
-
-def format_description(arr: np.ndarray, dp: float = 0) -> str:
-    """Format a statistical description of an array.
-
-    Parameters
-    ----------
-    arr : np.ndarray
-        Input array.
-    dp : float, optional
-        Decimal places to round to, by default 0.
-
-    Returns
-    -------
-    str
-        Formatted string containing min, mean, max, and standard deviation.
-    """
-    min = arr.min()
-    mean = np.mean(arr)
-    max = arr.max()
-    std = np.std(arr)
-    return (
-        f"min = {min:.{dp}f}\nμ = {mean:.{dp}f} (σ = {std:.{dp}f})\nmax = {max:.{dp}f}"
-    )
 
 
 def create_grid(
@@ -150,7 +126,7 @@ def plot_contour(
         ax.text(
             1.0,
             1.1,
-            format_description(data),
+            utils.format_description(data),
             transform=ax.transAxes,
             ha="center",
         )
@@ -348,7 +324,7 @@ def plot_slip_histogram(ax: plt.Axes, slip: np.ndarray, summary: bool = True) ->
         ax.text(
             1.0,
             1.1,
-            format_description(slip),
+            utils.format_description(slip),
             transform=ax.transAxes,
             ha="center",
         )
@@ -425,39 +401,34 @@ class PlotType(StrEnum):
     distribution = "dist"
 
 
-@app.command(help="Plot slip-rise-rake for segments")
+@app.command()
+@utils.from_docstring
 def plot_slip_rise_rake(
-    realisation_ffp: Annotated[
-        Path, typer.Argument(help="Path to realisation.", exists=True, dir_okay=False)
-    ],
+    realisation_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     srf_ffp: Annotated[
         Path,
-        typer.Argument(help="Path to SRF file to plot.", exists=True, dir_okay=False),
+        typer.Argument(exists=True, dir_okay=False),
     ],
-    output_ffp: Annotated[
-        Path, typer.Argument(help="Output plot image.", dir_okay=False)
-    ],
-    dpi: Annotated[
-        float, typer.Option(help="Plot output DPI (higher is better)")
-    ] = 300,
-    title: Annotated[Optional[str], typer.Option(help="Plot title to use")] = None,
-    width: Annotated[float, typer.Option(help="Plot width (cm)", min=0)] = 10,
-    height: Annotated[float, typer.Option(help="Plot height (cm)", min=0)] = 10,
+    output_ffp: Annotated[Path, typer.Argument(dir_okay=False)],
+    dpi: Annotated[float, typer.Option()] = 300,
+    title: Annotated[Optional[str], typer.Option()] = None,
+    width: Annotated[float, typer.Option(min=0)] = 10,
+    height: Annotated[float, typer.Option(min=0)] = 10,
     plot_type: Annotated[
         PlotType,
-        typer.Option(
-            help="Plot type",
-        ),
+        typer.Option(),
     ] = PlotType.slip,
     segment: Annotated[
         Optional[int],
-        typer.Option(help="Get a complete overview for an individual segment."),
+        typer.Option(),
     ] = None,
 ) -> None:
     """Plot slip-rise-rake for segments.
 
     Parameters
     ----------
+    realisation_ffp : Path
+        Path to ralisation file.
     srf_ffp : Path
         Path to SRF file to plot.
     output_ffp : Path
@@ -465,9 +436,15 @@ def plot_slip_rise_rake(
     dpi : float
         Plot output DPI (higher is better).
     title : Optional[str]
-        Plot title to use
+        Plot title to use.
     width : float
-        Plot width (cm)
+        Plot width (cm).
+    height : float
+        Plot height (cm).
+    plot_type : PlotType
+        Type of plot to generate.
+    segment : int, optional
+        The segment to plot, default will plot all segments.
     """
     matplotlib.rcParams.update(matplotlib.rcParamsDefault)
     srf_data = srf.read_srf(srf_ffp)

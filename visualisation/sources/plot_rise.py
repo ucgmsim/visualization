@@ -7,25 +7,21 @@ import typer
 from source_modelling import srf
 
 from pygmt_helper import plotting
+from visualisation import utils
 
 app = typer.Typer()
 
 
-@app.command(help="Plot multi-segment rupture with rise.")
+@app.command()
+@utils.from_docstring
 def plot_rise(
-    srf_ffp: Annotated[
-        Path, typer.Argument(help="Path to SRF file to plot.", exists=True)
-    ],
-    output_ffp: Annotated[
-        Path, typer.Argument(help="Output plot image.", dir_okay=False)
-    ],
-    dpi: Annotated[
-        float, typer.Option(help="Plot output DPI (higher is better)")
-    ] = 300,
-    title: Annotated[Optional[str], typer.Option(help="Plot title to use")] = None,
-    width: Annotated[float, typer.Option(help="Plot width (cm)", min=0)] = 17,
+    srf_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    output_ffp: Annotated[Path, typer.Argument(dir_okay=False)],
+    dpi: Annotated[float, typer.Option()] = 300,
+    title: Annotated[Optional[str], typer.Option()] = None,
+    width: Annotated[float, typer.Option(min=0)] = 17,
 ) -> None:
-    """Plot multi-segment drupture with rise.
+    """Plot multi-segment rupture with rise.
 
     Parameters
     ----------
@@ -33,9 +29,9 @@ def plot_rise(
         Path to SRF file to plot.
     output_ffp : Path
         Output plot image.
-    dpi : float, default 300
+    dpi : float
         Plot output DPI (higher is better).
-    title : Optional[str], default None
+    title : Optional[str]
         Plot title to use.
     width : float
         Width of plot (in cm).

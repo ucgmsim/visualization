@@ -6,32 +6,22 @@ from typing import Annotated, Optional
 import typer
 from matplotlib import pyplot as plt
 from source_modelling import moment, rupture_propagation, srf
+from visualisation import utils
 
 app = typer.Typer()
 
 
-@app.command(help="Plot released moment for an SRF over time.")
+@app.command()
+@utils.from_docstring
 def plot_srf_moment(
     srf_ffp: Annotated[
-        Path,
-        typer.Argument(
-            help="SRF filepath to plot", exists=True, readable=True, dir_okay=False
-        ),
+        Path, typer.Argument(exists=True, readable=True, dir_okay=False)
     ],
-    output_png_ffp: Annotated[
-        Path, typer.Argument(help="Output plot path", writable=True, dir_okay=False)
-    ],
-    dpi: Annotated[
-        int, typer.Option(help="Plot image pixel density (higher = better)", min=300)
-    ] = 300,
-    realisation_ffp: Annotated[
-        Optional[Path],
-        typer.Option(
-            help="Path to realisation, used to plot individual fault contribution."
-        ),
-    ] = None,
-    height: Annotated[float, typer.Option(help="Plot height (cm)", min=0)] = 10,
-    width: Annotated[float, typer.Option(help="Plot width (cm)", min=0)] = 10,
+    output_png_ffp: Annotated[Path, typer.Argument(writable=True, dir_okay=False)],
+    dpi: Annotated[int, typer.Option(min=300)] = 300,
+    realisation_ffp: Annotated[Optional[Path], typer.Option()] = None,
+    height: Annotated[float, typer.Option(min=0)] = 10,
+    width: Annotated[float, typer.Option(min=0)] = 10,
 ) -> None:
     """Plot released moment for an SRF over time.
 
@@ -41,9 +31,9 @@ def plot_srf_moment(
         SRF filepath to plot.
     output_png_ffp : Path
         Output plot path.
-    dpi : float, default 300
+    dpi : int
         Plot image pixel density (higher = better).
-    realisation_ffp : Optional[Path], default None
+    realisation_ffp : Optional[Path]
         Path to realisation, used to plot individual fault contribution.
     height : float
         Height of plot (in cm).
