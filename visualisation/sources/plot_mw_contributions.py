@@ -7,8 +7,8 @@ import numpy as np
 import typer
 from matplotlib import pyplot as plt
 
+from qcore import cli
 from source_modelling import moment, rupture_propagation, srf
-from visualisation import utils
 from workflow.realisations import (
     RealisationMetadata,
     RupturePropagationConfig,
@@ -18,8 +18,7 @@ from workflow.realisations import (
 app = typer.Typer()
 
 
-@app.command()
-@utils.from_docstring
+@cli.from_docstring(app)
 def plot_mw_contributions(
     srf_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     realisation_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],

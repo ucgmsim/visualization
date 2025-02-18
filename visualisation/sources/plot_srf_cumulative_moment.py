@@ -7,14 +7,13 @@ import numpy as np
 import typer
 from matplotlib import pyplot as plt
 
+from qcore import cli
 from source_modelling import moment, rupture_propagation, srf
-from visualisation import utils
 
 app = typer.Typer()
 
 
-@app.command()
-@utils.from_docstring
+@cli.from_docstring(app)
 def plot_srf_cumulative_moment(
     srf_ffp: Annotated[
         Path, typer.Argument(exists=True, readable=True, dir_okay=False)

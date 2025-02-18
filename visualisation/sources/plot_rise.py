@@ -6,14 +6,13 @@ from typing import Annotated, Optional
 import typer
 
 from pygmt_helper import plotting
+from qcore import cli
 from source_modelling import srf
-from visualisation import utils
 
 app = typer.Typer()
 
 
-@app.command()
-@utils.from_docstring
+@cli.from_docstring(app)
 def plot_rise(
     srf_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     output_ffp: Annotated[Path, typer.Argument(dir_okay=False)],

@@ -14,7 +14,7 @@ import typer
 from matplotlib import pyplot as plt
 from pooch import Unzip
 
-from qcore import coordinates
+from qcore import cli, coordinates
 from source_modelling import rupture_propagation, srf
 from source_modelling.sources import Fault
 from visualisation import utils
@@ -404,8 +404,7 @@ class PlotType(StrEnum):
     distribution = "dist"
 
 
-@app.command()
-@utils.from_docstring
+@cli.from_docstring(app)
 def plot_slip_rise_rake(
     realisation_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     srf_ffp: Annotated[
