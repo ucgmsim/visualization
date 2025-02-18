@@ -1,4 +1,5 @@
 diffimg
+docstring_parser
 matplotlib
 numpy
 pygmt_helper @ git+https://github.com/ucgmsim/pygmt_helper.git
