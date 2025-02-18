@@ -1,3 +1,5 @@
+"""Utility functions common to many plotting scripts."""
+
 import inspect
 from functools import wraps
 from collections.abc import Callable
@@ -8,6 +10,8 @@ import typer
 from docstring_parser.common import DocstringStyle
 
 
+# Originally written by @Genfood: https://github.com/fastapi/typer/issues/336#issuecomment-2434726193
+# Updated and modified for Python 3.13.
 def from_docstring(command: Callable) -> Callable:
     """Apply help texts from the function's docstring to Typer arguments/options.
 
@@ -42,7 +46,7 @@ def from_docstring(command: Callable) -> Callable:
     parameters = sig.parameters
 
     @wraps(command)
-    def wrapper(**kwargs: Any) -> Any:
+    def wrapper(**kwargs: Any) -> Any:  # numpydoc ignore=GL08
         return command(**kwargs)
 
     # Prepare a new mapping for parameters

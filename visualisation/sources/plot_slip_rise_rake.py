@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Plot slip-rise-rake for segments."""
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, NamedTuple, Optional
@@ -105,6 +106,8 @@ def plot_contour(
         Contour levels for the overlay, by default None.
     extra_contour_color : str, optional
         Color for additional contours, by default "black".
+    summary : bool, optional
+        If True, include a summary text box, by default True.
     """
     x, y = create_grid(data, length, width)
     contours = ax.contourf(x, y, data, cmap=cmap, levels=levels)

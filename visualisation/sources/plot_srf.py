@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Plot multi-segment rupture with slip."""
 
 from pathlib import Path
