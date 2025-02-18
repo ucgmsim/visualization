@@ -1,11 +1,12 @@
 """Utility functions common to many plotting scripts."""
 
 import inspect
-from functools import wraps
 from collections.abc import Callable
+from functools import wraps
 from typing import Annotated, Any, get_args, get_origin
 
 import docstring_parser
+import numpy as np
 import typer
 from docstring_parser.common import DocstringStyle
 

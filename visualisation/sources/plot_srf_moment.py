@@ -5,6 +5,7 @@ from typing import Annotated, Optional
 
 import typer
 from matplotlib import pyplot as plt
+
 from source_modelling import moment, rupture_propagation, srf
 from visualisation import utils
 

@@ -13,10 +13,10 @@ import shapely
 import typer
 from matplotlib import pyplot as plt
 from pooch import Unzip
-from source_modelling import rupture_propagation, srf
-from source_modelling.sources import Fault
 
 from qcore import coordinates
+from source_modelling import rupture_propagation, srf
+from source_modelling.sources import Fault
 from visualisation import utils
 from workflow.realisations import RupturePropagationConfig, SourceConfig
 

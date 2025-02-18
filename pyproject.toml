@@ -57,6 +57,7 @@ convention = "numpy"
 
 [tool.ruff.lint.isort]
 known-first-party = [
+    "source_modelling",
     "visualisation",
     "workflow",
     "pygmt_helper",

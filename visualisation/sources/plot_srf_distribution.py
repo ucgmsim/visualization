@@ -5,8 +5,8 @@ from typing import Annotated, Optional
 
 import typer
 from matplotlib import pyplot as plt
-from source_modelling import srf
 
+from source_modelling import srf
 from visualisation import utils
 
 app = typer.Typer()

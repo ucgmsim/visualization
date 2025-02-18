@@ -5,10 +5,10 @@ from typing import Annotated, Optional
 
 import numpy as np
 import typer
-from source_modelling import srf
 
-from visualisation import utils
 from pygmt_helper import plotting
+from source_modelling import srf
+from visualisation import utils
 
 app = typer.Typer()
 

@@ -6,14 +6,14 @@ from typing import Annotated
 import numpy as np
 import typer
 from matplotlib import pyplot as plt
-from source_modelling import moment, rupture_propagation, srf
 
+from source_modelling import moment, rupture_propagation, srf
+from visualisation import utils
 from workflow.realisations import (
     RealisationMetadata,
     RupturePropagationConfig,
     SourceConfig,
 )
-from visualisation import utils
 
 app = typer.Typer()
 
