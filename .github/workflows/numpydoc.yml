@@ -33,4 +33,4 @@ jobs:
 
       - name: Run Numpydoc Lint
         run: |
-          fdfind . source_modelling/ -E "__init__.py" -E ccldpy.py --extension py -x numpydoc lint
+          fdfind . visualisation/ -E "__init__.py" -E ccldpy.py --extension py -x numpydoc lint
