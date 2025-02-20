@@ -46,7 +46,7 @@ def plot_srf_distribution(
     ax.set_xlabel("Slip (cm)")
     ax.set_title(
         title
-        or f'Slip PDF for {srf_ffp.stem} ({utils.format_description(srf_data.points["slip"])})'
+        or f'Slip PDF for {srf_ffp.stem} ({utils.format_description(srf_data.points["slip"], compact=True)})'
     )
 
     plt.savefig(plot_png, dpi=dpi)
