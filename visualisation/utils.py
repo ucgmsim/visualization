@@ -11,6 +11,8 @@ def format_description(arr: np.ndarray, dp: float = 0, compact: bool = False) ->
         Input array.
     dp : float, optional
         Decimal places to round to, by default 0.
+    compact : bool, optional
+        Whether to return a compact string (i.e. on one line), by default False.
 
     Returns
     -------
