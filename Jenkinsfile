@@ -10,21 +10,16 @@ pipeline {
                    apt-get update
                    apt-get install -y gmt libgmt-dev libgmt6 ghostscript
                 """
-                echo "[[ Install uv ]]"
-                sh """
-                    curl -LsSf https://astral.sh/uv/install.sh | sh
-                """
             }
         }
         stage('Setting up env') {
             steps {
                 echo "[[ Start virtual environment ]]"
                 sh """
-                    source ~/.local/bin/env sh
                     cd ${env.WORKSPACE}
-                    uv venv
+                    python -m venv .venv
                     source .venv/bin/activate
-                    uv pip install -e .
+                    pip install -e .
                 """
             }
         }
