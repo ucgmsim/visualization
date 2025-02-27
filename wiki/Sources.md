@@ -7,24 +7,27 @@ A how-to guide on using the source-modelling repo to plot SRF files various ways
 Before you can plot anything, you need to install the visualisation repository. You can do that with `pip install git+https://github.com/ucgmsim/visualisation`. Assuming you've done that correctly you should be able to execute `plot-srf --help` and get output like
 
 ```
- Usage: plot-srf [OPTIONS] SRF_FFP OUTPUT_FFP                                                                                                                 
-                                                                                                                                                              
- Plot multi-segment rupture with time-slip-rise.                                                                                                              
-                                                                                                                                                              
-╭─ Arguments ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ *    srf_ffp         PATH  Path to SRF file to plot. [default: None] [required]                                                                            │
-│ *    output_ffp      FILE  Output plot image. [default: None] [required]                                                                                   │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --dpi                                    FLOAT   Plot output DPI (higher is better) [default: 300]                                                         │
-│ --title                                  TEXT    Plot title to use [default: Title]                                                                        │
-│ --levels                                 LEVELS  Plot time as contours of every LEVELS seconds [default: 1]                                                │
-│ --realisation-ffp                        PATH    Path to realisation, used to mark jump points. [default: None]                                            │
-│ --latitude-pad                           FLOAT   Latitude padding to apply (degrees) [default: 0]                                                          │
-│ --longitude-pad                          FLOAT   longitude padding to apply (degrees) [default: 0]                                                         │
-│ --annotations        --no-annotations            Label contours [default: annotations]                                                                     │
-│ --help                                           Show this message and exit.                                                                               │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ Usage: plot-srf [OPTIONS] SRF_FFP OUTPUT_FFP
+
+ Plot multi-segment rupture with slip.
+
+╭─ Arguments ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *    srf_ffp         FILE  Path to SRF file to plot. [default: None] [required]                                                                                                             │
+│ *    output_ffp      FILE  Output plot image. [default: None] [required]                                                                                                                    │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --dpi                                       FLOAT               Plot output DPI (higher is better). [default: 300]                                                                          │
+│ --title                                     TEXT                Plot title to use. [default: None]                                                                                          │
+│ --realisation-ffp                           PATH                Path to realisation, used to mark jump points. [default: None]                                                              │
+│ --latitude-pad                              FLOAT               Latitude padding to apply (degrees). [default: 0]                                                                           │
+│ --longitude-pad                             FLOAT               Longitude padding to apply (degrees). [default: 0]                                                                          │
+│ --annotations           --no-annotations                        Label contours. [default: annotations]                                                                                      │
+│ --width                                     FLOAT RANGE [x>=0]  Width of plot (in cm). [default: 17]                                                                                        │
+│ --show-inset            --no-show-inset                         If True, show an inset overview map. [default: no-show-inset]                                                               │
+│ --install-completion                                            Install completion for the current shell.                                                                                   │
+│ --show-completion                                               Show completion for the current shell, to copy it or customize the installation.                                            │
+│ --help                                                          Show this message and exit.                                                                                                 │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 > [!NOTE]
@@ -84,7 +87,7 @@ Which produces the cumulative moment function for the SRF and plots it.
 
 ![](images/srf_cumulative_moment_rate_example.png)
 
-The shaded area under the curve represents the time for the rupture to release 5-95% of its moment. 
+The shaded area under the curve represents the time for the rupture to release 5-95% of its moment.
 
 As you'd expect, you can break this down further to get the cumulative moment on each segment — if you have a realisation file for this SRF.
 
@@ -119,7 +122,7 @@ plot-srf-rise SRF_FFP OUTPUT_PLOT_FFP
 ## How Do I Plot Segment Magnitudes?
 
 If you want to plot the magnitude of a rupture against the magnitude
-on each segment, use the `plot-mw-contributions` command. 
+on each segment, use the `plot-mw-contributions` command.
 
 > [!NOTE]
 > To use this command, you *must* have a realisation along with the SRF.
@@ -155,11 +158,11 @@ plot-slip-rise-rake realisation.json realisation.srf plot.png --width 200 --heig
 
 The option `--plot_type PLOT_TYPE` controls what you to plot based on `PLOT_TYPE`.
 
-### Plot type `rise` 
+### Plot type `rise`
 ![](images/summary_rise.png)
-### Plot type `rake` 
+### Plot type `rake`
 ![](images/summary_rake.png)
-### Plot type `dist` 
+### Plot type `dist`
 ![](images/summary_dist.png)
-### Plot type `slip` 
+### Plot type `slip`
 ![](images/summary_slip.png)
