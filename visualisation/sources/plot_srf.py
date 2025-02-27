@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Plot multi-segment rupture with slip."""
 
-from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Optional
 
