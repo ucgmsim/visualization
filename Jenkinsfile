@@ -1,6 +1,9 @@
 pipeline {
     agent {
-        docker { image 'python:3.13' }
+        docker {
+            image 'python:3.13'
+            args '-u 0'
+        }
     }
     stages {
         stage('Installing OS Dependencies') {
