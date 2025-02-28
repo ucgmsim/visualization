@@ -34,6 +34,10 @@ def plot_rise(
         Plot title to use.
     width : float
         Width of plot (in cm).
+
+    Examples
+    --------
+    >>> plot_srf("rupture.srf", "rupture.png", dpi=300, title="Rupture Model", width=15)
     """
     srf_data = srf.read_srf(srf_ffp)
     region = (

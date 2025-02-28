@@ -46,6 +46,19 @@ def plot_srf_cumulative_moment(
         Height of plot (in cm).
     width : float, default 10
         Width of plot (in cm).
+
+    Examples
+    --------
+    >>> plot_srf_cumulative_moment(
+    ...  srf_ffp="path/to/srf_file.srf",
+    ...  output_png_ffp="path/to/output_plot.png",
+    ...  dpi=300,
+    ...  realisation_ffp="path/to/realisation_file.json",
+    ...  min_shade_cutoff=0.05,
+    ...  max_shade_cutoff=0.95,
+    ...  height=10,
+    ...  width=15
+    ... )
     """
     srf_data = srf.read_srf(srf_ffp)
 
