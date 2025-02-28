@@ -298,8 +298,7 @@ def plot_srf(
         Width of plot (in cm).
     show_inset : bool
         If True, show an inset overview map.
-    """
-    
+
     Examples
     --------
     >>> plot_srf(
@@ -321,6 +320,7 @@ def plot_srf(
     >>> # The plot will have jump points marked from the realisation file 'realisation.json'.
     >>> # The plot will have a latitude and longitude padding of 0.5 degrees.
     >>> # The plot will have annotations of slip times and an inset map.
+    """
     srf_data = srf.read_srf(srf_ffp)
     region = (
         srf_data.points["lon"].min() - longitude_pad,
