@@ -299,6 +299,28 @@ def plot_srf(
     show_inset : bool
         If True, show an inset overview map.
     """
+    
+    Examples
+    --------
+    >>> plot_srf(
+    ...     srf_ffp="tests/srfs/rupture_1.srf",
+    ...     output_ffp="slip_plot.png",
+    ...     dpi=300,
+    ...     title="Rupture Slip Distribution",
+    ...     realisation_ffp="tests/srfs/realisation.json",
+    ...     latitude_pad=0.5,
+    ...     longitude_pad=0.5,
+    ...     annotations=True,
+    ...     width=15,
+    ...     show_inset=True,
+    ... )
+    >>> # The above code would plot the slip distribution of the SRF file 'rupture_1.srf'
+    >>> # and save it as 'slip_plot.png'.
+    >>> # The plot will have a DPI of 300.
+    >>> # The plot will have the title "Rupture Slip Distribution".
+    >>> # The plot will have jump points marked from the realisation file 'realisation.json'.
+    >>> # The plot will have a latitude and longitude padding of 0.5 degrees.
+    >>> # The plot will have annotations of slip times and an inset map.
     srf_data = srf.read_srf(srf_ffp)
     region = (
         srf_data.points["lon"].min() - longitude_pad,
