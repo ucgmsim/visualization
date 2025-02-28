@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Plot SRF distributions."""
+
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -38,6 +39,17 @@ def plot_srf_distribution(
         Width of the plot in cm, by default 10.
     title : str, optional
         Title for the plot, by default None.
+
+    Examples
+    --------
+    >>> plot_srf_distribution(
+    ...     srf_ffp="path/to/srf_file.srf",
+    ...     plot_png="path/to/output_plot.png",
+    ...     dpi=300,
+    ...     height=10,
+    ...     width=15,
+    ...     title="Slip Distribution",
+    ... )
     """
     srf_data = srf.read_srf(srf_ffp)
     fig, ax = plt.subplots(figsize=(width, height))

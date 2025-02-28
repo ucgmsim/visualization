@@ -44,6 +44,13 @@ def plot_rakes(
         Random seed to sample rakes with.
     width : float
         Width of plot (in cm).
+
+    Example
+    -------
+    >>> plot_rake_sample(
+    ...     "rupture.srf", "rake_plot.png", dpi=300, title="Rake Variation",
+    ...     sample_size=1000, vector_length=5, seed=42, width=15
+    ... )
     """
     srf_data = srf.read_srf(srf_ffp)
     region = (

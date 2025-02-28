@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Plot slip-rise-rake for segments."""
+
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, NamedTuple, Optional
@@ -108,6 +109,14 @@ def plot_contour(
         Color for additional contours, by default "black".
     summary : bool, optional
         If True, include a summary text box, by default True.
+
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> fig, ax = plt.subplots()
+    >>> data = np.random.rand(10, 10)
+    >>> plot_contour(ax, data, 10, 5, np.linspace(0, 1, 6), "cool", "Data", "Title")
     """
     x, y = create_grid(data, length, width)
     contours = ax.contourf(x, y, data, cmap=cmap, levels=levels)
@@ -208,6 +217,20 @@ def plot_rise(
         Segment width in km.
     levels : np.ndarray
         Contour levels for rise.
+
+    Examples
+    --------
+    Example usage with dummy data:
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> fig, ax = plt.subplots()
+    >>> rise_time = np.random.rand(10, 10)
+    >>> length = 10.0
+    >>> width = 5.0
+    >>> levels = np.linspace(0, 1, 6)
+    >>> plot_rise(ax, rise_time, length, width, levels)
+    >>> plt.show()
     """
     plot_contour(
         ax,
@@ -248,7 +271,24 @@ def plot_rake(
         Scaling paramater, smaller `norm` implies smaller vectors.
     stride : int
         Sampling stride of rake array. Higher `stride` implies sparser output.
+
+    Examples
+    --------
+    Example usage with dummy data:
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> fig, ax = plt.subplots()
+    >>> rake = np.random.rand(10, 10)
+    >>> slip = np.random.rand(10, 10)
+    >>> length = 1.0
+    >>> width = 0.5
+    >>> norm = 0.1
+    >>> stride = 2
+    >>> plot_rake(ax, rake, slip, length, width, norm, stride)
+    >>> plt.show()
     """
+
     x, y = create_grid(rake, length, width)
     u, v = np.cos(np.radians(rake)), np.sin(np.radians(rake))
     scale = slip * norm
@@ -275,6 +315,28 @@ def plot_map(ax: plt.Axes, geometry: gpd.GeoDataFrame) -> None:
         Matplotlib axis to plot on.
     geometry : gpd.GeoDataFrame
         Geometry to plot.
+
+    Examples
+    --------
+    Plot a single segment:
+
+    >>> import matplotlib.pyplot as plt
+    >>> import geopandas as gpd
+    >>> from shapely.geometry import LineString
+    >>> fig, ax = plt.subplots()
+    >>> geometry = gpd.GeoDataFrame({'geometry': [LineString([(174, -41), (175, -42)])]}, crs="EPSG:4326") # Sample geometry
+    >>> plot_segment(ax, geometry)
+    >>> plt.show()
+
+    Plot multiple segments:
+
+    >>> import matplotlib.pyplot as plt
+    >>> import geopandas as gpd
+    >>> from shapely.geometry import LineString
+    >>> fig, ax = plt.subplots()
+    >>> geometry = gpd.GeoDataFrame({'geometry': [LineString([(174, -41), (175, -42)]), LineString([(176, -40), (177, -41)])]}, crs="EPSG:4326") # Sample geometry
+    >>> plot_segment(ax, geometry)
+    >>> plt.show()
     """
     nz = gpd.read_file(
         next(
@@ -319,6 +381,26 @@ def plot_slip_histogram(ax: plt.Axes, slip: np.ndarray, summary: bool = True) ->
         Slip array.
     summary : bool, optional
         Whether to include a summary text box, default True.
+
+    Examples
+    --------
+    Example with a simple slip array:
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> slip = np.array([1, 2, 2, 3, 3, 3, 4, 4, 5])
+    >>> fig, ax = plt.subplots()
+    >>> plot_slip_histogram(ax, slip)
+    >>> plt.show()
+
+    Example without summary:
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> slip = np.array([1, 2, 3, 4, 5])
+    >>> fig, ax = plt.subplots()
+    >>> plot_slip_histogram(ax, slip, summary=False)
+    >>> plt.show()
     """
 
     ax.hist(slip.ravel(), density=True)
@@ -447,6 +529,21 @@ def plot_slip_rise_rake(
         Type of plot to generate.
     segment : int, optional
         The segment to plot, default will plot all segments.
+
+    Examples
+    --------
+    Example usage:
+    >>> plot_slip_rise_rake(
+    ...     realisation_ffp="realisation.txt",
+    ...     srf_ffp="segment.srf",
+    ...     output_ffp="slip_rise_rake.png",
+    ...     dpi=300,
+    ...     title="Slip, Rise Time and Rake Angle",
+    ...     width=20,
+    ...     height=15,
+    ...     plot_type=PlotType.SLIP,
+    ...     segment=1,
+    ... )
     """
     matplotlib.rcParams.update(matplotlib.rcParamsDefault)
     srf_data = srf.read_srf(srf_ffp)

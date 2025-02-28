@@ -43,7 +43,19 @@ def plot_mw_contributions(
         Height of plot (in cm).
     width : float
         Width of plot (in cm).
+
+    Examples
+    --------
+    >>> plot_segment_magnitudes(
+    ...     srf_ffp="path/to/srf_file.srf",
+    ...     realisation_ffp="path/to/realisation_file.txt",
+    ...     output_ffp="path/to/output_plot.png",
+    ...     dpi=300,
+    ...     height=10,
+    ...     width=15
+    ... )
     """
+
     source_config = SourceConfig.read_from_realisation(realisation_ffp)
     rupture_propogation_config = RupturePropagationConfig.read_from_realisation(
         realisation_ffp
