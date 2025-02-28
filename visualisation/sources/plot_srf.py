@@ -34,6 +34,14 @@ def show_map(
         The region to highlight.
     projection : str
         The projection to apply to the basemap. Defaults to an autoexpanding mercator projection.
+
+    Examples
+    --------
+    >>> import pygmt
+    >>> fig = pygmt.Figure()
+    >>> highlight_region = (172.5, 174.0, -44.0, -43.0)
+    >>> show_map(fig, highlight_region, projection="M6i")
+    >>> fig.show()  # Displays the plot with the highlighted region
     """
     fig.basemap(region=NZ_REGION, projection=projection, frame=["f"])
     fig.coast(shorelines=True, resolution="i", water="lightblue", land="lightgray")
@@ -75,6 +83,16 @@ def show_slip(
         The realisation to use for jump points, if any.
     title : Optional[str]
         The title of the slip plot.
+
+    Examples
+    --------
+    >>> import pygmt
+    >>> from source_modelling import srf
+    >>> srf_data = srf.read_srf("tests/srfs/rupture_1.srf")
+    >>> fig = pygmt.Figure()
+    >>> region = (172.0, 175.0, -45.0, -43.0)
+    >>> show_slip(fig, region, srf_data, annotations=True, projection="M6i", title="Slip Distribution")
+    >>> fig.show()  # Displays the slip map with optional annotations
     """
     subtitle = utils.format_description(
         srf_data.points["slip"], units="cm", compact=True
