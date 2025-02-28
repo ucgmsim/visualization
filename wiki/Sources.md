@@ -2,6 +2,8 @@
 
 A how-to guide on using the source-modelling repo to plot SRF files various ways.
 
+All of the tools below can be invoked via the command line, or via Python scripts. See the [QuakeCoRE docs](https://quakecoresoft.canterbury.ac.nz/docs/visualisation.sources.html) for API documentation.
+
 ## Installing the Plotting Tools
 
 Before you can plot anything, you need to install the visualisation repository. You can do that with `pip install git+https://github.com/ucgmsim/visualisation`. Assuming you've done that correctly you should be able to execute `plot-srf --help` and get output like
@@ -58,6 +60,8 @@ See the help text to find more formatting options. You will probably be interest
 > [!NOTE]
 > If your rupture is especially large, you'll want to disable the
 > annotations feature with the `--no-annotations` flag.
+### With an Inset
+It often helps to provide an overview map that helps the reader know where you rupture is occurring relative to the whole country. To see one, pass the `--show-inset` flag to `plot-srf`.
 
 # How Do I Plot a Moment Rate Function?
 
